@@ -8,7 +8,7 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const macosRoot = path.resolve(here, "..");
 const stageScript = path.join(macosRoot, "scripts", "stage-theme.mjs");
 const fixtureAsset = path.join(macosRoot, "assets", "portal-hero.png");
-const tempRoot = await fs.mkdtemp(path.join("/tmp", "codex-dream-skin-stage-"));
+const tempRoot = await fs.mkdtemp(path.join("/tmp", "codex-qq-skin-stage-"));
 
 function runStage(source, stage) {
   return new Promise((resolve, reject) => {

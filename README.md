@@ -4,6 +4,26 @@
 
 > 非 OpenAI、腾讯或 QQ 官方产品。本项目不会修改官方 `.app`、`app.asar`、代码签名、API Key 或 Base URL。
 
+## 安装
+
+1. 在 GitHub 项目页点击 **Code → Download ZIP**，下载后解压。
+2. 完全退出 Codex。
+3. 双击 `Install Codex QQ Skin.command`。
+4. 如果 macOS 提示无法验证开发者，请右键该文件，选择“打开”，再确认一次。
+5. 等待安装完成，然后使用桌面上生成的 `Codex QQ Skin.command` 启动主题版 Codex。
+
+安装前请确保官方 Codex/ChatGPT 桌面端至少成功启动过一次。通常不需要打开终端，也不需要另行安装 Node.js。
+
+如需通过终端安装：
+
+```bash
+cd Codex-QQ-Skin
+chmod +x ./*.command scripts/*.sh tests/*.sh
+./scripts/install-qq-skin-macos.sh
+```
+
+运行引擎会安装到 `~/.codex/codex-qq-skin-studio`，主题和运行状态保存在 `~/Library/Application Support/CodexQQSkin`。
+
 ## 效果特点
 
 - 38px 深蓝标题行与 29px 蓝银工具行组成一体化复古标题区。
@@ -25,30 +45,6 @@
 
 项目不要求单独安装 Node.js。运行时会验证并使用官方 Codex 应用内签名的 Node.js。
 
-## 最简单的安装方式
-
-1. 从 GitHub 下载 ZIP 并解压。
-2. 完全退出 Codex。
-3. 双击 `Install Codex QQ Skin.command`。
-4. 如果 macOS 首次阻止运行：右键文件，选择“打开”，然后再次确认。
-5. 安装完成后，从桌面生成的启动入口打开主题版 Codex。
-
-也可以在终端安装：
-
-```bash
-cd Codex-QQ-Skin
-chmod +x ./*.command scripts/*.sh tests/*.sh
-./scripts/install-dream-skin-macos.sh
-```
-
-安装器会把运行引擎复制到：
-
-```text
-~/.codex/codex-dream-skin-studio
-```
-
-这个目录名沿用基础引擎的兼容路径，不影响仓库名与界面名称。
-
 ## 日常使用
 
 安装后可以使用仓库入口：
@@ -62,10 +58,10 @@ chmod +x ./*.command scripts/*.sh tests/*.sh
 终端对应命令：
 
 ```bash
-./scripts/start-dream-skin-macos.sh
+./scripts/start-qq-skin-macos.sh
 ./scripts/doctor-macos.sh --require-live
-./scripts/pause-dream-skin-macos.sh
-./scripts/restore-dream-skin-macos.sh --restore-base-theme --restart-codex
+./scripts/pause-qq-skin-macos.sh
+./scripts/restore-qq-skin-macos.sh --restore-base-theme --restart-codex
 ```
 
 ## 更换背景图

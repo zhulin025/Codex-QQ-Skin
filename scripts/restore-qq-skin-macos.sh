@@ -60,10 +60,10 @@ fi
 
 /bin/rm -f "$STATE_PATH"
 if [ "$UNINSTALL" = "true" ]; then
-  /bin/rm -f "$HOME/Desktop/Codex Dream Skin.command"
-  /bin/rm -f "$HOME/Desktop/Codex Dream Skin - Customize.command"
-  /bin/rm -f "$HOME/Desktop/Codex Dream Skin - Verify.command"
-  /bin/rm -f "$HOME/Desktop/Codex Dream Skin - Restore.command"
+  /bin/rm -f "$HOME/Desktop/Codex QQ Skin.command"
+  /bin/rm -f "$HOME/Desktop/Codex QQ Skin - Customize.command"
+  /bin/rm -f "$HOME/Desktop/Codex QQ Skin - Verify.command"
+  /bin/rm -f "$HOME/Desktop/Codex QQ Skin - Restore.command"
 fi
 
-printf 'Codex Dream Skin Studio was removed and the requested macOS restore actions completed successfully.\n'
+printf 'Codex QQ Skin was removed and the requested macOS restore actions completed successfully.\n'

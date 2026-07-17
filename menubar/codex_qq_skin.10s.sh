@@ -26,7 +26,7 @@ swiftbar_attribute_path_safe() {
   return 0
 }
 
-ENGINE="${CODEX_DREAM_SKIN_ENGINE:-$HOME/.codex/codex-dream-skin-studio}"
+ENGINE="${CODEX_QQ_SKIN_ENGINE:-$HOME/.codex/codex-qq-skin-studio}"
 if [ ! -d "$ENGINE/scripts" ]; then
   HERE="$(cd "$(dirname "$0")" && pwd -P)"
   [ -d "$HERE/../scripts" ] && ENGINE="$(cd "$HERE/.." && pwd -P)"
@@ -40,16 +40,16 @@ fi
 
 SCRIPTS="$ENGINE/scripts"
 APPLY="$SCRIPTS/apply-from-menubar-macos.sh"
-START="$SCRIPTS/start-dream-skin-macos.sh"
-PAUSE="$SCRIPTS/pause-dream-skin-macos.sh"
+START="$SCRIPTS/start-qq-skin-macos.sh"
+PAUSE="$SCRIPTS/pause-qq-skin-macos.sh"
 CUSTOMIZE="$SCRIPTS/customize-theme-macos.sh"
-RESTORE="$SCRIPTS/restore-dream-skin-macos.sh"
-STATUS="$SCRIPTS/status-dream-skin-macos.sh"
+RESTORE="$SCRIPTS/restore-qq-skin-macos.sh"
+STATUS="$SCRIPTS/status-qq-skin-macos.sh"
 SWITCH="$SCRIPTS/switch-theme-macos.sh"
 LOAD_IMG="$SCRIPTS/load-image-theme-macos.sh"
 [ -x "$APPLY" ] || APPLY="$START"
 
-STATE_ROOT="$HOME/Library/Application Support/CodexDreamSkinStudio"
+STATE_ROOT="$HOME/Library/Application Support/CodexQQSkin"
 THEMES_ROOT="$STATE_ROOT/themes"
 IMAGES_DIR="$STATE_ROOT/images"
 /bin/mkdir -p "$THEMES_ROOT" "$IMAGES_DIR" 2>/dev/null

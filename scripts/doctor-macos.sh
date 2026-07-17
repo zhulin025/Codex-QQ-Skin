@@ -15,7 +15,7 @@ discover_codex_app
 require_macos_runtime
 [ -f "$CONFIG_PATH" ] || fail "Codex config not found: $CONFIG_PATH"
 for required in \
-  "$PROJECT_ROOT/assets/dream-skin.css" \
+  "$PROJECT_ROOT/assets/qq-skin.css" \
   "$PROJECT_ROOT/assets/renderer-inject.js" \
   "$PROJECT_ROOT/assets/codex-pet.png" \
   "$PROJECT_ROOT/assets/retro-window-frame.png" \
@@ -35,13 +35,13 @@ if [ -f "$STATE_PATH" ] && verified_cdp_endpoint "$PORT"; then
   "$NODE" "$INJECTOR" --verify --port "$PORT" --theme-dir "$THEME_DIR" --timeout-ms 12000 >/dev/null
   LIVE="true"
 fi
-[ "$REQUIRE_LIVE" = "false" ] || [ "$LIVE" = "true" ] || fail "No verified live Dream Skin session is active."
+[ "$REQUIRE_LIVE" = "false" ] || [ "$LIVE" = "true" ] || fail "No verified live QQ Skin session is active."
 
 "$NODE" -e '
   const payload = JSON.parse(process.argv[1]);
   const result = {
     pass: true,
-    product: "Codex Dream Skin Studio",
+    product: "Codex QQ Skin",
     version: process.argv[2],
     platform: `darwin-${process.argv[3]}`,
     codexVersion: process.argv[4],

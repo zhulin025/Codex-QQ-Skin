@@ -4,7 +4,7 @@ import { randomUUID } from "node:crypto";
 
 const [mode, configPath, backupPath] = process.argv.slice(2);
 // Backup these keys so Restore can put them back. Do NOT force dark —
-// Dream Skin CSS auto-adapts to light/dark via data-dream-shell.
+// QQ Skin CSS auto-adapts to light/dark via data-dream-shell.
 const settings = new Map([
   ["appearanceTheme", null],
   ["appearanceDarkCodeThemeId", null],
@@ -148,7 +148,7 @@ function decodeStrictUtf8(bytes, label) {
 }
 
 async function acquireConfigLock() {
-  const lockPath = `${configPath}.dream-skin.lock`;
+  const lockPath = `${configPath}.qq-skin.lock`;
   const deadline = Date.now() + 5000;
   while (true) {
     let created = false;
@@ -192,7 +192,7 @@ async function acquireConfigLock() {
         }
       }
       if (Date.now() >= deadline) {
-        throw new Error("Another Dream Skin config operation is still running; try again shortly.");
+        throw new Error("Another QQ Skin config operation is still running; try again shortly.");
       }
       await new Promise((resolve) => setTimeout(resolve, 100));
     }

@@ -5,15 +5,15 @@ set -euo pipefail
 if [ -z "${HOME:-}" ]; then
   CURRENT_USER="$(/usr/bin/id -un)"
   HOME="$(/usr/bin/dscl . -read "/Users/$CURRENT_USER" NFSHomeDirectory 2>/dev/null | /usr/bin/awk '{print $2}')"
-  [ -n "$HOME" ] || { printf 'Codex Dream Skin Studio: could not resolve the current macOS home directory.\n' >&2; exit 1; }
+  [ -n "$HOME" ] || { printf 'Codex QQ Skin: could not resolve the current macOS home directory.\n' >&2; exit 1; }
   export HOME
 fi
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd -P)"
 INJECTOR="$SCRIPT_DIR/injector.mjs"
-INSTALL_ROOT="$HOME/.codex/codex-dream-skin-studio"
-STATE_ROOT="$HOME/Library/Application Support/CodexDreamSkinStudio"
+INSTALL_ROOT="$HOME/.codex/codex-qq-skin-studio"
+STATE_ROOT="$HOME/Library/Application Support/CodexQQSkin"
 STATE_PATH="$STATE_ROOT/state.json"
 THEME_BACKUP_PATH="$STATE_ROOT/theme-backup.json"
 THEME_DIR="$STATE_ROOT/theme"
@@ -23,8 +23,8 @@ INJECTOR_ERROR_LOG="$STATE_ROOT/injector-error.log"
 APP_LOG="$STATE_ROOT/codex-launch.log"
 APP_ERROR_LOG="$STATE_ROOT/codex-launch-error.log"
 START_ERROR_LOG="$STATE_ROOT/start-error.log"
-CODEX_APP_JOB_LABEL="com.openai.codex-dream-skin-studio.app"
-INJECTOR_JOB_LABEL="com.openai.codex-dream-skin-studio.injector"
+CODEX_APP_JOB_LABEL="com.openai.codex-qq-skin-studio.app"
+INJECTOR_JOB_LABEL="com.openai.codex-qq-skin-studio.injector"
 EXPECTED_CODEX_TEAM_ID="${CODEX_EXPECTED_TEAM_ID:-2DC432GLL2}"
 SKIN_VERSION="1.5.1"
 
@@ -34,7 +34,7 @@ fail() {
     /bin/mkdir -p "$STATE_ROOT" 2>/dev/null || true
     printf '%s %s\n' "$(/bin/date -u '+%Y-%m-%dT%H:%M:%SZ')" "$message" >> "$START_ERROR_LOG" 2>/dev/null || true
   fi
-  printf 'Codex Dream Skin Studio: %s\n' "$message" >&2
+  printf 'Codex QQ Skin: %s\n' "$message" >&2
   exit 1
 }
 
@@ -42,7 +42,7 @@ notify_user() {
   local message="$*"
   /usr/bin/osascript - "$message" <<'APPLESCRIPT' >/dev/null 2>&1 || true
 on run argv
-  display notification (item 1 of argv) with title "Codex Dream Skin"
+  display notification (item 1 of argv) with title "Codex QQ Skin"
 end run
 APPLESCRIPT
 }
@@ -51,7 +51,7 @@ alert_user() {
   local message="$*"
   /usr/bin/osascript - "$message" <<'APPLESCRIPT' >/dev/null 2>&1 || true
 on run argv
-  display alert "Codex Dream Skin" message (item 1 of argv)
+  display alert "Codex QQ Skin" message (item 1 of argv)
 end run
 APPLESCRIPT
 }
@@ -396,7 +396,7 @@ stop_recorded_injector() {
   local saved_node
   local saved_injector
   if ! pid="$(state_field injectorPid 2>/dev/null)" || [ -z "${pid:-}" ]; then
-    printf 'Dream Skin state is damaged or missing its injector PID; state was preserved.\n' >&2
+    printf 'QQ Skin state is damaged or missing its injector PID; state was preserved.\n' >&2
     return 1
   fi
   # Already paused / no daemon
@@ -406,7 +406,7 @@ stop_recorded_injector() {
   fi
   case "$pid" in
     *[!0-9]*|??????????*)
-      printf 'Recorded Dream Skin injector PID is invalid; state was preserved.\n' >&2
+      printf 'Recorded QQ Skin injector PID is invalid; state was preserved.\n' >&2
       return 1
       ;;
   esac
@@ -426,16 +426,16 @@ stop_recorded_injector() {
   saved_injector="$(state_field injectorPath 2>/dev/null || true)"
   case "$saved_port" in
     ''|*[!0-9]*)
-      printf 'Recorded Dream Skin injector port is missing or invalid; state was preserved.\n' >&2
+      printf 'Recorded QQ Skin injector port is missing or invalid; state was preserved.\n' >&2
       return 1
       ;;
   esac
   [ "$saved_port" -ge 1024 ] && [ "$saved_port" -le 65535 ] || {
-    printf 'Recorded Dream Skin injector port is out of range; state was preserved.\n' >&2
+    printf 'Recorded QQ Skin injector port is out of range; state was preserved.\n' >&2
     return 1
   }
   if [ -z "$saved_start" ] || [ -z "$saved_node" ] || [ -z "$saved_injector" ]; then
-    printf 'Recorded Dream Skin injector identity is incomplete; state was preserved.\n' >&2
+    printf 'Recorded QQ Skin injector identity is incomplete; state was preserved.\n' >&2
     return 1
   fi
   /bin/kill -0 "$pid" 2>/dev/null || {
@@ -466,7 +466,7 @@ stop_recorded_injector() {
     /bin/sleep 0.1
   done
   if recorded_injector_process_matches "$pid" "$saved_start" "$saved_node" "$saved_injector" "$saved_port"; then
-    printf 'Could not stop the recorded Dream Skin injector (PID %s).\n' "$pid" >&2
+    printf 'Could not stop the recorded QQ Skin injector (PID %s).\n' "$pid" >&2
     return 1
   fi
   return 0

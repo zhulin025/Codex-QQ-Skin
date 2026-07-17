@@ -44,7 +44,7 @@ else
   [ "$SOURCE_BYTES" -le 52428800 ] || fail "Selected image is larger than 50 MB. Choose a smaller file."
 
   if [ -z "$THEME_NAME" ]; then
-    THEME_NAME="$(/usr/bin/osascript -e 'text returned of (display dialog "给这套主题起个名字" default answer "我的 Codex Dream Skin" buttons {"取消", "继续"} default button "继续")')" \
+    THEME_NAME="$(/usr/bin/osascript -e 'text returned of (display dialog "给这套主题起个名字" default answer "我的 Codex QQ Skin" buttons {"取消", "继续"} default button "继续")')" \
       || fail "Theme setup was cancelled."
   fi
   if [ -z "$TAGLINE" ]; then TAGLINE="把喜欢的画面变成可交互的 Codex 工作台。"; fi
@@ -74,7 +74,7 @@ else
 fi
 
 if [ "$APPLY_NOW" = "true" ]; then
-  "$SCRIPT_DIR/start-dream-skin-macos.sh" --port 9341 --prompt-restart
+  "$SCRIPT_DIR/start-qq-skin-macos.sh" --port 9341 --prompt-restart
 fi
 
-printf 'Codex Dream Skin Studio theme is ready.\n'
+printf 'Codex QQ Skin theme is ready.\n'

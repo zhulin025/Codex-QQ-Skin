@@ -95,7 +95,7 @@
 - SwiftBar 菜单栏标题恢复调色板图标，并加入静态回归检查，避免升级后只剩 `Skin ON` 文本。
 - 浅色模式撰写器改为更通透的珍珠白表面，并修复占位文字被原生双重透明度削弱的问题；暗色模式继续使用单层实色表面。
 - 兼容 Codex Desktop 更名：官方桌面端在 26.707 从 `Codex.app` 更名为 `ChatGPT.app`（bundle id 仍是 com.openai.codex）。发现 / 启动流程现在两种名字都识别，且 `state.json` 缓存的旧 app 路径若已不存在则不再劫持启动——此前更新后会因指向旧 `Codex.app` 而启动失败
-- 菜单栏与 `status-dream-skin-macos.sh` 不再依赖 `/usr/bin/python3`（macOS 12.3+ 默认不预装）读取主题名与运行状态，改用纯 shell 解析；此前在未装 Xcode 命令行工具的机器上，主题名会退化成 id、`--json` 状态直接失效
+- 菜单栏与 `status-qq-skin-macos.sh` 不再依赖 `/usr/bin/python3`（macOS 12.3+ 默认不预装）读取主题名与运行状态，改用纯 shell 解析；此前在未装 Xcode 命令行工具的机器上，主题名会退化成 id、`--json` 状态直接失效
 
 ### 安全
 
@@ -132,7 +132,7 @@
 ### 修复
 
 - 不再用 `launchctl submit` 托管带调试口的 Codex：退出 SwiftBar / 关掉 Codex 后不应再被 launchd 自动拉起
-- 暂停与完全恢复时清理 `com.openai.codex-dream-skin-studio.app` 作业
+- 暂停与完全恢复时清理 `com.openai.codex-qq-skin-studio.app` 作业
 
 ---
 

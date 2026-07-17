@@ -45,7 +45,7 @@ if [ "$IN_PLACE" = "false" ] && [ "$PROJECT_ROOT" != "$INSTALL_ROOT" ]; then
   install_args=(--in-place --port "$PORT")
   [ "$CREATE_LAUNCHERS" = "true" ] || install_args+=(--no-launchers)
   [ "$LAUNCH_AFTER_INSTALL" = "true" ] || install_args+=(--no-launch)
-  exec "$INSTALL_ROOT/scripts/install-dream-skin-macos.sh" "${install_args[@]}"
+  exec "$INSTALL_ROOT/scripts/install-qq-skin-macos.sh" "${install_args[@]}"
 fi
 
 discover_codex_app
@@ -67,12 +67,12 @@ shell_quote() {
 write_launcher() {
   local target="$1"
   local command="$2"
-  if [ -e "$target" ] && ! /usr/bin/grep -q '^# CodexDreamSkinStudio launcher$' "$target" 2>/dev/null; then
+  if [ -e "$target" ] && ! /usr/bin/grep -q '^# CodexQQSkin launcher$' "$target" 2>/dev/null; then
     fail "Refusing to overwrite an unrelated Desktop file: $target"
   fi
   /usr/bin/printf '%s\n' \
     '#!/bin/bash' \
-    '# CodexDreamSkinStudio launcher' \
+    '# CodexQQSkin launcher' \
     'set -e' \
     "$command" > "$target"
   /bin/chmod 700 "$target"
@@ -80,22 +80,22 @@ write_launcher() {
 
 if [ "$CREATE_LAUNCHERS" = "true" ]; then
   /bin/mkdir -p "$HOME/Desktop"
-  start_script="$(shell_quote "$SCRIPT_DIR/start-dream-skin-macos.sh")"
+  start_script="$(shell_quote "$SCRIPT_DIR/start-qq-skin-macos.sh")"
   customize_script="$(shell_quote "$SCRIPT_DIR/customize-theme-macos.sh")"
-  verify_script="$(shell_quote "$SCRIPT_DIR/verify-dream-skin-macos.sh")"
-  restore_script="$(shell_quote "$SCRIPT_DIR/restore-dream-skin-macos.sh")"
-  screenshot="$(shell_quote "$HOME/Desktop/Codex Dream Skin Verification.png")"
-  write_launcher "$HOME/Desktop/Codex Dream Skin.command" "exec $start_script --port $PORT --prompt-restart"
-  write_launcher "$HOME/Desktop/Codex Dream Skin - Customize.command" "exec $customize_script"
-  write_launcher "$HOME/Desktop/Codex Dream Skin - Verify.command" "$verify_script --screenshot $screenshot && /usr/bin/open $screenshot"
-  write_launcher "$HOME/Desktop/Codex Dream Skin - Restore.command" "exec $restore_script --restore-base-theme --restart-codex"
+  verify_script="$(shell_quote "$SCRIPT_DIR/verify-qq-skin-macos.sh")"
+  restore_script="$(shell_quote "$SCRIPT_DIR/restore-qq-skin-macos.sh")"
+  screenshot="$(shell_quote "$HOME/Desktop/Codex QQ Skin Verification.png")"
+  write_launcher "$HOME/Desktop/Codex QQ Skin.command" "exec $start_script --port $PORT --prompt-restart"
+  write_launcher "$HOME/Desktop/Codex QQ Skin - Customize.command" "exec $customize_script"
+  write_launcher "$HOME/Desktop/Codex QQ Skin - Verify.command" "$verify_script --screenshot $screenshot && /usr/bin/open $screenshot"
+  write_launcher "$HOME/Desktop/Codex QQ Skin - Restore.command" "exec $restore_script --restore-base-theme --restart-codex"
 fi
 
-printf 'Codex Dream Skin Studio %s installed at %s for Codex %s using its signed Node.js %s.\n' \
+printf 'Codex QQ Skin %s installed at %s for Codex %s using its signed Node.js %s.\n' \
   "$SKIN_VERSION" "$PROJECT_ROOT" "$CODEX_VERSION" "$NODE_VERSION"
 printf 'Use the Desktop launchers to customize, start, verify, or restore the official appearance.\n'
 printf 'Bundled presets are ready in your theme library — pick one from the menu bar (已保存的主题) or switch-theme.\n'
 
 if [ "$LAUNCH_AFTER_INSTALL" = "true" ]; then
-  "$SCRIPT_DIR/start-dream-skin-macos.sh" --port "$PORT" --prompt-restart
+  "$SCRIPT_DIR/start-qq-skin-macos.sh" --port "$PORT" --prompt-restart
 fi

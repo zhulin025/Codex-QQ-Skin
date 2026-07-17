@@ -149,7 +149,7 @@ if hot_reapply_theme "$PORT" 8000; then
 fi
 
 progress "CDP not ready, full start..."
-if "$SCRIPT_DIR/start-dream-skin-macos.sh" --port "$PORT" --restart-existing; then
+if "$SCRIPT_DIR/start-qq-skin-macos.sh" --port "$PORT" --restart-existing; then
   progress "Done: ${THEME_NAME}"
   exit 0
 fi

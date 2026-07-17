@@ -61,7 +61,7 @@ assert.deepEqual(
   ["new"],
   "A stale early script must yield to the newest watcher generation.",
 );
-assert.equal(generations.context.window.__CODEX_DREAM_SKIN_EARLY_APPLIED__, "new");
+assert.equal(generations.context.window.__CODEX_QQ_SKIN_EARLY_APPLIED__, "new");
 
 const discoveryStart = source.indexOf("record.earlyScriptId = await registerEarly");
 const probeStart = source.indexOf("const probe = await waitForCodexProbe", discoveryStart);

@@ -13,7 +13,7 @@ while IFS= read -r file; do "$NODE" --check "$file" >/dev/null; done < <(
   /usr/bin/find "$ROOT/scripts" "$ROOT/assets" "$ROOT/presets" -type f \( -name '*.mjs' -o -name '*.js' \) -print
 )
 
-if /usr/bin/grep -R -n -E 'dream-skin-skin|DREAM_SKIN_SKIN|1\.0\.0-rc2' \
+if /usr/bin/grep -R -n -E 'qq-skin-skin|QQ_SKIN_SKIN|1\.0\.0-rc2' \
   "$ROOT/scripts" "$ROOT/assets" >/dev/null; then
   printf 'Legacy release-candidate identifiers remain in runtime files.\n' >&2
   exit 1
@@ -33,8 +33,8 @@ if /usr/bin/grep -R -n --include='*.sh' -E '/usr/bin/osascript[[:space:]]+-e[[:s
   exit 1
 fi
 if ! /usr/bin/grep -F -q 'sfimage=paintpalette.fill' \
-  "$ROOT/menubar/codex_dream_skin.10s.sh"; then
-  printf 'SwiftBar menu title must retain the Dream Skin palette icon.\n' >&2
+  "$ROOT/menubar/codex_qq_skin.10s.sh"; then
+  printf 'SwiftBar menu title must retain the QQ Skin palette icon.\n' >&2
   exit 1
 fi
 if ! /usr/bin/grep -F -q 'flag: "wx"' "$ROOT/scripts/write-theme.mjs"; then
@@ -59,8 +59,8 @@ for preset in "$ROOT"/presets/preset-*/; do
   ' "$PRESET_CHECK"
 done
 
-TMP="$(/usr/bin/mktemp -d /tmp/codex-dream-skin-tests.XXXXXX)"
-TEST_INJECTOR_JOB_LABEL="com.openai.codex-dream-skin-studio.tests.$$"
+TMP="$(/usr/bin/mktemp -d /tmp/codex-qq-skin-tests.XXXXXX)"
+TEST_INJECTOR_JOB_LABEL="com.openai.codex-qq-skin-studio.tests.$$"
 DUMMY_PID=""
 STATUS_PID=""
 WATCH_PID=""
@@ -87,11 +87,11 @@ trap cleanup_tests EXIT
 # into bash= or param*= fields.
 UNSAFE_ENGINE="$TMP/unsafe\"engine"
 /bin/mkdir -p "$UNSAFE_ENGINE/scripts"
-/usr/bin/printf '#!/bin/bash\ntrue\n' > "$UNSAFE_ENGINE/scripts/start-dream-skin-macos.sh"
-/bin/chmod +x "$UNSAFE_ENGINE/scripts/start-dream-skin-macos.sh"
+/usr/bin/printf '#!/bin/bash\ntrue\n' > "$UNSAFE_ENGINE/scripts/start-qq-skin-macos.sh"
+/bin/chmod +x "$UNSAFE_ENGINE/scripts/start-qq-skin-macos.sh"
 UNSAFE_MENU_OUTPUT="$(
-  /usr/bin/env CODEX_DREAM_SKIN_ENGINE="$UNSAFE_ENGINE" \
-    "$ROOT/menubar/codex_dream_skin.10s.sh"
+  /usr/bin/env CODEX_QQ_SKIN_ENGINE="$UNSAFE_ENGINE" \
+    "$ROOT/menubar/codex_qq_skin.10s.sh"
 )"
 /usr/bin/printf '%s\n' "$UNSAFE_MENU_OUTPUT" | /usr/bin/grep -F -q \
   'Engine path contains unsupported SwiftBar characters'
@@ -101,14 +101,14 @@ if /usr/bin/printf '%s\n' "$UNSAFE_MENU_OUTPUT" | /usr/bin/grep -F -q 'bash='; t
 fi
 
 MENU_HOME="$TMP/menu-home"
-MENU_IMAGES="$MENU_HOME/Library/Application Support/CodexDreamSkinStudio/images"
+MENU_IMAGES="$MENU_HOME/Library/Application Support/CodexQQSkin/images"
 /bin/mkdir -p "$MENU_IMAGES"
 : > "$MENU_IMAGES/safe-image.png"
 : > "$MENU_IMAGES/"$'bad\timage.png'
 : > "$MENU_IMAGES/"$'bad\033image.png'
 MENU_IMAGE_OUTPUT="$(
-  /usr/bin/env HOME="$MENU_HOME" CODEX_DREAM_SKIN_ENGINE="$ROOT" \
-    "$ROOT/menubar/codex_dream_skin.10s.sh"
+  /usr/bin/env HOME="$MENU_HOME" CODEX_QQ_SKIN_ENGINE="$ROOT" \
+    "$ROOT/menubar/codex_qq_skin.10s.sh"
 )"
 /usr/bin/printf '%s\n' "$MENU_IMAGE_OUTPUT" | /usr/bin/grep -F -q 'safe-image.png'
 if /usr/bin/printf '%s\n' "$MENU_IMAGE_OUTPUT" | /usr/bin/grep -F -q 'bad'; then
@@ -135,7 +135,7 @@ fi
 # Theme switches stage files and publish theme.json last, preserving a complete
 # active pack while the watcher is running.
 SWITCH_HOME="$TMP/switch-home"
-SWITCH_STATE="$SWITCH_HOME/Library/Application Support/CodexDreamSkinStudio"
+SWITCH_STATE="$SWITCH_HOME/Library/Application Support/CodexQQSkin"
 /bin/mkdir -p "$SWITCH_STATE/themes/preset-switch-fixture" "$SWITCH_STATE/theme"
 /bin/cp "$ROOT/assets/portal-hero.png" "$SWITCH_STATE/themes/preset-switch-fixture/background.png"
 /usr/bin/printf '%s\n' \
@@ -162,7 +162,7 @@ fi
 [ -z "$(/usr/bin/find "$SWITCH_STATE" -maxdepth 1 -name '.theme-switch.*' -print -quit)" ]
 
 RUNTIME_HOME="$TMP/runtime-home"
-RUNTIME_STATE_ROOT="$RUNTIME_HOME/Library/Application Support/CodexDreamSkinStudio"
+RUNTIME_STATE_ROOT="$RUNTIME_HOME/Library/Application Support/CodexQQSkin"
 RUNTIME_STATE="$RUNTIME_STATE_ROOT/state.json"
 STATE_EVAL_MARKER="$TMP/state-eval-marker"
 # Bundle/exe must exist for restore to trust them (Codex.app→ChatGPT.app rename),
@@ -196,7 +196,7 @@ EXPECTED_TEAM_ID="TEAM'ID"
 # A reused live PID must never be killed or treated as a successfully stopped
 # injector when its command identity does not match the recorded watcher.
 STOP_HOME="$TMP/stop-home"
-STOP_STATE_ROOT="$STOP_HOME/Library/Application Support/CodexDreamSkinStudio"
+STOP_STATE_ROOT="$STOP_HOME/Library/Application Support/CodexQQSkin"
 /bin/mkdir -p "$STOP_STATE_ROOT"
 "$NODE" -e 'process.on("SIGTERM", () => process.exit(0)); setTimeout(() => {}, 30000);' &
 DUMMY_PID="$!"
@@ -260,7 +260,7 @@ DUMMY_PID=""
 # SwiftBar status must not call a live, reused PID "active" merely because
 # kill -0 succeeds.  A watcher state needs matching command/path/start data.
 STATUS_HOME="$TMP/status-home"
-STATUS_STATE_ROOT="$STATUS_HOME/Library/Application Support/CodexDreamSkinStudio"
+STATUS_STATE_ROOT="$STATUS_HOME/Library/Application Support/CodexQQSkin"
 /bin/mkdir -p "$STATUS_STATE_ROOT"
 "$NODE" -e 'process.on("SIGTERM", () => process.exit(0)); setTimeout(() => {}, 30000);' &
 STATUS_PID="$!"
@@ -273,11 +273,11 @@ STATUS_PID="$!"
     port: 9341,
     injectorPid: Number(pid),
     injectorStartedAt: "not-the-real-start-time",
-    injectorPath: "/tmp/not-the-dream-skin-injector.mjs",
+    injectorPath: "/tmp/not-the-qq-skin-injector.mjs",
     nodePath: "/tmp/not-the-codex-node",
   })}\n`);
 ' "$STATUS_STATE_ROOT/state.json" "$STATUS_PID"
-STATUS_JSON="$(/usr/bin/env HOME="$STATUS_HOME" "$ROOT/scripts/status-dream-skin-macos.sh" --json)"
+STATUS_JSON="$(/usr/bin/env HOME="$STATUS_HOME" "$ROOT/scripts/status-qq-skin-macos.sh" --json)"
 "$NODE" -e '
   const value = JSON.parse(process.argv[1]);
   if (value.session !== "stale" || value.injectorAlive !== false) process.exit(1);
@@ -308,7 +308,7 @@ STATUS_START="$(/bin/ps -p "$STATUS_PID" -o lstart= 2>/dev/null | /usr/bin/awk '
     nodePath: node,
   })}\n`);
 ' "$STATUS_STATE_ROOT/state.json" "$STATUS_PID" "$NODE" "$STATUS_FAKE_INJECTOR" "$STATUS_START"
-STATUS_JSON="$(/usr/bin/env HOME="$STATUS_HOME" "$ROOT/scripts/status-dream-skin-macos.sh" --json)"
+STATUS_JSON="$(/usr/bin/env HOME="$STATUS_HOME" "$ROOT/scripts/status-qq-skin-macos.sh" --json)"
 "$NODE" -e '
   const value = JSON.parse(process.argv[1]);
   if (value.session !== "stale" || value.injectorAlive !== false) process.exit(1);
@@ -354,17 +354,17 @@ WATCH_PID=""
 
 # A failed start must prove the recorded watcher stopped before deleting its
 # state; this static guard prevents the old launchctl-short-circuit cleanup.
-/usr/bin/grep -F -q 'set -Eeuo pipefail' "$ROOT/scripts/start-dream-skin-macos.sh"
+/usr/bin/grep -F -q 'set -Eeuo pipefail' "$ROOT/scripts/start-qq-skin-macos.sh"
 /usr/bin/grep -F -q 'if "$NODE" "$INJECTOR" --verify' \
-  "$ROOT/scripts/start-dream-skin-macos.sh"
-if /usr/bin/grep -F -q 'set +e' "$ROOT/scripts/start-dream-skin-macos.sh"; then
+  "$ROOT/scripts/start-qq-skin-macos.sh"
+if /usr/bin/grep -F -q 'set +e' "$ROOT/scripts/start-qq-skin-macos.sh"; then
   printf 'start script still disables errexit around expected verify retries.\n' >&2
   exit 1
 fi
 /usr/bin/grep -F -q 'if ! stop_recorded_injector; then' \
-  "$ROOT/scripts/start-dream-skin-macos.sh"
+  "$ROOT/scripts/start-qq-skin-macos.sh"
 if /usr/bin/grep -F -q 'launchctl remove "$INJECTOR_JOB_LABEL" >/dev/null 2>&1 || /bin/kill -TERM "$INJECTOR_PID"' \
-  "$ROOT/scripts/start-dream-skin-macos.sh"; then
+  "$ROOT/scripts/start-qq-skin-macos.sh"; then
   printf 'start script still deletes state without identity-bound injector cleanup.\n' >&2
   exit 1
 fi
@@ -630,7 +630,7 @@ assert_theme_config_restore_rejected() {
   fi
   /usr/bin/cmp -s "$config" "$config.original"
   [ -e "$backup" ]
-  [ ! -e "$config.dream-skin.lock" ]
+  [ ! -e "$config.qq-skin.lock" ]
 }
 
 MALICIOUS_BACKUP_CONFIG="$TMP/config-malicious-backup.toml"
@@ -676,7 +676,7 @@ if "$NODE" "$ROOT/scripts/theme-config.mjs" install \
 fi
 /usr/bin/cmp -s "$INVALID_UTF_CONFIG" "$TMP/original-invalid-utf8.toml"
 [ ! -e "$INVALID_UTF_BACKUP" ]
-[ ! -e "$INVALID_UTF_CONFIG.dream-skin.lock" ]
+[ ! -e "$INVALID_UTF_CONFIG.qq-skin.lock" ]
 
 assert_theme_config_install_rejected() {
   local label="$1"
@@ -689,7 +689,7 @@ assert_theme_config_install_rejected() {
   fi
   /usr/bin/cmp -s "$config" "$config.original"
   [ ! -e "$backup" ]
-  [ ! -e "$config.dream-skin.lock" ]
+  [ ! -e "$config.qq-skin.lock" ]
 }
 
 SYMLINK_CONFIG_TARGET="$TMP/config-symlink-target.toml"
@@ -735,12 +735,12 @@ CRLF_BACKUP="$TMP/config-crlf-backup.json"
 
 /usr/bin/env -u HOME /bin/bash -c '. "$1/scripts/common-macos.sh"; [ -n "$HOME" ] && [ "$SKIN_VERSION" = "1.5.1" ]' _ "$ROOT"
 DOCTOR_HOME="$TMP/doctor-home"
-/bin/mkdir -p "$DOCTOR_HOME/.codex" "$DOCTOR_HOME/Library/Application Support/CodexDreamSkinStudio/theme"
+/bin/mkdir -p "$DOCTOR_HOME/.codex" "$DOCTOR_HOME/Library/Application Support/CodexQQSkin/theme"
 /usr/bin/printf '%s\n' 'model = "gpt-5"' > "$DOCTOR_HOME/.codex/config.toml"
 /bin/cp "$ROOT/presets/preset-classic-codex/theme.json" \
-  "$DOCTOR_HOME/Library/Application Support/CodexDreamSkinStudio/theme/theme.json"
+  "$DOCTOR_HOME/Library/Application Support/CodexQQSkin/theme/theme.json"
 /bin/cp "$ROOT/presets/preset-classic-codex/background.jpg" \
-  "$DOCTOR_HOME/Library/Application Support/CodexDreamSkinStudio/theme/background.jpg"
+  "$DOCTOR_HOME/Library/Application Support/CodexQQSkin/theme/background.jpg"
 /usr/bin/env HOME="$DOCTOR_HOME" "$ROOT/scripts/doctor-macos.sh" >/dev/null
 
 printf 'PASS: syntax, payload, bundled presets, preset seeding, runtime-state safety, custom-theme, config round-trips, HOME recovery, signature, and doctor checks.\n'

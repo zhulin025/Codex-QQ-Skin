@@ -125,7 +125,7 @@ if (!imageStat.isFile() || imageStat.size < 1 || imageStat.size > 16 * 1024 * 10
   throw new Error("The prepared theme image must be non-empty and no larger than 16 MB.");
 }
 
-const name = validateText(valueFor("name", "我的 Codex Dream Skin"), "name", 80, "我的 Codex Dream Skin");
+const name = validateText(valueFor("name", "我的 Codex QQ Skin"), "name", 80, "我的 Codex QQ Skin");
 const tagline = validateText(
   valueFor("tagline", "把喜欢的画面变成可交互的 Codex 工作台。"),
   "tagline",
@@ -164,12 +164,12 @@ if (hasValue("highlight")) explicitColors.highlight = validateHex(valueFor("high
 const custom = {
   schemaVersion: 1,
   id: `custom-${Date.now()}`,
-  name: name || "我的 Codex Dream Skin",
-  brandSubtitle: "CODEX DREAM SKIN",
+  name: name || "我的 Codex QQ Skin",
+  brandSubtitle: "CODEX QQ SKIN",
   tagline: tagline || "把喜欢的画面变成可交互的 Codex 工作台。",
   projectPrefix: "选择项目 · ",
   projectLabel: "◉  选择项目",
-  statusText: "DREAM SKIN ONLINE",
+  statusText: "QQ SKIN ONLINE",
   quote: quote || "MAKE SOMETHING WONDERFUL",
   image,
   appearance,

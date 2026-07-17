@@ -7,7 +7,7 @@ import { fileURLToPath } from "node:url";
 const here = path.dirname(fileURLToPath(import.meta.url));
 const macosRoot = path.resolve(here, "..");
 const template = await fs.readFile(path.join(macosRoot, "assets", "renderer-inject.js"), "utf8");
-const css = await fs.readFile(path.join(macosRoot, "assets", "dream-skin.css"), "utf8");
+const css = await fs.readFile(path.join(macosRoot, "assets", "qq-skin.css"), "utf8");
 
 assert.doesNotMatch(
   css,
@@ -16,13 +16,13 @@ assert.doesNotMatch(
 );
 assert.doesNotMatch(
   css,
-  /main\.main-surface:not\(\.dream-skin-home-shell\)\s*>\s*\*\s*\{[^}]*\bposition\s*:/,
+  /main\.main-surface:not\(\.qq-skin-home-shell\)\s*>\s*\*\s*\{[^}]*\bposition\s*:/,
   "Task-route child layering must not overwrite the native header position.",
 );
 
 assert.doesNotMatch(
   css,
-  /background-image:\s*var\(--dream-skin-art\),\s*var\(--dream-skin-art\)/,
+  /background-image:\s*var\(--qq-skin-art\),\s*var\(--qq-skin-art\)/,
   "The home hero must not stack duplicate copies of the selected image.",
 );
 assert.match(
@@ -42,27 +42,27 @@ assert.doesNotMatch(
 );
 assert.match(
   css,
-  /data-dream-art-task-mode="ambient"[\s\S]{0,500}body\s*\{[\s\S]{0,500}background-image:\s*var\(--dream-skin-art\) !important;[\s\S]{0,200}background-size:\s*cover !important;/,
+  /data-dream-art-task-mode="ambient"[\s\S]{0,500}body\s*\{[\s\S]{0,500}background-image:\s*var\(--qq-skin-art\) !important;[\s\S]{0,200}background-size:\s*cover !important;/,
   "Wide ambient task artwork should cover the full application window.",
 );
 assert.match(
   css,
-  /data-dream-task-mode="banner"[\s\S]{0,900}body\s*\{[\s\S]{0,500}background-image:\s*var\(--dream-skin-art\) !important;[\s\S]{0,200}background-size:\s*cover !important;/,
+  /data-dream-task-mode="banner"[\s\S]{0,900}body\s*\{[\s\S]{0,500}background-image:\s*var\(--qq-skin-art\) !important;[\s\S]{0,200}background-size:\s*cover !important;/,
   "Wide banner task artwork should use the same full-window wallpaper contract as ambient routes.",
 );
 assert.match(
   css,
-  /data-dream-art-wide="true"\]:has\(main\.main-surface\.dream-skin-home-shell\)[\s\S]{0,100}body\s*\{[\s\S]{0,300}background-image:\s*var\(--dream-skin-art\) !important;/,
+  /data-dream-art-wide="true"\]:has\(main\.main-surface\.qq-skin-home-shell\)[\s\S]{0,100}body\s*\{[\s\S]{0,300}background-image:\s*var\(--qq-skin-art\) !important;/,
   "Wide home artwork should use the same full-window image as utility routes.",
 );
 assert.match(
   css,
-  /data-dream-art-wide="true"\]:has\(main\.main-surface\.dream-skin-home-shell\)[\s\S]{0,120}body\s*\{[\s\S]{0,260}background-position:\s*var\(--ds-art-position\) !important;/,
+  /data-dream-art-wide="true"\]:has\(main\.main-surface\.qq-skin-home-shell\)[\s\S]{0,120}body\s*\{[\s\S]{0,260}background-position:\s*var\(--ds-art-position\) !important;/,
   "Wide home artwork must honor the configured focal point instead of forcing a centered crop.",
 );
 assert.match(
   css,
-  /data-dream-art-task-mode="ambient"[\s\S]{0,260}data-dream-art-wide="true"\]:has\(main\.main-surface:not\(\.dream-skin-home-shell\)\)[\s\S]{0,120}body\s*\{[\s\S]{0,260}background-position:\s*var\(--ds-art-position\) !important;/,
+  /data-dream-art-task-mode="ambient"[\s\S]{0,260}data-dream-art-wide="true"\]:has\(main\.main-surface:not\(\.qq-skin-home-shell\)\)[\s\S]{0,120}body\s*\{[\s\S]{0,260}background-position:\s*var\(--ds-art-position\) !important;/,
   "Wide task artwork must retain the same focal point as the home route.",
 );
 assert.match(
@@ -82,12 +82,12 @@ assert.match(
 );
 assert.match(
   template,
-  /\[class\*="_homeUtilityBar_"\][\s\S]{0,500}dream-skin-home-utility/,
+  /\[class\*="_homeUtilityBar_"\][\s\S]{0,500}qq-skin-home-utility/,
   "The renderer should give the current native home utility bar a stable theme class.",
 );
 assert.match(
   css,
-  /\.dream-skin-home:has\(\.dream-skin-home-utility\)[\s\S]{0,120}\.composer-surface-chrome\s*\{[\s\S]{0,180}border-radius:\s*0 0 22px 22px !important;/,
+  /\.qq-skin-home:has\(\.qq-skin-home-utility\)[\s\S]{0,120}\.composer-surface-chrome\s*\{[\s\S]{0,180}border-radius:\s*0 0 22px 22px !important;/,
   "The home utility bar and composer should render as one continuous control.",
 );
 assert.match(
@@ -127,7 +127,7 @@ assert.match(
 );
 assert.match(
   css,
-  /#codex-dream-skin-companion[\s\S]{0,900}\.dream-skin-companion-stage/,
+  /#codex-qq-skin-companion[\s\S]{0,900}\.qq-skin-companion-stage/,
   "The classic three-pane skin must ship a dedicated Codex companion card.",
 );
 assert.match(
@@ -157,7 +157,7 @@ assert.match(
 );
 assert.match(
   css,
-  /#codex-dream-skin-retro-shell[\s\S]{0,5200}border-image-source:\s*var\(--dream-retro-frame\)/,
+  /#codex-qq-skin-retro-shell[\s\S]{0,5200}border-image-source:\s*var\(--dream-retro-frame\)/,
   "The retro application shell must use the generated frame as a scalable border.",
 );
 assert.match(
@@ -341,7 +341,7 @@ function createFixture(theme, {
       return mediaQuery;
     },
   };
-  if (analysisCache) window.__CODEX_DREAM_SKIN_ANALYSIS_CACHE__ = analysisCache;
+  if (analysisCache) window.__CODEX_QQ_SKIN_ANALYSIS_CACHE__ = analysisCache;
   if (analysisFixture) {
     window.Image = class {
       naturalWidth = analysisFixture.naturalWidth;
@@ -377,7 +377,7 @@ function createFixture(theme, {
     Uint8Array,
     atob,
     getComputedStyle() {
-      const skinShell = root.classList.contains("codex-dream-skin")
+      const skinShell = root.classList.contains("codex-qq-skin")
         ? (attributes.get("data-dream-shell") || "dark") : fixtureShell;
       return {
         colorScheme: skinShell,
@@ -395,14 +395,14 @@ function createFixture(theme, {
     cancelAnimationFrame() {},
   };
   const payloadFor = (nextTheme, cssText = ".fixture { color: blue; }") => template
-    .replace("__DREAM_SKIN_CSS_JSON__", JSON.stringify(cssText))
-    .replace("__DREAM_SKIN_ART_JSON__", JSON.stringify("data:image/png;base64,AA=="))
-    .replace("__DREAM_SKIN_PET_JSON__", JSON.stringify("data:image/png;base64,AA=="))
-    .replace("__DREAM_SKIN_RETRO_FRAME_JSON__", JSON.stringify("data:image/png;base64,AA=="))
-    .replace("__DREAM_SKIN_QQ_AVATAR_JSON__", JSON.stringify("data:image/png;base64,AA=="))
-    .replace("__DREAM_SKIN_THEME_JSON__", JSON.stringify(nextTheme))
-    .replace("__DREAM_SKIN_VERSION_JSON__", JSON.stringify("test"))
-    .replace("__DREAM_SKIN_STYLE_REVISION_JSON__", JSON.stringify(cssText));
+    .replace("__QQ_SKIN_CSS_JSON__", JSON.stringify(cssText))
+    .replace("__QQ_SKIN_ART_JSON__", JSON.stringify("data:image/png;base64,AA=="))
+    .replace("__QQ_SKIN_PET_JSON__", JSON.stringify("data:image/png;base64,AA=="))
+    .replace("__QQ_SKIN_RETRO_FRAME_JSON__", JSON.stringify("data:image/png;base64,AA=="))
+    .replace("__QQ_SKIN_QQ_AVATAR_JSON__", JSON.stringify("data:image/png;base64,AA=="))
+    .replace("__QQ_SKIN_THEME_JSON__", JSON.stringify(nextTheme))
+    .replace("__QQ_SKIN_VERSION_JSON__", JSON.stringify("test"))
+    .replace("__QQ_SKIN_STYLE_REVISION_JSON__", JSON.stringify(cssText));
   const flushTimers = (maximumDelay = Infinity) => {
     const pending = [...timers.entries()].filter(([, timer]) => timer.delay <= maximumDelay);
     for (const [id, timer] of pending) {
@@ -448,11 +448,11 @@ assert.equal(defaults.attributes.get("data-dream-art-safe-area"), "center");
 assert.equal(defaults.attributes.get("data-dream-art-task-mode"), "ambient");
 assert.equal(defaults.attributes.get("data-dream-art-ready"), "false");
 assert.equal(defaults.attributes.get("data-dream-three-pane"), "false");
-assert.ok(defaults.nodes.has("codex-dream-skin-companion"));
-assert.ok(defaults.nodes.has("codex-dream-skin-retro-shell"));
+assert.ok(defaults.nodes.has("codex-qq-skin-companion"));
+assert.ok(defaults.nodes.has("codex-qq-skin-retro-shell"));
 assert.equal(defaults.rootStyle.values.get("--dream-retro-frame"), 'url("blob:fixture-3")');
 assert.equal(defaults.rootStyle.values.get("--dream-art-position"), "50.00% 50.00%");
-const defaultMetrics = defaults.window.__CODEX_DREAM_SKIN_STATE__.metrics;
+const defaultMetrics = defaults.window.__CODEX_QQ_SKIN_STATE__.metrics;
 assert.equal(defaultMetrics.rootPasses, 1);
 assert.equal(defaultMetrics.routePasses, 1);
 assert.equal(defaultMetrics.layoutReads, 1);
@@ -469,7 +469,7 @@ defaults.shellBox.width = 1084;
 defaults.resizeObservers[0].callback([]);
 defaults.flushTimers(64);
 assert.equal(defaultMetrics.layoutReads, 2, "Shell ResizeObserver changes must refresh chrome geometry.");
-const defaultChrome = defaults.nodes.get("codex-dream-skin-chrome");
+const defaultChrome = defaults.nodes.get("codex-qq-skin-chrome");
 assert.equal(defaultChrome.style.values.get("left"), "196px");
 assert.equal(defaultChrome.style.values.get("width"), "1084px");
 
@@ -486,7 +486,7 @@ assert.equal(threePane.attributes.get("data-dream-left-sidebar"), "open");
 assert.equal(threePane.attributes.get("data-dream-three-pane"), "true");
 assert.equal(threePane.attributes.get("data-dream-summary-state"), "open");
 assert.equal(
-  threePane.nodes.get("codex-dream-skin-companion").classList.contains("is-visible"),
+  threePane.nodes.get("codex-qq-skin-companion").classList.contains("is-visible"),
   true,
   "The Codex pet should appear only with the real pinned summary panel.",
 );
@@ -508,10 +508,10 @@ shellFollow.root.className = "";
 vm.runInNewContext(shellFollow.payload, shellFollow.context);
 assert.equal(shellFollow.attributes.get("data-dream-shell"), "light");
 shellFollow.setNativeShell("dark");
-shellFollow.window.__CODEX_DREAM_SKIN_STATE__.ensure();
+shellFollow.window.__CODEX_QQ_SKIN_STATE__.ensure();
 assert.equal(shellFollow.attributes.get("data-dream-shell"), "dark");
 shellFollow.setNativeShell("light");
-shellFollow.window.__CODEX_DREAM_SKIN_STATE__.ensure();
+shellFollow.window.__CODEX_QQ_SKIN_STATE__.ensure();
 assert.equal(shellFollow.attributes.get("data-dream-shell"), "light");
 
 defaults.root.className = "";
@@ -557,16 +557,16 @@ const cached = createFixture({
   appearance: "auto",
   art: { safeArea: "auto", taskMode: "auto" },
   artKey: "cached-art",
-  artMetadata: synchronousWide.window.__CODEX_DREAM_SKIN_STATE__.artMetadata,
+  artMetadata: synchronousWide.window.__CODEX_QQ_SKIN_STATE__.artMetadata,
 }, { analysisCache: new Map([["cached-art", cachedAnalysis]]) });
 vm.runInNewContext(cached.payload, cached.context);
 assert.equal(cached.attributes.get("data-dream-art-ready"), "true");
 assert.equal(cached.attributes.get("data-dream-art-safe-area"), "left");
-assert.equal(cached.window.__CODEX_DREAM_SKIN_STATE__.metrics.analysisCacheHits, 1);
-assert.equal(cached.window.__CODEX_DREAM_SKIN_STATE__.metrics.analysisRuns, 0);
+assert.equal(cached.window.__CODEX_QQ_SKIN_STATE__.metrics.analysisCacheHits, 1);
+assert.equal(cached.window.__CODEX_QQ_SKIN_STATE__.metrics.analysisRuns, 0);
 
-const previousWideState = synchronousWide.window.__CODEX_DREAM_SKIN_STATE__;
-const stableStyle = synchronousWide.nodes.get("codex-dream-skin-style");
+const previousWideState = synchronousWide.window.__CODEX_QQ_SKIN_STATE__;
+const stableStyle = synchronousWide.nodes.get("codex-qq-skin-style");
 vm.runInNewContext(synchronousWide.payloadFor({
   id: "switched-wide",
   appearance: "dark",
@@ -581,10 +581,10 @@ vm.runInNewContext(synchronousWide.payloadFor({
     taskMode: "ambient",
   },
 }, ".fixture { color: red; }"), synchronousWide.context);
-assert.equal(synchronousWide.nodes.get("codex-dream-skin-style"), stableStyle);
+assert.equal(synchronousWide.nodes.get("codex-qq-skin-style"), stableStyle);
 assert.equal(stableStyle.textContent, ".fixture { color: red; }");
 assert.equal(stableStyle.dataset.dreamSkinVersion, "test");
-assert.equal(synchronousWide.rootStyle.values.get("--dream-skin-art"), 'url("blob:fixture-5")');
+assert.equal(synchronousWide.rootStyle.values.get("--qq-skin-art"), 'url("blob:fixture-5")');
 assert.deepEqual(synchronousWide.revokedUrls, [
   "blob:fixture-1", "blob:fixture-2", "blob:fixture-3", "blob:fixture-4",
 ]);
@@ -608,8 +608,8 @@ const nativeDark = createFixture({
 vm.runInNewContext(nativeDark.payload, nativeDark.context);
 await Promise.resolve();
 await Promise.resolve();
-nativeDark.window.__CODEX_DREAM_SKIN_STATE__.ensure();
-assert.equal(nativeDark.window.__CODEX_DREAM_SKIN_STATE__.analysis.shell, "light");
+nativeDark.window.__CODEX_QQ_SKIN_STATE__.ensure();
+assert.equal(nativeDark.window.__CODEX_QQ_SKIN_STATE__.analysis.shell, "light");
 assert.equal(nativeDark.attributes.get("data-dream-shell"), "dark");
 assert.match(nativeDark.rootStyle.values.get("--ds-bg"), /^#[0-9a-f]{6}$/);
 assert.ok(Number.parseInt(nativeDark.rootStyle.values.get("--ds-bg").slice(1), 16) < 0x303030);
@@ -626,7 +626,7 @@ assert.equal(explicit.attributes.get("data-dream-art-safe-area"), "none");
 assert.equal(explicit.attributes.get("data-dream-art-safe"), "none");
 assert.equal(explicit.attributes.get("data-dream-art-task-mode"), "off");
 assert.equal(explicit.rootStyle.values.get("--dream-art-position"), "15.00% 80.00%");
-assert.equal(explicit.window.__CODEX_DREAM_SKIN_STATE__.analysis, null);
+assert.equal(explicit.window.__CODEX_QQ_SKIN_STATE__.analysis, null);
 
 const banner = createFixture({
   id: "banner-contract",
@@ -649,23 +649,23 @@ assert.equal(banner.attributes.get("data-dream-art-wide"), "true");
 assert.equal(banner.attributes.get("data-dream-art-task-mode"), "banner");
 assert.equal(banner.attributes.get("data-dream-task-mode"), "banner");
 
-assert.equal(explicit.window.__CODEX_DREAM_SKIN_STATE__.cleanup(), true);
-assert.equal(explicit.root.classList.contains("codex-dream-skin"), false);
+assert.equal(explicit.window.__CODEX_QQ_SKIN_STATE__.cleanup(), true);
+assert.equal(explicit.root.classList.contains("codex-qq-skin"), false);
 assert.equal(explicit.attributes.has("data-dream-shell"), false);
 assert.equal(explicit.attributes.has("data-dream-art-safe-area"), false);
 assert.equal(explicit.attributes.has("data-dream-art-task-mode"), false);
 assert.equal(explicit.rootStyle.values.has("--dream-art-position"), false);
-assert.equal(explicit.nodes.has("codex-dream-skin-style"), false);
-assert.equal(explicit.nodes.has("codex-dream-skin-chrome"), false);
-assert.equal(explicit.nodes.has("codex-dream-skin-companion"), false);
-assert.equal(explicit.nodes.has("codex-dream-skin-retro-shell"), false);
+assert.equal(explicit.nodes.has("codex-qq-skin-style"), false);
+assert.equal(explicit.nodes.has("codex-qq-skin-chrome"), false);
+assert.equal(explicit.nodes.has("codex-qq-skin-companion"), false);
+assert.equal(explicit.nodes.has("codex-qq-skin-retro-shell"), false);
 assert.deepEqual(explicit.revokedUrls, [
   "blob:fixture-1", "blob:fixture-2", "blob:fixture-3", "blob:fixture-4",
 ]);
 await Promise.resolve();
 await Promise.resolve();
-assert.equal(explicit.root.classList.contains("codex-dream-skin"), false);
-assert.equal(explicit.nodes.has("codex-dream-skin-style"), false);
-assert.equal(explicit.window.__CODEX_DREAM_SKIN_STATE__, undefined);
+assert.equal(explicit.root.classList.contains("codex-qq-skin"), false);
+assert.equal(explicit.nodes.has("codex-qq-skin-style"), false);
+assert.equal(explicit.window.__CODEX_QQ_SKIN_STATE__, undefined);
 
 console.log("PASS: renderer honors adaptive art metadata, fallback, and cleanup behavior.");

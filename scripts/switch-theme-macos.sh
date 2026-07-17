@@ -92,7 +92,7 @@ fi
 
 # Cold path only when debug port is missing
 progress "CDP not ready, full start..."
-if "$SCRIPT_DIR/start-dream-skin-macos.sh" --port "$PORT" --restart-existing; then
+if "$SCRIPT_DIR/start-qq-skin-macos.sh" --port "$PORT" --restart-existing; then
   progress "Done: ${THEME_NAME}"
   exit 0
 fi

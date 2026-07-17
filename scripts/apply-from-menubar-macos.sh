@@ -6,7 +6,7 @@ set +e
 export PATH="/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin:${PATH:-}"
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd -P)"
-STATE_ROOT="${HOME}/Library/Application Support/CodexDreamSkinStudio"
+STATE_ROOT="${HOME}/Library/Application Support/CodexQQSkin"
 LOG_OUT="${STATE_ROOT}/menubar-apply.log"
 
 /bin/mkdir -p "$STATE_ROOT" 2>/dev/null
@@ -18,7 +18,7 @@ progress() {
   printf '[progress] %s\n' "$*" >>"$LOG_OUT" 2>/dev/null
   /usr/bin/osascript - "$*" >/dev/null 2>&1 <<'APPLESCRIPT' &
 on run argv
-  display notification (item 1 of argv) with title "Codex Dream Skin"
+  display notification (item 1 of argv) with title "Codex QQ Skin"
 end run
 APPLESCRIPT
 }
@@ -26,7 +26,7 @@ APPLESCRIPT
 alert() {
   /usr/bin/osascript - "$1" >/dev/null 2>&1 <<'APPLESCRIPT' || true
 on run argv
-  display alert "Codex Dream Skin" message (item 1 of argv)
+  display alert "Codex QQ Skin" message (item 1 of argv)
 end run
 APPLESCRIPT
 }
@@ -38,7 +38,7 @@ confirm() {
 on run argv
   set promptText to item 1 of argv
   set okLabel to item 2 of argv
-  display dialog promptText buttons {"取消", okLabel} default button okLabel with title "Codex Dream Skin"
+  display dialog promptText buttons {"取消", okLabel} default button okLabel with title "Codex QQ Skin"
 end run
 APPLESCRIPT
 }
@@ -87,7 +87,7 @@ fi
 ensure_state_root
 progress "启动/连接调试口（可能 10–30 秒）…"
 
-"$SCRIPT_DIR/start-dream-skin-macos.sh" --port "$PORT" --restart-existing >>"$LOG_OUT" 2>&1
+"$SCRIPT_DIR/start-qq-skin-macos.sh" --port "$PORT" --restart-existing >>"$LOG_OUT" 2>&1
 code=$?
 
 if [ "$code" -eq 0 ]; then

@@ -17,7 +17,7 @@ while [ "$#" -gt 0 ]; do
   esac
 done
 
-STATE_ROOT="${HOME}/Library/Application Support/CodexDreamSkinStudio"
+STATE_ROOT="${HOME}/Library/Application Support/CodexQQSkin"
 STATE_PATH="${STATE_ROOT}/state.json"
 THEME_DIR="${STATE_ROOT}/theme"
 

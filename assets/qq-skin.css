@@ -1,4 +1,4 @@
-:root.codex-dream-skin {
+:root.codex-qq-skin {
   color-scheme: dark !important;
   --ds-bg: #111318;
   --ds-panel: #191c22;
@@ -23,9 +23,9 @@
   --ds-secondary: var(--ds-cyan);
   --ds-highlight: var(--ds-purple);
   --ds-on-accent: rgb(var(--ds-bg-rgb) / 1);
-  --ds-focus-x: var(--dream-skin-focus-x, var(--dream-art-focus-x, 50%));
-  --ds-focus-y: var(--dream-skin-focus-y, var(--dream-art-focus-y, 50%));
-  --ds-art-position: var(--dream-art-position, var(--dream-skin-art-position, var(--ds-focus-x) var(--ds-focus-y)));
+  --ds-focus-x: var(--qq-skin-focus-x, var(--dream-art-focus-x, 50%));
+  --ds-focus-y: var(--qq-skin-focus-y, var(--dream-art-focus-y, 50%));
+  --ds-art-position: var(--dream-art-position, var(--qq-skin-art-position, var(--ds-focus-x) var(--ds-focus-y)));
   --ds-safe-side: left;
   --ds-hero-scrim: linear-gradient(90deg,
     rgb(var(--ds-bg-rgb) / .90) 0%,
@@ -57,7 +57,7 @@
   --ds-task-immersive-far: rgb(var(--ds-bg-rgb) / .60);
 }
 
-html.codex-dream-skin[data-dream-shell="light"] {
+html.codex-qq-skin[data-dream-shell="light"] {
   color-scheme: light !important;
   --ds-bg: #f3f5f6;
   --ds-panel: #fafbfb;
@@ -102,12 +102,12 @@ html.codex-dream-skin[data-dream-shell="light"] {
   --ds-task-immersive-far: rgb(var(--ds-panel-rgb) / .66);
 }
 
-html.codex-dream-skin:is([data-dream-art-safe="left"], [data-dream-art-safe-area="left"]) {
+html.codex-qq-skin:is([data-dream-art-safe="left"], [data-dream-art-safe-area="left"]) {
   --ds-safe-side: left;
   --ds-art-position: 100% var(--ds-focus-y);
 }
 
-html.codex-dream-skin:is([data-dream-art-safe="right"], [data-dream-art-safe-area="right"]) {
+html.codex-qq-skin:is([data-dream-art-safe="right"], [data-dream-art-safe-area="right"]) {
   --ds-safe-side: right;
   --ds-art-position: 0% var(--ds-focus-y);
   --ds-hero-scrim: linear-gradient(270deg,
@@ -121,7 +121,7 @@ html.codex-dream-skin:is([data-dream-art-safe="right"], [data-dream-art-safe-are
     rgb(var(--ds-bg-rgb) / .12) 100%);
 }
 
-html.codex-dream-skin[data-dream-shell="light"]:is([data-dream-art-safe="right"], [data-dream-art-safe-area="right"]) {
+html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-art-safe="right"], [data-dream-art-safe-area="right"]) {
   --ds-hero-scrim: linear-gradient(270deg,
     rgb(var(--ds-panel-rgb) / .96) 0%,
     rgb(var(--ds-panel-rgb) / .82) 50%,
@@ -133,7 +133,7 @@ html.codex-dream-skin[data-dream-shell="light"]:is([data-dream-art-safe="right"]
     rgb(var(--ds-bg-rgb) / .12) 100%);
 }
 
-html.codex-dream-skin:is([data-dream-art-safe="center"], [data-dream-art-safe-area="center"]) {
+html.codex-qq-skin:is([data-dream-art-safe="center"], [data-dream-art-safe-area="center"]) {
   --ds-safe-side: center;
   --ds-hero-scrim: linear-gradient(90deg,
     transparent 0%,
@@ -147,7 +147,7 @@ html.codex-dream-skin:is([data-dream-art-safe="center"], [data-dream-art-safe-ar
     rgb(var(--ds-bg-rgb) / .10) 100%);
 }
 
-html.codex-dream-skin[data-dream-shell="light"]:is([data-dream-art-safe="center"], [data-dream-art-safe-area="center"]) {
+html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-art-safe="center"], [data-dream-art-safe-area="center"]) {
   --ds-hero-scrim: linear-gradient(90deg,
     transparent 0%,
     rgb(var(--ds-panel-rgb) / .72) 25%,
@@ -160,7 +160,7 @@ html.codex-dream-skin[data-dream-shell="light"]:is([data-dream-art-safe="center"
     rgb(var(--ds-bg-rgb) / .10) 100%);
 }
 
-html.codex-dream-skin:is([data-dream-art-safe="none"], [data-dream-art-safe-area="none"]) {
+html.codex-qq-skin:is([data-dream-art-safe="none"], [data-dream-art-safe-area="none"]) {
   --ds-safe-side: none;
   --ds-hero-scrim: linear-gradient(180deg,
     rgb(var(--ds-bg-rgb) / .34),
@@ -170,7 +170,7 @@ html.codex-dream-skin:is([data-dream-art-safe="none"], [data-dream-art-safe-area
     rgb(var(--ds-bg-rgb) / .14));
 }
 
-html.codex-dream-skin[data-dream-shell="light"]:is([data-dream-art-safe="none"], [data-dream-art-safe-area="none"]) {
+html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-art-safe="none"], [data-dream-art-safe-area="none"]) {
   --ds-hero-scrim: linear-gradient(180deg,
     rgb(var(--ds-panel-rgb) / .46),
     rgb(var(--ds-panel-rgb) / .28));
@@ -179,7 +179,7 @@ html.codex-dream-skin[data-dream-shell="light"]:is([data-dream-art-safe="none"],
     rgb(var(--ds-bg-rgb) / .16));
 }
 
-html.codex-dream-skin body {
+html.codex-qq-skin body {
   background: var(--ds-bg) !important;
   color: var(--ds-text) !important;
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Microsoft YaHei UI", "Segoe UI", system-ui, sans-serif !important;
@@ -189,18 +189,18 @@ html.codex-dream-skin body {
   overflow: hidden !important;
 }
 
-html.codex-dream-skin body::before {
+html.codex-qq-skin body::before {
   content: none;
 }
 
-html.codex-dream-skin body > #root {
+html.codex-qq-skin body > #root {
   width: calc(100vw - 24px) !important;
   height: calc(100vh - 84px) !important;
   min-width: 0 !important;
   min-height: 0 !important;
 }
 
-html.codex-dream-skin body > #root > div:first-of-type {
+html.codex-qq-skin body > #root > div:first-of-type {
   width: 100% !important;
   height: 100% !important;
   min-width: 0 !important;
@@ -211,7 +211,7 @@ html.codex-dream-skin body > #root > div:first-of-type {
 /* The native macOS traffic-light bar remains untouched. This renderer layer
    recreates the requested 2007-era titlebar and uses the generated frame as a
    scalable nine-slice border, so resizing never stretches the corner chrome. */
-#codex-dream-skin-retro-shell {
+#codex-qq-skin-retro-shell {
   position: fixed;
   inset: 0;
   z-index: 50;
@@ -220,8 +220,8 @@ html.codex-dream-skin body > #root > div:first-of-type {
   user-select: none;
 }
 
-#codex-dream-skin-retro-shell::before,
-#codex-dream-skin-retro-shell::after {
+#codex-qq-skin-retro-shell::before,
+#codex-qq-skin-retro-shell::after {
   content: "";
   position: absolute;
   z-index: 2;
@@ -234,8 +234,8 @@ html.codex-dream-skin body > #root > div:first-of-type {
   box-shadow: 0 0 4px rgb(5 67 142 / .45);
 }
 
-#codex-dream-skin-retro-shell::before { left: 0; }
-#codex-dream-skin-retro-shell::after { right: 0; transform: scaleX(-1); }
+#codex-qq-skin-retro-shell::before { left: 0; }
+#codex-qq-skin-retro-shell::after { right: 0; transform: scaleX(-1); }
 
 .dream-retro-titlebar {
   position: absolute;
@@ -361,7 +361,7 @@ html.codex-dream-skin body > #root > div:first-of-type {
 
 .dream-retro-profile-host > [class~="h-toolbar"] { opacity: 0 !important; }
 
-#codex-dream-skin-retro-profile {
+#codex-qq-skin-retro-profile {
   position: absolute;
   inset: 1px 8px 1px 12px;
   z-index: 11;
@@ -372,7 +372,7 @@ html.codex-dream-skin body > #root > div:first-of-type {
   color: #173f70;
 }
 
-#codex-dream-skin-retro-profile > img {
+#codex-qq-skin-retro-profile > img {
   width: 48px;
   height: 48px;
   flex: 0 0 48px;
@@ -380,13 +380,13 @@ html.codex-dream-skin body > #root > div:first-of-type {
   filter: drop-shadow(0 2px 2px rgb(40 83 127 / .22));
 }
 
-#codex-dream-skin-retro-profile > div {
+#codex-qq-skin-retro-profile > div {
   min-width: 0;
   display: grid;
   gap: 3px;
 }
 
-#codex-dream-skin-retro-profile strong {
+#codex-qq-skin-retro-profile strong {
   overflow: hidden;
   font-size: 14px;
   line-height: 18px;
@@ -394,7 +394,7 @@ html.codex-dream-skin body > #root > div:first-of-type {
   white-space: nowrap;
 }
 
-#codex-dream-skin-retro-profile span {
+#codex-qq-skin-retro-profile span {
   display: flex;
   align-items: center;
   gap: 5px;
@@ -403,7 +403,7 @@ html.codex-dream-skin body > #root > div:first-of-type {
   font-weight: 650;
 }
 
-#codex-dream-skin-retro-profile span i {
+#codex-qq-skin-retro-profile span i {
   width: 12px;
   height: 12px;
   border: 1px solid #438c25;
@@ -412,7 +412,7 @@ html.codex-dream-skin body > #root > div:first-of-type {
   box-shadow: inset 0 1px rgb(255 255 255 / .78);
 }
 
-#codex-dream-skin-retro-profile span i::after {
+#codex-qq-skin-retro-profile span i::after {
   content: "✓";
   display: block;
   color: white;
@@ -421,11 +421,11 @@ html.codex-dream-skin body > #root > div:first-of-type {
   text-align: center;
 }
 
-#codex-dream-skin-retro-profile b { color: #2e66a2; font-size: 10px; }
+#codex-qq-skin-retro-profile b { color: #2e66a2; font-size: 10px; }
 
 @media (max-width: 760px) {
-  html.codex-dream-skin body { padding-top: 64px !important; }
-  html.codex-dream-skin body > #root { height: calc(100vh - 76px) !important; }
+  html.codex-qq-skin body { padding-top: 64px !important; }
+  html.codex-qq-skin body > #root { height: calc(100vh - 76px) !important; }
   .dream-retro-titlebar { height: 35px; }
   .dream-retro-title-penguin { left: 76px; width: 31px; height: 31px; }
   .dream-retro-titlebar strong {
@@ -439,7 +439,7 @@ html.codex-dream-skin body > #root > div:first-of-type {
   .dream-retro-body-frame { inset: 64px 0 0; }
 }
 
-html.codex-dream-skin aside.app-shell-left-panel {
+html.codex-qq-skin aside.app-shell-left-panel {
   background:
     linear-gradient(180deg,
       rgb(var(--ds-panel-rgb) / .98),
@@ -452,41 +452,41 @@ html.codex-dream-skin aside.app-shell-left-panel {
   backdrop-filter: none !important;
 }
 
-html.codex-dream-skin aside.app-shell-left-panel nav { background: transparent !important; }
+html.codex-qq-skin aside.app-shell-left-panel nav { background: transparent !important; }
 
-html.codex-dream-skin aside.app-shell-left-panel button,
-html.codex-dream-skin aside.app-shell-left-panel a {
+html.codex-qq-skin aside.app-shell-left-panel button,
+html.codex-qq-skin aside.app-shell-left-panel a {
   color: var(--ds-text) !important;
   transition: background-color .18s cubic-bezier(.22, 1, .36, 1),
     border-color .18s cubic-bezier(.22, 1, .36, 1),
     color .18s cubic-bezier(.22, 1, .36, 1) !important;
 }
 
-html.codex-dream-skin aside.app-shell-left-panel [class*="text-token-foreground"] {
+html.codex-qq-skin aside.app-shell-left-panel [class*="text-token-foreground"] {
   color: var(--ds-text) !important;
 }
 
-html.codex-dream-skin aside.app-shell-left-panel [class*="text-token-input-placeholder-foreground"] {
+html.codex-qq-skin aside.app-shell-left-panel [class*="text-token-input-placeholder-foreground"] {
   color: rgb(var(--ds-muted-rgb) / .92) !important;
 }
 
-html.codex-dream-skin aside.app-shell-left-panel svg {
+html.codex-qq-skin aside.app-shell-left-panel svg {
   color: rgb(var(--ds-muted-rgb) / .96) !important;
 }
 
-html.codex-dream-skin aside.app-shell-left-panel button:hover,
-html.codex-dream-skin aside.app-shell-left-panel a:hover {
+html.codex-qq-skin aside.app-shell-left-panel button:hover,
+html.codex-qq-skin aside.app-shell-left-panel a:hover {
   background: rgb(var(--ds-accent-rgb) / .09) !important;
   color: var(--ds-text) !important;
   transform: none !important;
 }
 
-html.codex-dream-skin aside.app-shell-left-panel button:hover svg,
-html.codex-dream-skin aside.app-shell-left-panel a:hover svg {
+html.codex-qq-skin aside.app-shell-left-panel button:hover svg,
+html.codex-qq-skin aside.app-shell-left-panel a:hover svg {
   color: var(--ds-accent) !important;
 }
 
-html.codex-dream-skin aside.app-shell-left-panel button[aria-label^="切换模式"] {
+html.codex-qq-skin aside.app-shell-left-panel button[aria-label^="切换模式"] {
   background: transparent !important;
   border: 0 !important;
   color: var(--ds-accent) !important;
@@ -496,24 +496,24 @@ html.codex-dream-skin aside.app-shell-left-panel button[aria-label^="切换模�
   text-shadow: none !important;
 }
 
-html.codex-dream-skin aside.app-shell-left-panel button[aria-label^="切换模式"]::after {
+html.codex-qq-skin aside.app-shell-left-panel button[aria-label^="切换模式"]::after {
   content: " ·";
   color: var(--ds-secondary);
 }
 
-html.codex-dream-skin aside.app-shell-left-panel [class~="bg-token-list-hover-background"],
-html.codex-dream-skin aside.app-shell-left-panel [aria-current="page"] {
+html.codex-qq-skin aside.app-shell-left-panel [class~="bg-token-list-hover-background"],
+html.codex-qq-skin aside.app-shell-left-panel [aria-current="page"] {
   background: rgb(var(--ds-accent-rgb) / .12) !important;
   border: 1px solid rgb(var(--ds-accent-rgb) / .22) !important;
   box-shadow: 0 4px 16px rgb(var(--ds-bg-rgb) / .12) !important;
   color: var(--ds-text) !important;
 }
 
-html.codex-dream-skin aside.app-shell-left-panel [aria-current="page"] svg {
+html.codex-qq-skin aside.app-shell-left-panel [aria-current="page"] svg {
   color: var(--ds-accent) !important;
 }
 
-html.codex-dream-skin main.main-surface {
+html.codex-qq-skin main.main-surface {
   position: relative !important;
   isolation: isolate;
   overflow: hidden !important;
@@ -525,44 +525,44 @@ html.codex-dream-skin main.main-surface {
   box-shadow: -8px 0 28px rgb(var(--ds-bg-rgb) / .18) !important;
 }
 
-html.codex-dream-skin main.main-surface:not(.dream-skin-home-shell)::before {
+html.codex-qq-skin main.main-surface:not(.qq-skin-home-shell)::before {
   content: "";
   position: absolute;
   inset: 0;
   z-index: 0;
   pointer-events: none;
-  background-image: var(--ds-task-fade), var(--ds-task-shade), var(--dream-skin-art);
+  background-image: var(--ds-task-fade), var(--ds-task-shade), var(--qq-skin-art);
   background-repeat: no-repeat;
   background-position: center, center, var(--ds-art-position);
   background-size: 100% 100%, 100% 100%, cover;
   opacity: .78;
 }
 
-html.codex-dream-skin[data-dream-shell="light"] main.main-surface:not(.dream-skin-home-shell)::before {
+html.codex-qq-skin[data-dream-shell="light"] main.main-surface:not(.qq-skin-home-shell)::before {
   opacity: .72;
 }
 
-html.codex-dream-skin:is([data-dream-art-wide="true"], [data-dream-art-aspect="wide"], [data-dream-art-aspect="ultrawide"])
-  main.main-surface:not(.dream-skin-home-shell)::before {
+html.codex-qq-skin:is([data-dream-art-wide="true"], [data-dream-art-aspect="wide"], [data-dream-art-aspect="ultrawide"])
+  main.main-surface:not(.qq-skin-home-shell)::before {
   background-position: center, center, var(--ds-art-position);
   background-size: 100% 100%, 100% 100%, cover;
 }
 
-html.codex-dream-skin:is([data-dream-task-mode="ambient"], [data-dream-art-task-mode="ambient"], [data-dream-task-mode="banner"], [data-dream-art-task-mode="banner"])
-  main.main-surface:not(.dream-skin-home-shell)::before {
+html.codex-qq-skin:is([data-dream-task-mode="ambient"], [data-dream-art-task-mode="ambient"], [data-dream-task-mode="banner"], [data-dream-art-task-mode="banner"])
+  main.main-surface:not(.qq-skin-home-shell)::before {
   inset: 0;
   height: auto;
 }
 
-html.codex-dream-skin:is([data-dream-task-mode="ambient"], [data-dream-art-task-mode="ambient"], [data-dream-task-mode="banner"], [data-dream-art-task-mode="banner"])[data-dream-art-wide="true"]:has(main.main-surface:not(.dream-skin-home-shell)) body {
-  background-image: var(--dream-skin-art) !important;
+html.codex-qq-skin:is([data-dream-task-mode="ambient"], [data-dream-art-task-mode="ambient"], [data-dream-task-mode="banner"], [data-dream-art-task-mode="banner"])[data-dream-art-wide="true"]:has(main.main-surface:not(.qq-skin-home-shell)) body {
+  background-image: var(--qq-skin-art) !important;
   background-position: var(--ds-art-position) !important;
   background-size: cover !important;
   background-repeat: no-repeat !important;
   background-attachment: fixed !important;
 }
 
-html.codex-dream-skin:is([data-dream-task-mode="ambient"], [data-dream-art-task-mode="ambient"], [data-dream-task-mode="banner"], [data-dream-art-task-mode="banner"])[data-dream-art-wide="true"]:has(main.main-surface:not(.dream-skin-home-shell))
+html.codex-qq-skin:is([data-dream-task-mode="ambient"], [data-dream-art-task-mode="ambient"], [data-dream-task-mode="banner"], [data-dream-art-task-mode="banner"])[data-dream-art-wide="true"]:has(main.main-surface:not(.qq-skin-home-shell))
   aside.app-shell-left-panel {
   background: linear-gradient(90deg,
     var(--ds-task-immersive-sidebar),
@@ -575,13 +575,13 @@ html.codex-dream-skin:is([data-dream-task-mode="ambient"], [data-dream-art-task-
 
 /* Native sidebar resize chrome inherits the sidebar background and extends
    20px into the main surface. Keeping it clear preserves one continuous image. */
-html.codex-dream-skin:is([data-dream-task-mode="ambient"], [data-dream-art-task-mode="ambient"], [data-dream-task-mode="banner"], [data-dream-art-task-mode="banner"])[data-dream-art-wide="true"]:has(main.main-surface:not(.dream-skin-home-shell))
+html.codex-qq-skin:is([data-dream-task-mode="ambient"], [data-dream-art-task-mode="ambient"], [data-dream-task-mode="banner"], [data-dream-art-task-mode="banner"])[data-dream-art-wide="true"]:has(main.main-surface:not(.qq-skin-home-shell))
   aside.app-shell-left-panel::after {
   background: transparent !important;
 }
 
-html.codex-dream-skin:is([data-dream-task-mode="ambient"], [data-dream-art-task-mode="ambient"], [data-dream-task-mode="banner"], [data-dream-art-task-mode="banner"])[data-dream-art-wide="true"]:has(main.main-surface:not(.dream-skin-home-shell))
-  main.main-surface:not(.dream-skin-home-shell) {
+html.codex-qq-skin:is([data-dream-task-mode="ambient"], [data-dream-art-task-mode="ambient"], [data-dream-task-mode="banner"], [data-dream-art-task-mode="banner"])[data-dream-art-wide="true"]:has(main.main-surface:not(.qq-skin-home-shell))
+  main.main-surface:not(.qq-skin-home-shell) {
   background: linear-gradient(90deg,
     var(--ds-task-immersive-edge),
     var(--ds-task-immersive-mid) 64%,
@@ -591,12 +591,12 @@ html.codex-dream-skin:is([data-dream-task-mode="ambient"], [data-dream-art-task-
   box-shadow: none !important;
 }
 
-html.codex-dream-skin:is([data-dream-task-mode="ambient"], [data-dream-art-task-mode="ambient"], [data-dream-task-mode="banner"], [data-dream-art-task-mode="banner"])[data-dream-art-wide="true"]
-  main.main-surface:not(.dream-skin-home-shell)::before {
+html.codex-qq-skin:is([data-dream-task-mode="ambient"], [data-dream-art-task-mode="ambient"], [data-dream-task-mode="banner"], [data-dream-art-task-mode="banner"])[data-dream-art-wide="true"]
+  main.main-surface:not(.qq-skin-home-shell)::before {
   content: none;
 }
 
-html.codex-dream-skin:is([data-dream-task-mode="ambient"], [data-dream-art-task-mode="ambient"], [data-dream-task-mode="banner"], [data-dream-art-task-mode="banner"])[data-dream-art-wide="true"]:has(main.main-surface:not(.dream-skin-home-shell))
+html.codex-qq-skin:is([data-dream-task-mode="ambient"], [data-dream-art-task-mode="ambient"], [data-dream-task-mode="banner"], [data-dream-art-task-mode="banner"])[data-dream-art-wide="true"]:has(main.main-surface:not(.qq-skin-home-shell))
   .composer-surface-chrome {
   background: var(--ds-immersive-composer-solid) !important;
   border: 0 !important;
@@ -607,7 +607,7 @@ html.codex-dream-skin:is([data-dream-task-mode="ambient"], [data-dream-art-task-
   backdrop-filter: none !important;
 }
 
-html.codex-dream-skin:is([data-dream-task-mode="ambient"], [data-dream-art-task-mode="ambient"], [data-dream-task-mode="banner"], [data-dream-art-task-mode="banner"])[data-dream-art-wide="true"]:has(main.main-surface:not(.dream-skin-home-shell))
+html.codex-qq-skin:is([data-dream-task-mode="ambient"], [data-dream-art-task-mode="ambient"], [data-dream-task-mode="banner"], [data-dream-art-task-mode="banner"])[data-dream-art-wide="true"]:has(main.main-surface:not(.qq-skin-home-shell))
   main.main-surface > header.app-header-tint {
   background: transparent !important;
   border-bottom: 0 !important;
@@ -615,48 +615,48 @@ html.codex-dream-skin:is([data-dream-task-mode="ambient"], [data-dream-art-task-
   backdrop-filter: none !important;
 }
 
-html.codex-dream-skin:is([data-dream-task-mode="ambient"], [data-dream-art-task-mode="ambient"], [data-dream-task-mode="banner"], [data-dream-art-task-mode="banner"])[data-dream-art-wide="true"]
-  main.main-surface:not(.dream-skin-home-shell) [class*="_markdown"] {
+html.codex-qq-skin:is([data-dream-task-mode="ambient"], [data-dream-art-task-mode="ambient"], [data-dream-task-mode="banner"], [data-dream-art-task-mode="banner"])[data-dream-art-wide="true"]
+  main.main-surface:not(.qq-skin-home-shell) [class*="_markdown"] {
   color: var(--ds-text) !important;
   text-shadow:
     0 1px 2px rgb(var(--ds-bg-rgb) / .82),
     0 0 10px rgb(var(--ds-bg-rgb) / .58);
 }
 
-html.codex-dream-skin[data-dream-shell="light"]:is([data-dream-task-mode="ambient"], [data-dream-art-task-mode="ambient"], [data-dream-task-mode="banner"], [data-dream-art-task-mode="banner"])[data-dream-art-wide="true"]
-  main.main-surface:not(.dream-skin-home-shell) [class*="_markdown"] {
+html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-task-mode="ambient"], [data-dream-art-task-mode="ambient"], [data-dream-task-mode="banner"], [data-dream-art-task-mode="banner"])[data-dream-art-wide="true"]
+  main.main-surface:not(.qq-skin-home-shell) [class*="_markdown"] {
   text-shadow:
     0 1px 2px rgb(var(--ds-panel-rgb) / .92),
     0 0 10px rgb(var(--ds-panel-rgb) / .72);
 }
 
-html.codex-dream-skin:is([data-dream-task-mode="banner"], [data-dream-art-task-mode="banner"])
-  main.main-surface:not(.dream-skin-home-shell)::before {
+html.codex-qq-skin:is([data-dream-task-mode="banner"], [data-dream-art-task-mode="banner"])
+  main.main-surface:not(.qq-skin-home-shell)::before {
   inset: 0 0 auto;
   height: clamp(280px, 46vh, 520px);
   background-position: center top, center top, var(--ds-art-position);
   background-size: 100% 100%, 100% 100%, cover;
 }
 
-html.codex-dream-skin:is([data-dream-task-mode="banner"], [data-dream-art-task-mode="banner"]):is([data-dream-art-wide="true"], [data-dream-art-aspect="wide"], [data-dream-art-aspect="ultrawide"])
-  main.main-surface:not(.dream-skin-home-shell)::before {
+html.codex-qq-skin:is([data-dream-task-mode="banner"], [data-dream-art-task-mode="banner"]):is([data-dream-art-wide="true"], [data-dream-art-aspect="wide"], [data-dream-art-aspect="ultrawide"])
+  main.main-surface:not(.qq-skin-home-shell)::before {
   inset: 0;
   height: auto;
   background-position: center, center, var(--ds-art-position);
   background-size: 100% 100%, 100% 100%, cover;
 }
 
-html.codex-dream-skin:is([data-dream-task-mode="off"], [data-dream-art-task-mode="off"])
-  main.main-surface:not(.dream-skin-home-shell)::before {
+html.codex-qq-skin:is([data-dream-task-mode="off"], [data-dream-art-task-mode="off"])
+  main.main-surface:not(.qq-skin-home-shell)::before {
   content: none;
 }
 
-html.codex-dream-skin main.main-surface:not(.dream-skin-home-shell) > :not(header.app-header-tint) {
+html.codex-qq-skin main.main-surface:not(.qq-skin-home-shell) > :not(header.app-header-tint) {
   position: relative;
   z-index: 1;
 }
 
-html.codex-dream-skin main.main-surface:not(.dream-skin-home-shell) [role="main"] {
+html.codex-qq-skin main.main-surface:not(.qq-skin-home-shell) [role="main"] {
   background: transparent !important;
   color: var(--ds-text) !important;
   text-shadow:
@@ -664,29 +664,29 @@ html.codex-dream-skin main.main-surface:not(.dream-skin-home-shell) [role="main"
     0 0 10px rgb(var(--ds-bg-rgb) / .46);
 }
 
-html.codex-dream-skin[data-dream-shell="light"] main.main-surface:not(.dream-skin-home-shell) [role="main"] {
+html.codex-qq-skin[data-dream-shell="light"] main.main-surface:not(.qq-skin-home-shell) [role="main"] {
   text-shadow: none;
 }
 
-html.codex-dream-skin main.main-surface:not(.dream-skin-home-shell) article {
+html.codex-qq-skin main.main-surface:not(.qq-skin-home-shell) article {
   border: 1px solid rgb(var(--ds-muted-rgb) / .12);
   background: rgb(var(--ds-panel-rgb) / .44);
   box-shadow: 0 8px 24px rgb(var(--ds-bg-rgb) / .10);
   backdrop-filter: blur(7px) saturate(105%);
 }
 
-html.codex-dream-skin[data-dream-shell="light"] main.main-surface:not(.dream-skin-home-shell) article {
+html.codex-qq-skin[data-dream-shell="light"] main.main-surface:not(.qq-skin-home-shell) article {
   background: rgb(var(--ds-panel-rgb) / .72);
 }
 
-html.codex-dream-skin main.main-surface > header.app-header-tint {
+html.codex-qq-skin main.main-surface > header.app-header-tint {
   /* Preserve Codex's native fixed header geometry and side-panel controls. */
   background: rgb(var(--ds-panel-rgb) / .90) !important;
   border-bottom: 1px solid var(--ds-line) !important;
   backdrop-filter: blur(14px) saturate(108%) !important;
 }
 
-#codex-dream-skin-chrome {
+#codex-qq-skin-chrome {
   position: fixed;
   z-index: 31;
   overflow: hidden;
@@ -696,7 +696,7 @@ html.codex-dream-skin main.main-surface > header.app-header-tint {
 
 /* Classic three-pane companion rail. Codex owns the pinned summary panel in
    the upper-right; this non-interactive card occupies only the lower section. */
-#codex-dream-skin-companion {
+#codex-qq-skin-companion {
   --dream-companion-height: clamp(250px, 36vh, 318px);
   position: fixed;
   right: 12px;
@@ -726,23 +726,23 @@ html.codex-dream-skin main.main-surface > header.app-header-tint {
     visibility 0s linear .24s;
 }
 
-#codex-dream-skin-companion.is-visible {
+#codex-qq-skin-companion.is-visible {
   opacity: 1;
   visibility: visible;
   transform: none;
   transition-delay: 0s;
 }
 
-html.codex-dream-skin:has(input[placeholder*="设置"])
-  #codex-dream-skin-companion,
-html.codex-dream-skin:has(input[placeholder*="設定"])
-  #codex-dream-skin-companion,
-html.codex-dream-skin:has(input[placeholder*="settings" i])
-  #codex-dream-skin-companion {
+html.codex-qq-skin:has(input[placeholder*="设置"])
+  #codex-qq-skin-companion,
+html.codex-qq-skin:has(input[placeholder*="設定"])
+  #codex-qq-skin-companion,
+html.codex-qq-skin:has(input[placeholder*="settings" i])
+  #codex-qq-skin-companion {
   display: none !important;
 }
 
-.dream-skin-companion-title {
+.qq-skin-companion-title {
   position: relative;
   z-index: 2;
   display: flex;
@@ -758,7 +758,7 @@ html.codex-dream-skin:has(input[placeholder*="settings" i])
   text-shadow: 0 1px rgb(255 255 255 / .92);
 }
 
-.dream-skin-companion-title i {
+.qq-skin-companion-title i {
   width: 8px;
   height: 8px;
   border-radius: 50%;
@@ -766,7 +766,7 @@ html.codex-dream-skin:has(input[placeholder*="settings" i])
   box-shadow: 0 0 0 2px rgb(255 255 255 / .84), 0 0 8px rgb(73 189 49 / .48);
 }
 
-.dream-skin-companion-stage {
+.qq-skin-companion-stage {
   position: relative;
   display: grid;
   min-height: 0;
@@ -777,8 +777,8 @@ html.codex-dream-skin:has(input[placeholder*="settings" i])
     linear-gradient(135deg, rgb(217 239 255 / .92), rgb(242 248 255 / .94));
 }
 
-.dream-skin-companion-stage::before,
-.dream-skin-companion-stage::after {
+.qq-skin-companion-stage::before,
+.qq-skin-companion-stage::after {
   content: "";
   position: absolute;
   width: 4px;
@@ -792,10 +792,10 @@ html.codex-dream-skin:has(input[placeholder*="settings" i])
     -108px -36px 0 0 rgb(137 191 247 / .62);
 }
 
-.dream-skin-companion-stage::before { left: 30%; top: 20%; }
-.dream-skin-companion-stage::after { right: 24%; bottom: 26%; transform: scale(.72); }
+.qq-skin-companion-stage::before { left: 30%; top: 20%; }
+.qq-skin-companion-stage::after { right: 24%; bottom: 26%; transform: scale(.72); }
 
-.dream-skin-pet-image {
+.qq-skin-pet-image {
   position: relative;
   z-index: 2;
   width: auto;
@@ -804,10 +804,10 @@ html.codex-dream-skin:has(input[placeholder*="settings" i])
   object-fit: contain;
   object-position: center bottom;
   filter: drop-shadow(0 10px 12px rgb(28 78 139 / .24));
-  animation: dream-skin-pet-float 4.8s ease-in-out infinite;
+  animation: qq-skin-pet-float 4.8s ease-in-out infinite;
 }
 
-.dream-skin-pet-glow {
+.qq-skin-pet-glow {
   position: absolute;
   left: 50%;
   bottom: 7%;
@@ -818,7 +818,7 @@ html.codex-dream-skin:has(input[placeholder*="settings" i])
   transform: translateX(-50%);
 }
 
-.dream-skin-pet-status {
+.qq-skin-pet-status {
   display: flex;
   align-items: center;
   gap: 7px;
@@ -830,7 +830,7 @@ html.codex-dream-skin:has(input[placeholder*="settings" i])
   font-weight: 650;
 }
 
-.dream-skin-pet-status i {
+.qq-skin-pet-status i {
   width: 8px;
   height: 8px;
   border: 1px solid #388c24;
@@ -839,19 +839,19 @@ html.codex-dream-skin:has(input[placeholder*="settings" i])
   box-shadow: inset 0 1px rgb(255 255 255 / .82);
 }
 
-@keyframes dream-skin-pet-float {
+@keyframes qq-skin-pet-float {
   0%, 100% { transform: translateY(1px); }
   50% { transform: translateY(-5px); }
 }
 
-html.codex-dream-skin[data-dream-three-pane="true"] aside.app-shell-left-panel,
-html.codex-dream-skin[data-dream-three-pane="true"] main.main-surface {
+html.codex-qq-skin[data-dream-three-pane="true"] aside.app-shell-left-panel,
+html.codex-qq-skin[data-dream-three-pane="true"] main.main-surface {
   border-color: rgb(64 122 187 / .62) !important;
   border-radius: 8px 0 0 0 !important;
   box-shadow: 0 0 0 1px rgb(255 255 255 / .12) !important;
 }
 
-html.codex-dream-skin[data-dream-three-pane="true"] aside.app-shell-left-panel {
+html.codex-qq-skin[data-dream-three-pane="true"] aside.app-shell-left-panel {
   border-radius: 0 8px 0 0 !important;
   background:
     linear-gradient(180deg, rgb(238 247 255 / .96), rgb(205 226 245 / .94)) !important;
@@ -861,24 +861,24 @@ html.codex-dream-skin[data-dream-three-pane="true"] aside.app-shell-left-panel {
 /* Codex reserves its native 46px application header inside task routes. The
    retro title + toolbar already occupy that space, so lift only task content;
    settings and other split views retain their native geometry. */
-html.codex-dream-skin[data-dream-task-route="true"]
+html.codex-qq-skin[data-dream-task-route="true"]
   aside.app-shell-left-panel > .max-w-full.overflow-hidden {
   position: relative !important;
   top: -46px !important;
   height: calc(100% + 46px) !important;
 }
 
-html.codex-dream-skin[data-dream-task-route="true"] main.main-surface
+html.codex-qq-skin[data-dream-task-route="true"] main.main-surface
   .app-shell-main-content-frame {
   margin-top: 0 !important;
 }
 
-html.codex-dream-skin[data-dream-three-pane="true"] main.main-surface > header.app-header-tint {
+html.codex-qq-skin[data-dream-three-pane="true"] main.main-surface > header.app-header-tint {
   border-bottom-color: transparent !important;
   background: transparent !important;
 }
 
-html.codex-dream-skin[data-dream-three-pane="true"] [data-pip-obstacle="thread-summary-panel"] {
+html.codex-qq-skin[data-dream-three-pane="true"] [data-pip-obstacle="thread-summary-panel"] {
   height: calc(100vh - clamp(250px, 36vh, 318px) - 64px) !important;
   max-height: calc(100vh - clamp(250px, 36vh, 318px) - 64px) !important;
   min-height: 220px !important;
@@ -892,7 +892,7 @@ html.codex-dream-skin[data-dream-three-pane="true"] [data-pip-obstacle="thread-s
 /* Classic blue-silver workspace. These selectors use Codex's stable action
    and conversation attributes so native navigation, drag/drop and virtualized
    turn measurement keep working. */
-html.codex-dream-skin[data-dream-shell="light"][data-dream-three-pane="true"] {
+html.codex-qq-skin[data-dream-shell="light"][data-dream-three-pane="true"] {
   --dream-classic-blue: #2d74bc;
   --dream-classic-line: rgb(70 125 184 / .58);
   --dream-classic-line-soft: rgb(105 151 196 / .34);
@@ -901,16 +901,16 @@ html.codex-dream-skin[data-dream-shell="light"][data-dream-three-pane="true"] {
   --dream-classic-selected: #cfe7fb;
 }
 
-html.codex-dream-skin[data-dream-shell="light"][data-dream-three-pane="true"]
-  main.main-surface:not(.dream-skin-home-shell),
-html.codex-dream-skin[data-dream-shell="light"][data-dream-three-pane="true"]
-  main.main-surface:not(.dream-skin-home-shell) [role="main"],
-html.codex-dream-skin[data-dream-shell="light"][data-dream-three-pane="true"]
-  main.main-surface:not(.dream-skin-home-shell) .thread-scroll-container {
+html.codex-qq-skin[data-dream-shell="light"][data-dream-three-pane="true"]
+  main.main-surface:not(.qq-skin-home-shell),
+html.codex-qq-skin[data-dream-shell="light"][data-dream-three-pane="true"]
+  main.main-surface:not(.qq-skin-home-shell) [role="main"],
+html.codex-qq-skin[data-dream-shell="light"][data-dream-three-pane="true"]
+  main.main-surface:not(.qq-skin-home-shell) .thread-scroll-container {
   background: var(--dream-classic-panel) !important;
 }
 
-html.codex-dream-skin[data-dream-shell="light"][data-dream-three-pane="true"]
+html.codex-qq-skin[data-dream-shell="light"][data-dream-three-pane="true"]
   aside.app-shell-left-panel {
   border-right: 1px solid rgb(46 108 172 / .72) !important;
   border-radius: 0 !important;
@@ -921,13 +921,13 @@ html.codex-dream-skin[data-dream-shell="light"][data-dream-three-pane="true"]
     4px 0 14px rgb(41 91 143 / .12) !important;
 }
 
-html.codex-dream-skin[data-dream-shell="light"][data-dream-three-pane="true"]
+html.codex-qq-skin[data-dream-shell="light"][data-dream-three-pane="true"]
   aside.app-shell-left-panel nav {
   padding-inline: 4px !important;
 }
 
 /* Sidebar section captions: 置顶 / 项目 / 任务 become full-width XP bars. */
-html.codex-dream-skin[data-dream-shell="light"][data-dream-three-pane="true"]
+html.codex-qq-skin[data-dream-shell="light"][data-dream-three-pane="true"]
   aside.app-shell-left-panel [data-app-action-sidebar-section-toggle] {
   width: calc(100% + 12px) !important;
   max-width: none !important;
@@ -946,14 +946,14 @@ html.codex-dream-skin[data-dream-shell="light"][data-dream-three-pane="true"]
   text-shadow: 0 1px rgb(255 255 255 / .96) !important;
 }
 
-html.codex-dream-skin[data-dream-shell="light"][data-dream-three-pane="true"]
+html.codex-qq-skin[data-dream-shell="light"][data-dream-three-pane="true"]
   aside.app-shell-left-panel [data-app-action-sidebar-section-toggle] svg {
   color: #477eaf !important;
   opacity: .86 !important;
 }
 
 /* Each project is a small folder panel; its native task rows remain clickable. */
-html.codex-dream-skin[data-dream-shell="light"][data-dream-three-pane="true"]
+html.codex-qq-skin[data-dream-shell="light"][data-dream-three-pane="true"]
   aside.app-shell-left-panel [data-sidebar-project-kind][role="listitem"] {
   margin: 4px 3px 9px !important;
   overflow: hidden !important;
@@ -965,7 +965,7 @@ html.codex-dream-skin[data-dream-shell="light"][data-dream-three-pane="true"]
     inset 0 0 0 1px rgb(255 255 255 / .72) !important;
 }
 
-html.codex-dream-skin[data-dream-shell="light"][data-dream-three-pane="true"]
+html.codex-qq-skin[data-dream-shell="light"][data-dream-three-pane="true"]
   aside.app-shell-left-panel [data-app-action-sidebar-project-row] {
   min-height: 32px !important;
   border-radius: 5px 5px 0 0 !important;
@@ -976,13 +976,13 @@ html.codex-dream-skin[data-dream-shell="light"][data-dream-three-pane="true"]
   box-shadow: inset 0 -1px var(--dream-classic-line-soft) !important;
 }
 
-html.codex-dream-skin[data-dream-shell="light"][data-dream-three-pane="true"]
+html.codex-qq-skin[data-dream-shell="light"][data-dream-three-pane="true"]
   aside.app-shell-left-panel [data-app-action-sidebar-project-row] [data-sidebar-project-kind] {
   color: #d49b32 !important;
   filter: drop-shadow(0 1px rgb(255 255 255 / .92));
 }
 
-html.codex-dream-skin[data-dream-shell="light"][data-dream-three-pane="true"]
+html.codex-qq-skin[data-dream-shell="light"][data-dream-three-pane="true"]
   aside.app-shell-left-panel [data-app-action-sidebar-thread-row] {
   min-height: 29px !important;
   margin: 2px 4px !important;
@@ -994,13 +994,13 @@ html.codex-dream-skin[data-dream-shell="light"][data-dream-three-pane="true"]
   box-shadow: inset 0 1px rgb(255 255 255 / .82) !important;
 }
 
-html.codex-dream-skin[data-dream-shell="light"][data-dream-three-pane="true"]
+html.codex-qq-skin[data-dream-shell="light"][data-dream-three-pane="true"]
   aside.app-shell-left-panel [data-app-action-sidebar-thread-row]:hover {
   border-color: rgb(81 139 194 / .34) !important;
   background: #e6f2fd !important;
 }
 
-html.codex-dream-skin[data-dream-shell="light"][data-dream-three-pane="true"]
+html.codex-qq-skin[data-dream-shell="light"][data-dream-three-pane="true"]
   aside.app-shell-left-panel [data-app-action-sidebar-thread-row][aria-current="page"] {
   border-color: rgb(57 125 190 / .54) !important;
   background: linear-gradient(180deg, #deeffd, #c8e3f9) !important;
@@ -1011,8 +1011,8 @@ html.codex-dream-skin[data-dream-shell="light"][data-dream-three-pane="true"]
 }
 
 /* Each user + assistant turn becomes one framed conversation card. */
-html.codex-dream-skin[data-dream-shell="light"][data-dream-three-pane="true"]
-  main.main-surface:not(.dream-skin-home-shell) [data-turn-key] {
+html.codex-qq-skin[data-dream-shell="light"][data-dream-three-pane="true"]
+  main.main-surface:not(.qq-skin-home-shell) [data-turn-key] {
   position: relative !important;
   margin: 0 8px 15px !important;
   padding: 12px 14px 14px !important;
@@ -1026,13 +1026,13 @@ html.codex-dream-skin[data-dream-shell="light"][data-dream-three-pane="true"]
     inset 0 0 0 1px rgb(255 255 255 / .86) !important;
 }
 
-html.codex-dream-skin[data-dream-shell="light"][data-dream-three-pane="true"]
-  main.main-surface:not(.dream-skin-home-shell) [data-turn-key]:has([data-local-conversation-final-assistant="true"]) {
+html.codex-qq-skin[data-dream-shell="light"][data-dream-three-pane="true"]
+  main.main-surface:not(.qq-skin-home-shell) [data-turn-key]:has([data-local-conversation-final-assistant="true"]) {
   border-color: rgb(67 129 188 / .44) !important;
 }
 
-html.codex-dream-skin[data-dream-shell="light"][data-dream-three-pane="true"]
-  main.main-surface:not(.dream-skin-home-shell) [data-user-message-bubble="true"] {
+html.codex-qq-skin[data-dream-shell="light"][data-dream-three-pane="true"]
+  main.main-surface:not(.qq-skin-home-shell) [data-user-message-bubble="true"] {
   max-width: 84% !important;
   border: 1px solid rgb(75 135 190 / .40) !important;
   border-radius: 8px 8px 3px 8px !important;
@@ -1043,8 +1043,8 @@ html.codex-dream-skin[data-dream-shell="light"][data-dream-three-pane="true"]
     0 2px 5px rgb(55 101 145 / .10) !important;
 }
 
-html.codex-dream-skin[data-dream-shell="light"][data-dream-three-pane="true"]
-  main.main-surface:not(.dream-skin-home-shell)
+html.codex-qq-skin[data-dream-shell="light"][data-dream-three-pane="true"]
+  main.main-surface:not(.qq-skin-home-shell)
   [data-content-search-unit-key$=":assistant"] {
   margin-top: 12px !important;
   padding: 13px 2px 0 !important;
@@ -1052,8 +1052,8 @@ html.codex-dream-skin[data-dream-shell="light"][data-dream-three-pane="true"]
   color: #1c3e5e !important;
 }
 
-html.codex-dream-skin[data-dream-shell="light"][data-dream-three-pane="true"]
-  main.main-surface:not(.dream-skin-home-shell)
+html.codex-qq-skin[data-dream-shell="light"][data-dream-three-pane="true"]
+  main.main-surface:not(.qq-skin-home-shell)
   [data-content-search-unit-key$=":assistant"] pre {
   overflow: auto !important;
   border: 1px solid rgb(72 132 190 / .46) !important;
@@ -1065,10 +1065,10 @@ html.codex-dream-skin[data-dream-shell="light"][data-dream-three-pane="true"]
     0 2px 5px rgb(48 95 141 / .08) !important;
 }
 
-html.codex-dream-skin[data-dream-shell="light"][data-dream-three-pane="true"]
-  main.main-surface:not(.dream-skin-home-shell) :not(pre) > code,
-html.codex-dream-skin[data-dream-shell="light"][data-dream-three-pane="true"]
-  main.main-surface:not(.dream-skin-home-shell) [data-markdown-copy="inline-code"] {
+html.codex-qq-skin[data-dream-shell="light"][data-dream-three-pane="true"]
+  main.main-surface:not(.qq-skin-home-shell) :not(pre) > code,
+html.codex-qq-skin[data-dream-shell="light"][data-dream-three-pane="true"]
+  main.main-surface:not(.qq-skin-home-shell) [data-markdown-copy="inline-code"] {
   border: 1px solid rgb(85 140 190 / .30) !important;
   border-radius: 5px !important;
   background: #e8f2fb !important;
@@ -1077,8 +1077,8 @@ html.codex-dream-skin[data-dream-shell="light"][data-dream-three-pane="true"]
 }
 
 /* The composer follows the flatter framed input in the reference image. */
-html.codex-dream-skin[data-dream-shell="light"][data-dream-three-pane="true"]
-  main.main-surface:not(.dream-skin-home-shell) .composer-surface-chrome {
+html.codex-qq-skin[data-dream-shell="light"][data-dream-three-pane="true"]
+  main.main-surface:not(.qq-skin-home-shell) .composer-surface-chrome {
   border: 1px solid rgb(63 126 189 / .58) !important;
   border-radius: 9px !important;
   background: linear-gradient(180deg, #ffffff, #f2f8fd) !important;
@@ -1089,10 +1089,10 @@ html.codex-dream-skin[data-dream-shell="light"][data-dream-three-pane="true"]
 }
 
 @media (max-width: 1179px) {
-  #codex-dream-skin-companion { display: none !important; }
+  #codex-qq-skin-companion { display: none !important; }
 }
 
-.dream-skin-brand {
+.qq-skin-brand {
   position: absolute;
   left: 22px;
   top: 4px;
@@ -1103,9 +1103,9 @@ html.codex-dream-skin[data-dream-shell="light"][data-dream-three-pane="true"]
   color: var(--ds-text);
 }
 
-#codex-dream-skin-chrome.dream-skin-home-shell .dream-skin-brand { display: none !important; }
+#codex-qq-skin-chrome.qq-skin-home-shell .qq-skin-brand { display: none !important; }
 
-.dream-skin-portal-mark {
+.qq-skin-portal-mark {
   width: 28px;
   height: 28px;
   display: grid;
@@ -1118,14 +1118,14 @@ html.codex-dream-skin[data-dream-shell="light"][data-dream-three-pane="true"]
   box-shadow: 0 0 0 4px rgb(var(--ds-accent-rgb) / .05);
 }
 
-.dream-skin-brand b {
+.qq-skin-brand b {
   display: block;
   color: var(--ds-accent);
   font-size: 13px;
   letter-spacing: 0;
 }
 
-.dream-skin-brand small {
+.qq-skin-brand small {
   display: block;
   margin-top: 2px;
   color: var(--ds-muted);
@@ -1134,10 +1134,10 @@ html.codex-dream-skin[data-dream-shell="light"][data-dream-three-pane="true"]
   text-transform: uppercase;
 }
 
-.dream-skin-brand small,
-.dream-skin-status { display: none !important; }
+.qq-skin-brand small,
+.qq-skin-status { display: none !important; }
 
-.dream-skin-status {
+.qq-skin-status {
   position: absolute;
   right: 84px;
   top: 13px;
@@ -1149,7 +1149,7 @@ html.codex-dream-skin[data-dream-shell="light"][data-dream-three-pane="true"]
   letter-spacing: 0;
 }
 
-.dream-skin-status i {
+.qq-skin-status i {
   width: 7px;
   height: 7px;
   border-radius: 50%;
@@ -1157,14 +1157,14 @@ html.codex-dream-skin[data-dream-shell="light"][data-dream-three-pane="true"]
   box-shadow: 0 0 8px rgb(var(--ds-accent-rgb) / .42);
 }
 
-.dream-skin-quote,
-.dream-skin-orbit { display: none !important; }
+.qq-skin-quote,
+.qq-skin-orbit { display: none !important; }
 
-.dream-skin-particles {
+.qq-skin-particles {
   display: none;
 }
 
-.dream-skin-particles i {
+.qq-skin-particles i {
   position: absolute;
   width: 3px;
   height: 3px;
@@ -1173,38 +1173,38 @@ html.codex-dream-skin[data-dream-shell="light"][data-dream-three-pane="true"]
   box-shadow: 0 0 8px 2px rgb(var(--ds-accent-rgb) / .24);
 }
 
-.dream-skin-particles i:nth-child(1) { left: 6%; top: 13%; }
-.dream-skin-particles i:nth-child(2) { left: 29%; top: 7%; background: var(--ds-secondary); }
-.dream-skin-particles i:nth-child(3) { left: 51%; top: 18%; }
-.dream-skin-particles i:nth-child(4) { left: 75%; top: 9%; background: var(--ds-secondary); }
-.dream-skin-particles i:nth-child(5) { left: 91%; top: 28%; }
-.dream-skin-particles i:nth-child(6) { left: 64%; top: 63%; background: var(--ds-secondary); }
-.dream-skin-particles i:nth-child(7) { left: 22%; top: 72%; }
-.dream-skin-particles i:nth-child(8) { left: 86%; top: 78%; }
+.qq-skin-particles i:nth-child(1) { left: 6%; top: 13%; }
+.qq-skin-particles i:nth-child(2) { left: 29%; top: 7%; background: var(--ds-secondary); }
+.qq-skin-particles i:nth-child(3) { left: 51%; top: 18%; }
+.qq-skin-particles i:nth-child(4) { left: 75%; top: 9%; background: var(--ds-secondary); }
+.qq-skin-particles i:nth-child(5) { left: 91%; top: 28%; }
+.qq-skin-particles i:nth-child(6) { left: 64%; top: 63%; background: var(--ds-secondary); }
+.qq-skin-particles i:nth-child(7) { left: 22%; top: 72%; }
+.qq-skin-particles i:nth-child(8) { left: 86%; top: 78%; }
 
-html.codex-dream-skin [role="main"] {
+html.codex-qq-skin [role="main"] {
   background: transparent !important;
   scrollbar-color: rgb(var(--ds-accent-rgb) / .38) transparent;
 }
 
-html.codex-dream-skin .dream-skin-home {
+html.codex-qq-skin .qq-skin-home {
   --thread-content-max-width: min(1180px, calc(100cqw - 44px)) !important;
   overflow-x: hidden !important;
 }
 
-.dream-skin-home > div:first-child {
+.qq-skin-home > div:first-child {
   min-height: 100% !important;
   padding-top: 15px !important;
 }
 
-.dream-skin-home > div:first-child > div:first-child {
+.qq-skin-home > div:first-child > div:first-child {
   flex: 0 0 440px !important;
   min-height: 440px !important;
   align-items: flex-start !important;
   padding-bottom: 0 !important;
 }
 
-.dream-skin-home > div:first-child > div:first-child > div:first-child {
+.qq-skin-home > div:first-child > div:first-child > div:first-child {
   position: relative !important;
   isolation: isolate;
   width: calc(100% - 44px) !important;
@@ -1217,14 +1217,14 @@ html.codex-dream-skin .dream-skin-home {
   border: 1px solid rgb(var(--ds-accent-rgb) / .30) !important;
   border-radius: 22px !important;
   background-color: var(--ds-panel) !important;
-  background-image: var(--dream-skin-art) !important;
+  background-image: var(--qq-skin-art) !important;
   background-repeat: no-repeat !important;
   background-position: var(--ds-art-position) !important;
   background-size: cover !important;
   box-shadow: 0 16px 38px rgb(var(--ds-bg-rgb) / .30) !important;
 }
 
-.dream-skin-home > div:first-child > div:first-child > div:first-child::before {
+.qq-skin-home > div:first-child > div:first-child > div:first-child::before {
   content: "";
   position: absolute;
   inset: 0 auto 0 0;
@@ -1235,26 +1235,26 @@ html.codex-dream-skin .dream-skin-home {
   background: var(--ds-hero-scrim);
 }
 
-html.codex-dream-skin:is([data-dream-art-safe="right"], [data-dream-art-safe-area="right"])
-  .dream-skin-home > div:first-child > div:first-child > div:first-child::before {
+html.codex-qq-skin:is([data-dream-art-safe="right"], [data-dream-art-safe-area="right"])
+  .qq-skin-home > div:first-child > div:first-child > div:first-child::before {
   inset: 0 0 0 auto;
 }
 
-html.codex-dream-skin:is([data-dream-art-safe="center"], [data-dream-art-safe-area="center"])
-  .dream-skin-home > div:first-child > div:first-child > div:first-child::before {
+html.codex-qq-skin:is([data-dream-art-safe="center"], [data-dream-art-safe-area="center"])
+  .qq-skin-home > div:first-child > div:first-child > div:first-child::before {
   inset: 0 14%;
   width: auto;
   border-radius: 0;
 }
 
-html.codex-dream-skin:is([data-dream-art-safe="none"], [data-dream-art-safe-area="none"])
-  .dream-skin-home > div:first-child > div:first-child > div:first-child::before {
+html.codex-qq-skin:is([data-dream-art-safe="none"], [data-dream-art-safe-area="none"])
+  .qq-skin-home > div:first-child > div:first-child > div:first-child::before {
   inset: 0;
   width: auto;
   border-radius: 21px;
 }
 
-.dream-skin-home > div:first-child > div:first-child > div:first-child > div:first-child {
+.qq-skin-home > div:first-child > div:first-child > div:first-child > div:first-child {
   position: relative;
   z-index: 1;
   height: 100%;
@@ -1263,38 +1263,38 @@ html.codex-dream-skin:is([data-dream-art-safe="none"], [data-dream-art-safe-area
   padding: 0 38px;
 }
 
-html.codex-dream-skin:is([data-dream-art-safe="right"], [data-dream-art-safe-area="right"])
-  .dream-skin-home > div:first-child > div:first-child > div:first-child > div:first-child {
+html.codex-qq-skin:is([data-dream-art-safe="right"], [data-dream-art-safe-area="right"])
+  .qq-skin-home > div:first-child > div:first-child > div:first-child > div:first-child {
   justify-content: flex-end !important;
 }
 
-html.codex-dream-skin:is([data-dream-art-safe="center"], [data-dream-art-safe-area="center"])
-  .dream-skin-home > div:first-child > div:first-child > div:first-child > div:first-child {
+html.codex-qq-skin:is([data-dream-art-safe="center"], [data-dream-art-safe-area="center"])
+  .qq-skin-home > div:first-child > div:first-child > div:first-child > div:first-child {
   justify-content: center !important;
 }
 
-.dream-skin-home > div:first-child > div:first-child > div:first-child > div:first-child > div:first-child {
+.qq-skin-home > div:first-child > div:first-child > div:first-child > div:first-child > div:first-child {
   width: min(46%, 520px) !important;
   align-items: flex-start !important;
   gap: 0 !important;
 }
 
-html.codex-dream-skin:is([data-dream-art-safe="right"], [data-dream-art-safe-area="right"])
-  .dream-skin-home > div:first-child > div:first-child > div:first-child > div:first-child > div:first-child {
+html.codex-qq-skin:is([data-dream-art-safe="right"], [data-dream-art-safe-area="right"])
+  .qq-skin-home > div:first-child > div:first-child > div:first-child > div:first-child > div:first-child {
   align-items: flex-end !important;
   text-align: right !important;
 }
 
-html.codex-dream-skin:is([data-dream-art-safe="center"], [data-dream-art-safe-area="center"])
-  .dream-skin-home > div:first-child > div:first-child > div:first-child > div:first-child > div:first-child {
+html.codex-qq-skin:is([data-dream-art-safe="center"], [data-dream-art-safe-area="center"])
+  .qq-skin-home > div:first-child > div:first-child > div:first-child > div:first-child > div:first-child {
   width: min(58%, 640px) !important;
   align-items: center !important;
   text-align: center !important;
 }
 
-.dream-skin-home [data-testid="home-icon"] { display: none !important; }
+.qq-skin-home [data-testid="home-icon"] { display: none !important; }
 
-.dream-skin-home [data-feature="game-source"] {
+.qq-skin-home [data-feature="game-source"] {
   display: block !important;
   max-width: 100% !important;
   color: var(--ds-text) !important;
@@ -1307,12 +1307,12 @@ html.codex-dream-skin:is([data-dream-art-safe="center"], [data-dream-art-safe-ar
   pointer-events: auto !important;
 }
 
-.dream-skin-home [data-feature="game-source"]::before {
+.qq-skin-home [data-feature="game-source"]::before {
   content: none;
 }
 
-.dream-skin-home [data-feature="game-source"]::after {
-  content: var(--dream-skin-tagline, "把喜欢的画面变成可交互的 Codex 工作台。");
+.qq-skin-home [data-feature="game-source"]::after {
+  content: var(--qq-skin-tagline, "把喜欢的画面变成可交互的 Codex 工作台。");
   display: block;
   margin-top: 13px;
   color: rgb(var(--ds-text-rgb) / .76);
@@ -1322,7 +1322,7 @@ html.codex-dream-skin:is([data-dream-art-safe="center"], [data-dream-art-safe-ar
   letter-spacing: 0;
 }
 
-.dream-skin-home [data-feature="game-source"] button {
+.qq-skin-home [data-feature="game-source"] button {
   margin: 0 5px;
   padding: 2px 9px 3px;
   border: 1px solid rgb(var(--ds-accent-rgb) / .36);
@@ -1333,24 +1333,24 @@ html.codex-dream-skin:is([data-dream-art-safe="center"], [data-dream-art-safe-ar
   text-underline-offset: 5px;
 }
 
-.dream-skin-home [data-feature="game-source"] button::before {
-  content: var(--dream-skin-project-prefix, "选择项目 · ");
+.qq-skin-home [data-feature="game-source"] button::before {
+  content: var(--qq-skin-project-prefix, "选择项目 · ");
   font-size: .46em;
   font-weight: 700;
   vertical-align: middle;
   opacity: .86;
 }
 
-.dream-skin-home > div:first-child > div:first-child > div:first-child > div:nth-child(2) {
+.qq-skin-home > div:first-child > div:first-child > div:first-child > div:nth-child(2) {
   left: 14px !important;
   right: 14px !important;
   top: 100% !important;
   margin-top: 13px !important;
 }
 
-.dream-skin-home .group\/home-suggestions { overflow: visible !important; }
+.qq-skin-home .group\/home-suggestions { overflow: visible !important; }
 
-.dream-skin-home .group\/home-suggestions button {
+.qq-skin-home .group\/home-suggestions button {
   position: relative !important;
   min-height: 118px !important;
   padding: 14px 13px 12px !important;
@@ -1371,13 +1371,13 @@ html.codex-dream-skin:is([data-dream-art-safe="center"], [data-dream-art-safe-ar
     border-color .18s cubic-bezier(.22, 1, .36, 1) !important;
 }
 
-.dream-skin-home .group\/home-suggestions button:hover {
+.qq-skin-home .group\/home-suggestions button:hover {
   transform: translateY(-2px) !important;
   border-color: rgb(var(--ds-accent-rgb) / .42) !important;
   box-shadow: 0 12px 28px rgb(var(--ds-bg-rgb) / .24) !important;
 }
 
-.dream-skin-home .group\/home-suggestions button > span:first-child > span:first-child {
+.qq-skin-home .group\/home-suggestions button > span:first-child > span:first-child {
   width: 38px;
   height: 38px;
   display: grid !important;
@@ -1390,16 +1390,16 @@ html.codex-dream-skin:is([data-dream-art-safe="center"], [data-dream-art-safe-ar
   box-shadow: 0 0 0 6px rgb(var(--ds-accent-rgb) / .05);
 }
 
-.dream-skin-home .group\/home-suggestions button svg {
+.qq-skin-home .group\/home-suggestions button svg {
   width: 21px !important;
   height: 21px !important;
   color: var(--ds-accent) !important;
 }
 
-.dream-skin-home .group\/home-suggestions button > span:first-child { justify-content: center !important; }
-.dream-skin-home .group\/home-suggestions button > span:last-child { align-items: center !important; text-align: center !important; }
+.qq-skin-home .group\/home-suggestions button > span:first-child { justify-content: center !important; }
+.qq-skin-home .group\/home-suggestions button > span:last-child { align-items: center !important; text-align: center !important; }
 
-html.codex-dream-skin .composer-surface-chrome {
+html.codex-qq-skin .composer-surface-chrome {
   overflow: visible !important;
   border: 1px solid rgb(var(--ds-muted-rgb) / .18) !important;
   border-radius: 22px !important;
@@ -1408,19 +1408,19 @@ html.codex-dream-skin .composer-surface-chrome {
   backdrop-filter: blur(16px) saturate(108%) !important;
 }
 
-html.codex-dream-skin .composer-surface-chrome::before { content: none !important; }
+html.codex-qq-skin .composer-surface-chrome::before { content: none !important; }
 
 /* A wide image can carry the home screen too. The native hero remains live,
    but the artwork is painted once on the window instead of repeated in a card. */
-html.codex-dream-skin[data-dream-art-wide="true"]:has(main.main-surface.dream-skin-home-shell) body {
-  background-image: var(--dream-skin-art) !important;
+html.codex-qq-skin[data-dream-art-wide="true"]:has(main.main-surface.qq-skin-home-shell) body {
+  background-image: var(--qq-skin-art) !important;
   background-position: var(--ds-art-position) !important;
   background-size: cover !important;
   background-repeat: no-repeat !important;
   background-attachment: fixed !important;
 }
 
-html.codex-dream-skin[data-dream-art-wide="true"]:has(main.main-surface.dream-skin-home-shell)
+html.codex-qq-skin[data-dream-art-wide="true"]:has(main.main-surface.qq-skin-home-shell)
   aside.app-shell-left-panel {
   background: linear-gradient(90deg,
     var(--ds-immersive-sidebar),
@@ -1431,12 +1431,12 @@ html.codex-dream-skin[data-dream-art-wide="true"]:has(main.main-surface.dream-sk
   backdrop-filter: none !important;
 }
 
-html.codex-dream-skin[data-dream-art-wide="true"]:has(main.main-surface.dream-skin-home-shell)
+html.codex-qq-skin[data-dream-art-wide="true"]:has(main.main-surface.qq-skin-home-shell)
   aside.app-shell-left-panel::after {
   background: transparent !important;
 }
 
-html.codex-dream-skin[data-dream-art-wide="true"] main.main-surface.dream-skin-home-shell {
+html.codex-qq-skin[data-dream-art-wide="true"] main.main-surface.qq-skin-home-shell {
   background: linear-gradient(90deg,
     var(--ds-immersive-edge),
     var(--ds-immersive-mid) 64%,
@@ -1446,7 +1446,7 @@ html.codex-dream-skin[data-dream-art-wide="true"] main.main-surface.dream-skin-h
   box-shadow: none !important;
 }
 
-html.codex-dream-skin[data-dream-art-wide="true"] main.main-surface.dream-skin-home-shell
+html.codex-qq-skin[data-dream-art-wide="true"] main.main-surface.qq-skin-home-shell
   > header.app-header-tint {
   background: transparent !important;
   border-bottom: 0 !important;
@@ -1454,7 +1454,7 @@ html.codex-dream-skin[data-dream-art-wide="true"] main.main-surface.dream-skin-h
   backdrop-filter: none !important;
 }
 
-html.codex-dream-skin[data-dream-art-wide="true"] main.main-surface
+html.codex-qq-skin[data-dream-art-wide="true"] main.main-surface
   > header.app-header-tint {
   color: var(--ds-text) !important;
   text-shadow:
@@ -1462,27 +1462,27 @@ html.codex-dream-skin[data-dream-art-wide="true"] main.main-surface
     0 0 8px rgb(var(--ds-bg-rgb) / .52) !important;
 }
 
-html.codex-dream-skin[data-dream-art-wide="true"] main.main-surface
+html.codex-qq-skin[data-dream-art-wide="true"] main.main-surface
   > header.app-header-tint svg {
   color: rgb(var(--ds-muted-rgb) / .96) !important;
   filter: drop-shadow(0 1px 2px rgb(var(--ds-bg-rgb) / .72));
 }
 
-html.codex-dream-skin[data-dream-art-wide="true"] main.main-surface.dream-skin-home-shell
-  .dream-skin-home > div:first-child > div:first-child > div:first-child {
+html.codex-qq-skin[data-dream-art-wide="true"] main.main-surface.qq-skin-home-shell
+  .qq-skin-home > div:first-child > div:first-child > div:first-child {
   border: 0 !important;
   border-radius: 0 !important;
   background: transparent !important;
   box-shadow: none !important;
 }
 
-html.codex-dream-skin[data-dream-art-wide="true"] main.main-surface.dream-skin-home-shell
-  .dream-skin-home > div:first-child > div:first-child > div:first-child::before {
+html.codex-qq-skin[data-dream-art-wide="true"] main.main-surface.qq-skin-home-shell
+  .qq-skin-home > div:first-child > div:first-child > div:first-child::before {
   content: none !important;
 }
 
-html.codex-dream-skin[data-dream-art-wide="true"] main.main-surface.dream-skin-home-shell
-  .dream-skin-home .group\/home-suggestions button {
+html.codex-qq-skin[data-dream-art-wide="true"] main.main-surface.qq-skin-home-shell
+  .qq-skin-home .group\/home-suggestions button {
   background: rgb(var(--ds-panel-rgb) / .56) !important;
   box-shadow:
     0 8px 22px rgb(var(--ds-bg-rgb) / .16),
@@ -1490,7 +1490,7 @@ html.codex-dream-skin[data-dream-art-wide="true"] main.main-surface.dream-skin-h
   backdrop-filter: blur(8px) saturate(104%) !important;
 }
 
-html.codex-dream-skin[data-dream-art-wide="true"] .composer-surface-chrome {
+html.codex-qq-skin[data-dream-art-wide="true"] .composer-surface-chrome {
   background: var(--ds-immersive-composer-solid) !important;
   border: 0 !important;
   box-shadow:
@@ -1500,7 +1500,7 @@ html.codex-dream-skin[data-dream-art-wide="true"] .composer-surface-chrome {
   backdrop-filter: none !important;
 }
 
-html.codex-dream-skin[data-dream-shell="light"][data-dream-art-wide="true"]
+html.codex-qq-skin[data-dream-shell="light"][data-dream-art-wide="true"]
   .composer-surface-chrome {
   box-shadow:
     0 10px 28px rgb(var(--ds-bg-rgb) / .14),
@@ -1509,7 +1509,7 @@ html.codex-dream-skin[data-dream-shell="light"][data-dream-art-wide="true"]
   backdrop-filter: blur(8px) saturate(102%) !important;
 }
 
-html.codex-dream-skin[data-dream-shell="light"]
+html.codex-qq-skin[data-dream-shell="light"]
   .composer-surface-chrome p.placeholder::after {
   color: rgb(var(--ds-muted-rgb) / .78) !important;
   opacity: 1 !important;
@@ -1518,7 +1518,7 @@ html.codex-dream-skin[data-dream-shell="light"]
 /* Current Codex builds render the home project picker as a separate opaque
    cap above the composer. Join both native controls into one continuous
    surface while leaving task and utility-route inputs untouched. */
-html.codex-dream-skin .dream-skin-home-utility {
+html.codex-qq-skin .qq-skin-home-utility {
   top: 0 !important;
   width: 100% !important;
   margin-inline: 0 !important;
@@ -1532,7 +1532,7 @@ html.codex-dream-skin .dream-skin-home-utility {
   backdrop-filter: blur(16px) saturate(108%) !important;
 }
 
-html.codex-dream-skin .dream-skin-home:has(.dream-skin-home-utility)
+html.codex-qq-skin .qq-skin-home:has(.qq-skin-home-utility)
   .composer-surface-chrome {
   border: 0 !important;
   border-radius: 0 0 22px 22px !important;
@@ -1543,7 +1543,7 @@ html.codex-dream-skin .dream-skin-home:has(.dream-skin-home-utility)
     inset 0 -1px rgb(var(--ds-muted-rgb) / .18) !important;
 }
 
-html.codex-dream-skin[data-dream-art-wide="true"] .dream-skin-home-utility {
+html.codex-qq-skin[data-dream-art-wide="true"] .qq-skin-home-utility {
   background: var(--ds-immersive-composer-solid) !important;
   box-shadow:
     inset 1px 0 var(--ds-immersive-line),
@@ -1552,8 +1552,8 @@ html.codex-dream-skin[data-dream-art-wide="true"] .dream-skin-home-utility {
   backdrop-filter: none !important;
 }
 
-html.codex-dream-skin[data-dream-art-wide="true"]
-  .dream-skin-home:has(.dream-skin-home-utility) .composer-surface-chrome {
+html.codex-qq-skin[data-dream-art-wide="true"]
+  .qq-skin-home:has(.qq-skin-home-utility) .composer-surface-chrome {
   box-shadow:
     0 10px 30px rgb(var(--ds-bg-rgb) / .20),
     inset 1px 0 var(--ds-immersive-line),
@@ -1561,8 +1561,8 @@ html.codex-dream-skin[data-dream-art-wide="true"]
     inset 0 -1px var(--ds-immersive-line) !important;
 }
 
-html.codex-dream-skin[data-dream-shell="light"][data-dream-art-wide="true"]
-  .dream-skin-home-utility {
+html.codex-qq-skin[data-dream-shell="light"][data-dream-art-wide="true"]
+  .qq-skin-home-utility {
   box-shadow:
     inset 1px 0 var(--ds-immersive-line),
     inset -1px 0 var(--ds-immersive-line),
@@ -1570,46 +1570,46 @@ html.codex-dream-skin[data-dream-shell="light"][data-dream-art-wide="true"]
   backdrop-filter: blur(8px) saturate(102%) !important;
 }
 
-html.codex-dream-skin .dream-skin-home-utility button,
-html.codex-dream-skin .composer-surface-chrome button:not([class~="bg-token-foreground"]) {
+html.codex-qq-skin .qq-skin-home-utility button,
+html.codex-qq-skin .composer-surface-chrome button:not([class~="bg-token-foreground"]) {
   color: var(--ds-muted) !important;
 }
 
-html.codex-dream-skin .dream-skin-home-utility button svg,
-html.codex-dream-skin .composer-surface-chrome button svg {
+html.codex-qq-skin .qq-skin-home-utility button svg,
+html.codex-qq-skin .composer-surface-chrome button svg {
   color: currentColor !important;
 }
 
-html.codex-dream-skin .dream-skin-home-utility button *,
-html.codex-dream-skin .composer-surface-chrome button:not([class~="bg-token-foreground"]) * {
+html.codex-qq-skin .qq-skin-home-utility button *,
+html.codex-qq-skin .composer-surface-chrome button:not([class~="bg-token-foreground"]) * {
   color: currentColor !important;
 }
 
-html.codex-dream-skin .dream-skin-home-utility button:hover,
-html.codex-dream-skin .composer-surface-chrome button:not([class~="bg-token-foreground"]):hover {
+html.codex-qq-skin .qq-skin-home-utility button:hover,
+html.codex-qq-skin .composer-surface-chrome button:not([class~="bg-token-foreground"]):hover {
   color: var(--ds-text) !important;
   background: rgb(var(--ds-accent-rgb) / .10) !important;
 }
 
-html.codex-dream-skin .composer-surface-chrome p.placeholder::after {
+html.codex-qq-skin .composer-surface-chrome p.placeholder::after {
   color: rgb(var(--ds-muted-rgb) / .82) !important;
   opacity: 1 !important;
 }
 
 /* Search routes ship an opaque sticky band and input surface. Keep the
    control legible while allowing the selected image to remain continuous. */
-html.codex-dream-skin:is([data-dream-task-mode="ambient"], [data-dream-art-task-mode="ambient"])[data-dream-art-wide="true"]
-  main.main-surface:not(.dream-skin-home-shell) div.sticky:has(input[type="text"]) {
+html.codex-qq-skin:is([data-dream-task-mode="ambient"], [data-dream-art-task-mode="ambient"])[data-dream-art-wide="true"]
+  main.main-surface:not(.qq-skin-home-shell) div.sticky:has(input[type="text"]) {
   background: transparent !important;
 }
 
-html.codex-dream-skin:is([data-dream-task-mode="ambient"], [data-dream-art-task-mode="ambient"])[data-dream-art-wide="true"]
-  main.main-surface:not(.dream-skin-home-shell) div.sticky:has(input[type="text"])::after {
+html.codex-qq-skin:is([data-dream-task-mode="ambient"], [data-dream-art-task-mode="ambient"])[data-dream-art-wide="true"]
+  main.main-surface:not(.qq-skin-home-shell) div.sticky:has(input[type="text"])::after {
   background: transparent !important;
 }
 
-html.codex-dream-skin:is([data-dream-task-mode="ambient"], [data-dream-art-task-mode="ambient"])[data-dream-art-wide="true"]
-  main.main-surface:not(.dream-skin-home-shell) div.no-drag:has(> input[type="text"]) {
+html.codex-qq-skin:is([data-dream-task-mode="ambient"], [data-dream-art-task-mode="ambient"])[data-dream-art-wide="true"]
+  main.main-surface:not(.qq-skin-home-shell) div.no-drag:has(> input[type="text"]) {
   background: var(--ds-immersive-composer) !important;
   border: 0 !important;
   box-shadow:
@@ -1620,18 +1620,18 @@ html.codex-dream-skin:is([data-dream-task-mode="ambient"], [data-dream-art-task-
 
 /* Pull Requests and similar utility routes wrap their content in a native
    full-size opaque surface. Only clear full-window wrappers, not cards. */
-html.codex-dream-skin:is([data-dream-task-mode="ambient"], [data-dream-art-task-mode="ambient"])[data-dream-art-wide="true"]
-  main.main-surface:not(.dream-skin-home-shell)
+html.codex-qq-skin:is([data-dream-task-mode="ambient"], [data-dream-art-task-mode="ambient"])[data-dream-art-wide="true"]
+  main.main-surface:not(.qq-skin-home-shell)
   [class~="bg-token-main-surface-primary"][class~="h-full"][class~="w-full"] {
   background: transparent !important;
 }
 
-html.codex-dream-skin[data-dream-art-wide="true"] main.main-surface
+html.codex-qq-skin[data-dream-art-wide="true"] main.main-surface
   .app-shell-main-content-frame {
   border-top: 0 !important;
 }
 
-html.codex-dream-skin[data-dream-art-wide="true"] main.main-surface
+html.codex-qq-skin[data-dream-art-wide="true"] main.main-surface
   .app-shell-main-content-top-fade {
   display: none !important;
   background: transparent !important;
@@ -1640,12 +1640,12 @@ html.codex-dream-skin[data-dream-art-wide="true"] main.main-surface
 /* Codex paints a second opaque fade behind the sticky composer. The composer
    already owns its readable surface, so retaining this layer creates a false
    bottom panel and makes the control look duplicated. */
-html.codex-dream-skin[data-dream-art-wide="true"] main.main-surface
+html.codex-qq-skin[data-dream-art-wide="true"] main.main-surface
   .thread-scroll-container .bg-gradient-to-t.from-token-main-surface-primary {
   background: transparent !important;
 }
 
-.dream-skin-home div:has(> .horizontal-scroll-fade-mask .group\/project-selector) {
+.qq-skin-home div:has(> .horizontal-scroll-fade-mask .group\/project-selector) {
   position: relative;
   padding-top: 28px !important;
   border: 1px solid rgb(var(--ds-muted-rgb) / .16);
@@ -1653,8 +1653,8 @@ html.codex-dream-skin[data-dream-art-wide="true"] main.main-surface
   background: rgb(var(--ds-panel-rgb) / .92) !important;
 }
 
-.dream-skin-home div:has(> .horizontal-scroll-fade-mask .group\/project-selector)::before {
-  content: var(--dream-skin-project-label, "选择项目");
+.qq-skin-home div:has(> .horizontal-scroll-fade-mask .group\/project-selector)::before {
+  content: var(--qq-skin-project-label, "选择项目");
   position: absolute;
   left: 13px;
   top: 6px;
@@ -1666,58 +1666,58 @@ html.codex-dream-skin[data-dream-art-wide="true"] main.main-surface
   white-space: nowrap;
 }
 
-.dream-skin-home .group\/project-selector > button {
+.qq-skin-home .group\/project-selector > button {
   border-color: rgb(var(--ds-accent-rgb) / .22) !important;
   background: rgb(var(--ds-accent-rgb) / .08) !important;
   color: var(--ds-text) !important;
   box-shadow: 0 3px 12px rgb(var(--ds-bg-rgb) / .12) !important;
 }
 
-html.codex-dream-skin .ProseMirror {
+html.codex-qq-skin .ProseMirror {
   color: var(--ds-text) !important;
   caret-color: var(--ds-accent) !important;
 }
 
-html.codex-dream-skin button[class~="bg-token-foreground"] {
+html.codex-qq-skin button[class~="bg-token-foreground"] {
   background: var(--ds-accent) !important;
   color: var(--ds-on-accent) !important;
   box-shadow: 0 5px 14px rgb(var(--ds-accent-rgb) / .20) !important;
 }
 
-html.codex-dream-skin article,
-html.codex-dream-skin [data-message-author-role] { border-radius: 16px; }
+html.codex-qq-skin article,
+html.codex-qq-skin [data-message-author-role] { border-radius: 16px; }
 
 @media (max-width: 1120px) {
-  .dream-skin-status { display: none !important; }
-  .dream-skin-home { --thread-content-max-width: min(940px, calc(100cqw - 30px)) !important; }
-  .dream-skin-home > div:first-child > div:first-child > div:first-child { width: calc(100% - 28px) !important; }
+  .qq-skin-status { display: none !important; }
+  .qq-skin-home { --thread-content-max-width: min(940px, calc(100cqw - 30px)) !important; }
+  .qq-skin-home > div:first-child > div:first-child > div:first-child { width: calc(100% - 28px) !important; }
 }
 
 @media (max-width: 900px) {
-  .dream-skin-brand { left: 15px; }
-  .dream-skin-brand b { font-size: 12px; }
-  .dream-skin-home > div:first-child > div:first-child {
+  .qq-skin-brand { left: 15px; }
+  .qq-skin-brand b { font-size: 12px; }
+  .qq-skin-home > div:first-child > div:first-child {
     flex-basis: 408px !important;
     min-height: 408px !important;
   }
-  .dream-skin-home > div:first-child > div:first-child > div:first-child {
+  .qq-skin-home > div:first-child > div:first-child > div:first-child {
     height: 232px !important;
     min-height: 232px !important;
   }
-  .dream-skin-home > div:first-child > div:first-child > div:first-child > div:first-child { padding: 0 26px; }
-  .dream-skin-home > div:first-child > div:first-child > div:first-child > div:first-child > div:first-child {
+  .qq-skin-home > div:first-child > div:first-child > div:first-child > div:first-child { padding: 0 26px; }
+  .qq-skin-home > div:first-child > div:first-child > div:first-child > div:first-child > div:first-child {
     width: min(58%, 460px) !important;
   }
-  .dream-skin-home [data-feature="game-source"] { font-size: 18px !important; }
-  .dream-skin-home [data-feature="game-source"]::before { margin-bottom: 7px; font-size: 10px; }
-  .dream-skin-home [data-feature="game-source"]::after { margin-top: 9px; font-size: 11px; }
-  .dream-skin-home .group\/home-suggestions button { min-height: 112px !important; font-size: 12px !important; }
+  .qq-skin-home [data-feature="game-source"] { font-size: 18px !important; }
+  .qq-skin-home [data-feature="game-source"]::before { margin-bottom: 7px; font-size: 10px; }
+  .qq-skin-home [data-feature="game-source"]::after { margin-top: 9px; font-size: 11px; }
+  .qq-skin-home .group\/home-suggestions button { min-height: 112px !important; font-size: 12px !important; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  html.codex-dream-skin *,
-  html.codex-dream-skin *::before,
-  html.codex-dream-skin *::after {
+  html.codex-qq-skin *,
+  html.codex-qq-skin *::before,
+  html.codex-qq-skin *::after {
     scroll-behavior: auto !important;
     transition-duration: .01ms !important;
     animation-duration: .01ms !important;

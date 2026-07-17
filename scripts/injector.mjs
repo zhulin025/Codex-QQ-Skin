@@ -129,7 +129,7 @@ class CdpSession {
     }
     for (const listener of this.listeners.get(message.method) ?? []) {
       try { listener(message.params ?? {}); } catch (error) {
-        console.error(`[dream-skin] CDP listener failed: ${error.message}`);
+        console.error(`[qq-skin] CDP listener failed: ${error.message}`);
       }
     }
   }
@@ -372,12 +372,12 @@ async function loadTheme(themeDir) {
   const theme = {
     schemaVersion: 1,
     id: text(raw.id, "custom", 80, "id"),
-    name: text(raw.name, "Codex Dream Skin", 80, "name"),
-    brandSubtitle: text(raw.brandSubtitle, "CODEX DREAM SKIN", 80, "brandSubtitle"),
+    name: text(raw.name, "Codex QQ Skin", 80, "name"),
+    brandSubtitle: text(raw.brandSubtitle, "CODEX QQ SKIN", 80, "brandSubtitle"),
     tagline: text(raw.tagline, "Make something wonderful.", 160, "tagline"),
     projectPrefix: text(raw.projectPrefix, "选择项目 · ", 80, "projectPrefix"),
     projectLabel: text(raw.projectLabel, "◉  选择项目", 80, "projectLabel"),
-    statusText: text(raw.statusText, "DREAM SKIN ONLINE", 80, "statusText"),
+    statusText: text(raw.statusText, "QQ SKIN ONLINE", 80, "statusText"),
     quote: text(raw.quote, "MAKE SOMETHING WONDERFUL", 80, "quote"),
     image: raw.image,
     layout,
@@ -447,7 +447,7 @@ async function loadStaticPayloadAssets() {
   const cacheHit = Boolean(staticPayloadAssets);
   if (!staticPayloadAssets) {
     staticPayloadAssets = Promise.all([
-      fs.readFile(path.join(root, "assets", "dream-skin.css"), "utf8"),
+      fs.readFile(path.join(root, "assets", "qq-skin.css"), "utf8"),
       fs.readFile(path.join(root, "assets", "renderer-inject.js"), "utf8"),
       fs.readFile(path.join(root, "assets", "codex-pet.png")),
       fs.readFile(path.join(root, "assets", "retro-window-frame.png")),
@@ -488,14 +488,14 @@ async function loadPayload(themeDir) {
   const retroFrameDataUrl = `data:image/png;base64,${retroFrame.toString("base64")}`;
   const qqAvatarDataUrl = `data:image/png;base64,${qqAvatar.toString("base64")}`;
   const payload = template
-    .replace("__DREAM_SKIN_CSS_JSON__", JSON.stringify(css))
-    .replace("__DREAM_SKIN_ART_JSON__", JSON.stringify(artDataUrl))
-    .replace("__DREAM_SKIN_PET_JSON__", JSON.stringify(petDataUrl))
-    .replace("__DREAM_SKIN_RETRO_FRAME_JSON__", JSON.stringify(retroFrameDataUrl))
-    .replace("__DREAM_SKIN_QQ_AVATAR_JSON__", JSON.stringify(qqAvatarDataUrl))
-    .replace("__DREAM_SKIN_THEME_JSON__", JSON.stringify(theme))
-    .replace("__DREAM_SKIN_VERSION_JSON__", JSON.stringify(SKIN_VERSION))
-    .replace("__DREAM_SKIN_STYLE_REVISION_JSON__", JSON.stringify(styleRevision));
+    .replace("__QQ_SKIN_CSS_JSON__", JSON.stringify(css))
+    .replace("__QQ_SKIN_ART_JSON__", JSON.stringify(artDataUrl))
+    .replace("__QQ_SKIN_PET_JSON__", JSON.stringify(petDataUrl))
+    .replace("__QQ_SKIN_RETRO_FRAME_JSON__", JSON.stringify(retroFrameDataUrl))
+    .replace("__QQ_SKIN_QQ_AVATAR_JSON__", JSON.stringify(qqAvatarDataUrl))
+    .replace("__QQ_SKIN_THEME_JSON__", JSON.stringify(theme))
+    .replace("__QQ_SKIN_VERSION_JSON__", JSON.stringify(SKIN_VERSION))
+    .replace("__QQ_SKIN_STYLE_REVISION_JSON__", JSON.stringify(styleRevision));
   const revision = createHash("sha256")
     .update(SKIN_VERSION)
     .update(css)
@@ -527,37 +527,37 @@ async function applyToSession(session, payload) {
 
 async function removeFromSession(session) {
   return session.evaluate(`(() => {
-    window.__CODEX_DREAM_SKIN_DISABLED__ = true;
-    const state = window.__CODEX_DREAM_SKIN_STATE__;
+    window.__CODEX_QQ_SKIN_DISABLED__ = true;
+    const state = window.__CODEX_QQ_SKIN_STATE__;
     if (state?.cleanup) return state.cleanup();
-    document.documentElement?.classList.remove('codex-dream-skin');
-    document.documentElement?.style.removeProperty('--dream-skin-art');
+    document.documentElement?.classList.remove('codex-qq-skin');
+    document.documentElement?.style.removeProperty('--qq-skin-art');
     document.documentElement?.style.removeProperty('--dream-retro-frame');
     document.documentElement?.style.removeProperty('--dream-summary-panel-width');
-    document.getElementById('codex-dream-skin-style')?.remove();
-    document.getElementById('codex-dream-skin-chrome')?.remove();
-    document.getElementById('codex-dream-skin-companion')?.remove();
-    document.getElementById('codex-dream-skin-retro-shell')?.remove();
-    document.getElementById('codex-dream-skin-retro-profile')?.remove();
+    document.getElementById('codex-qq-skin-style')?.remove();
+    document.getElementById('codex-qq-skin-chrome')?.remove();
+    document.getElementById('codex-qq-skin-companion')?.remove();
+    document.getElementById('codex-qq-skin-retro-shell')?.remove();
+    document.getElementById('codex-qq-skin-retro-profile')?.remove();
     document.querySelectorAll('.dream-retro-profile-host').forEach((node) =>
       node.classList.remove('dream-retro-profile-host'));
     document.querySelectorAll('.dream-retro-window-control').forEach((button) =>
       button.classList.remove(
         'dream-retro-window-control', 'dream-retro-control-summary',
         'dream-retro-control-bottom', 'dream-retro-control-sidebar'));
-    delete window.__CODEX_DREAM_SKIN_STATE__;
+    delete window.__CODEX_QQ_SKIN_STATE__;
     return true;
   })()`);
 }
 
 async function verifyRemovedSession(session) {
   return session.evaluate(`(() =>
-    !document.documentElement.classList.contains('codex-dream-skin') &&
-    !document.getElementById('codex-dream-skin-style') &&
-    !document.getElementById('codex-dream-skin-chrome') &&
-    !document.getElementById('codex-dream-skin-companion') &&
-    !document.getElementById('codex-dream-skin-retro-shell') &&
-    !window.__CODEX_DREAM_SKIN_STATE__
+    !document.documentElement.classList.contains('codex-qq-skin') &&
+    !document.getElementById('codex-qq-skin-style') &&
+    !document.getElementById('codex-qq-skin-chrome') &&
+    !document.getElementById('codex-qq-skin-companion') &&
+    !document.getElementById('codex-qq-skin-retro-shell') &&
+    !window.__CODEX_QQ_SKIN_STATE__
   )()`);
 }
 
@@ -577,7 +577,7 @@ async function verifySession(session) {
     const homeSignal = homeIndicator ?? document.querySelector('[data-feature="game-source"]') ??
       document.querySelector('.group\\\\/home-suggestions');
     const homeRoute = homeSignal?.closest('[role="main"]') ?? null;
-    const home = document.querySelector('[role="main"].dream-skin-home');
+    const home = document.querySelector('[role="main"].qq-skin-home');
     const suggestions = home?.querySelector('.group\\\\/home-suggestions') ?? null;
     const cardBoxes = suggestions ? [...suggestions.querySelectorAll('button')].map(box) : [];
     const visibleCards = cardBoxes.filter((item) => item?.visible);
@@ -586,11 +586,11 @@ async function verifySession(session) {
     const shell = box(document.querySelector('main.main-surface'));
     const composer = box(document.querySelector('.composer-surface-chrome'));
     const sidebar = box(document.querySelector('aside.app-shell-left-panel'));
-    const chrome = document.getElementById('codex-dream-skin-chrome');
+    const chrome = document.getElementById('codex-qq-skin-chrome');
     const result = {
-      installed: document.documentElement.classList.contains('codex-dream-skin'),
-      version: window.__CODEX_DREAM_SKIN_STATE__?.version ?? null,
-      stylePresent: Boolean(document.getElementById('codex-dream-skin-style')),
+      installed: document.documentElement.classList.contains('codex-qq-skin'),
+      version: window.__CODEX_QQ_SKIN_STATE__?.version ?? null,
+      stylePresent: Boolean(document.getElementById('codex-qq-skin-style')),
       chromePresent: Boolean(chrome),
       chromePointerEvents: getComputedStyle(chrome || document.body).pointerEvents,
       homeRoute: Boolean(homeRoute),
@@ -706,8 +706,8 @@ async function runOneShot(options) {
 
 export function earlyPayloadFor(payload, revision) {
   return `(() => {
-    const generationKey = "__CODEX_DREAM_SKIN_EARLY_GENERATION__";
-    const appliedKey = "__CODEX_DREAM_SKIN_EARLY_APPLIED__";
+    const generationKey = "__CODEX_QQ_SKIN_EARLY_GENERATION__";
+    const appliedKey = "__CODEX_QQ_SKIN_EARLY_APPLIED__";
     const generation = ${JSON.stringify(revision)};
     window[generationKey] = generation;
     let observer = null;
@@ -748,18 +748,18 @@ function watchPayloadSources(themeDir, onDirty) {
       watcher = watchFs(directory, { persistent: false }, (_event, filename) => {
         const name = filename ? String(filename) : "";
         const staticChanged = directory === assetsRoot &&
-          (!name || name === "dream-skin.css" || name === "renderer-inject.js" ||
+          (!name || name === "qq-skin.css" || name === "renderer-inject.js" ||
             name === "codex-pet.png" || name === "retro-window-frame.png" ||
             name === "qq-avatar.png");
         if (kind === "static" && !staticChanged) return;
         onDirty({ staticChanged });
       });
       watcher.on("error", (error) => {
-        console.error(`[dream-skin] file watch unavailable for ${directory}: ${error.message}`);
+        console.error(`[qq-skin] file watch unavailable for ${directory}: ${error.message}`);
       });
       watchers.push(watcher);
     } catch (error) {
-      console.error(`[dream-skin] file watch unavailable for ${directory}: ${error.message}`);
+      console.error(`[qq-skin] file watch unavailable for ${directory}: ${error.message}`);
     }
   };
   add(themeRoot, "theme");
@@ -813,10 +813,10 @@ async function runWatch(options) {
         await applyToSession(session, current.payload);
       } catch (error) {
         record.needsLoadFallback = true;
-        console.error(`[dream-skin] theme refresh failed: ${error.message}`);
+        console.error(`[qq-skin] theme refresh failed: ${error.message}`);
       }
     }
-    console.log(`[dream-skin] refreshed theme ${current.theme.id} (${current.timings.buildMs}ms)`);
+    console.log(`[qq-skin] refreshed theme ${current.theme.id} (${current.timings.buildMs}ms)`);
   };
 
   const queuePayloadRefresh = ({ staticChanged = false } = {}) => {
@@ -825,7 +825,7 @@ async function runWatch(options) {
     reloadTimer = setTimeout(() => {
       reloadTimer = null;
       reloadChain = reloadChain.then(refreshPayload).catch((error) => {
-        console.error(`[dream-skin] theme reload failed: ${error.message}`);
+        console.error(`[qq-skin] theme reload failed: ${error.message}`);
       });
     }, 45);
   };
@@ -839,7 +839,7 @@ async function runWatch(options) {
         discoveryDelayMs = 100;
       } catch (error) {
         if (Date.now() - lastListErrorAt >= 2000) {
-          console.error(`[dream-skin] ${new Date().toISOString()} ${error.message}`);
+          console.error(`[qq-skin] ${new Date().toISOString()} ${error.message}`);
           lastListErrorAt = Date.now();
         }
         await new Promise((resolve) => setTimeout(resolve, discoveryDelayMs));
@@ -867,14 +867,14 @@ async function runWatch(options) {
             await session.evaluate(earlyPayloadFor(current.payload, current.revision));
           } catch (error) {
             record.needsLoadFallback = true;
-            console.error(`[dream-skin] early injection unavailable: ${error.message}`);
+            console.error(`[qq-skin] early injection unavailable: ${error.message}`);
           }
           const probe = await waitForCodexProbe(session);
           if (!probe?.codex) {
             await removeEarly(record);
             session.close();
             if (!rejected.has(target.id)) {
-              console.error(`[dream-skin] rejected non-Codex app target ${target.id}`);
+              console.error(`[qq-skin] rejected non-Codex app target ${target.id}`);
               rejected.add(target.id);
             }
             continue;
@@ -883,24 +883,24 @@ async function runWatch(options) {
           session.on("Page.loadEventFired", () => {
             if (!record.needsLoadFallback) return;
             setTimeout(() => applyToSession(session, current.payload).catch((error) => {
-              console.error(`[dream-skin] fallback reinject failed: ${error.message}`);
+              console.error(`[qq-skin] fallback reinject failed: ${error.message}`);
             }), 0);
           });
           const earlyApplied = await session.evaluate(
-            `window.__CODEX_DREAM_SKIN_EARLY_APPLIED__ === ${JSON.stringify(current.revision)}`,
+            `window.__CODEX_QQ_SKIN_EARLY_APPLIED__ === ${JSON.stringify(current.revision)}`,
           );
           if (!earlyApplied) {
             await session.evaluate(
-              `window.__CODEX_DREAM_SKIN_EARLY_GENERATION__ = ${JSON.stringify(`fallback:${current.revision}`)}`,
+              `window.__CODEX_QQ_SKIN_EARLY_GENERATION__ = ${JSON.stringify(`fallback:${current.revision}`)}`,
             );
             await applyToSession(session, current.payload);
           }
           sessions.set(target.id, record);
-          console.log(`[dream-skin] injected verified Codex target ${target.id} (${target.title || target.url})`);
+          console.log(`[qq-skin] injected verified Codex target ${target.id} (${target.title || target.url})`);
         } catch (error) {
           if (record) await removeEarly(record);
           session?.close();
-          console.error(`[dream-skin] inject failed for ${target.id}: ${error.message}`);
+          console.error(`[qq-skin] inject failed for ${target.id}: ${error.message}`);
         }
       }
       const pollDelay = sessions.size ? 800 : (targets.length ? 250 : 100);
@@ -936,7 +936,7 @@ if (path.resolve(process.argv[1] || "") === path.resolve(scriptPath)) {
     } else if (options.mode === "watch") await runWatch(options);
     else await runOneShot(options);
   } catch (error) {
-    console.error(`[dream-skin] ${error.stack || error.message}`);
+    console.error(`[qq-skin] ${error.stack || error.message}`);
     process.exitCode = 1;
   }
 }

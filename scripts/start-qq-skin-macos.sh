@@ -8,7 +8,7 @@ record_start_error() {
   local line="$2"
   ensure_state_root
   printf '%s exit=%s line=%s\n' "$(/bin/date -u '+%Y-%m-%dT%H:%M:%SZ')" "$code" "$line" >> "$START_ERROR_LOG"
-  printf 'Codex Dream Skin Studio: start failed at line %s (exit %s). See %s\n' "$line" "$code" "$START_ERROR_LOG" >&2
+  printf 'Codex QQ Skin: start failed at line %s (exit %s). See %s\n' "$line" "$code" "$START_ERROR_LOG" >&2
 }
 trap 'code=$?; record_start_error "$code" "$LINENO"' ERR
 
@@ -43,7 +43,7 @@ if verified_cdp_endpoint "$PORT"; then DEBUG_READY="true"; fi
 
 if codex_is_running && [ "$DEBUG_READY" = "false" ]; then
   if [ "$PROMPT_RESTART" = "true" ] && [ "$RESTART_EXISTING" = "false" ]; then
-    /usr/bin/osascript -e 'display dialog "Codex 需要重启一次才能启用 Dream Skin。" buttons {"取消", "重启并应用"} default button "重启并应用" with title "Codex Dream Skin Studio"' >/dev/null \
+    /usr/bin/osascript -e 'display dialog "Codex 需要重启一次才能启用 QQ Skin。" buttons {"取消", "重启并应用"} default button "重启并应用" with title "Codex QQ Skin"' >/dev/null \
       || fail "Theme launch was cancelled."
     RESTART_EXISTING="true"
   fi
@@ -88,7 +88,7 @@ CODEX_PID="$(codex_main_pids | /usr/bin/head -n 1)"
 write_state "$PORT" "$INJECTOR_PID" "$INJECTOR_STARTED_AT" "$CODEX_PID"
 
 # Soft verify: keep the injector even if secondary selectors differ by Codex version.
-VERIFY_OUTPUT="$(/usr/bin/mktemp "${TMPDIR:-/tmp}/dream-skin-verify.XXXXXX")"
+VERIFY_OUTPUT="$(/usr/bin/mktemp "${TMPDIR:-/tmp}/qq-skin-verify.XXXXXX")"
 /bin/chmod 600 "$VERIFY_OUTPUT"
 cleanup_verify_output() { /bin/rm -f "$VERIFY_OUTPUT"; }
 trap cleanup_verify_output EXIT
@@ -109,7 +109,7 @@ fi
 if [ "$verify_code" -ne 0 ]; then
   # If CSS markers are present, treat as soft success (do not kill injector).
   if /usr/bin/grep -q '"installed": true' "$VERIFY_OUTPUT" 2>/dev/null; then
-    printf 'Codex Dream Skin Studio %s is active (soft verify) on port %s.\n' "$SKIN_VERSION" "$PORT"
+    printf 'Codex QQ Skin %s is active (soft verify) on port %s.\n' "$SKIN_VERSION" "$PORT"
     cleanup_verify_output
     trap - EXIT
     exit 0
@@ -132,4 +132,4 @@ fi
 cleanup_verify_output
 trap - EXIT
 
-printf 'Codex Dream Skin Studio %s is active on loopback port %s.\n' "$SKIN_VERSION" "$PORT"
+printf 'Codex QQ Skin %s is active on loopback port %s.\n' "$SKIN_VERSION" "$PORT"
