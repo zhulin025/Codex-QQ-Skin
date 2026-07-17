@@ -1,0 +1,13 @@
+{
+  "name": "codex-qq-skin",
+  "version": "1.5.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "./tests/run-tests.sh",
+    "doctor": "./scripts/doctor-macos.sh"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
