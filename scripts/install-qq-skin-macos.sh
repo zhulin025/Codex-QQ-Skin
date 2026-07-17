@@ -52,6 +52,11 @@ discover_codex_app
 require_macos_runtime
 ensure_state_root
 codex_is_running && fail "Close Codex before installation so config.toml cannot be rewritten while the app is saving it."
+# Drop leftover watchers / state from a previous QQ Skin or Dream Skin install so
+# a fresh install is not blocked by a reused PID or renamed engine path.
+stop_known_skin_injectors || true
+/bin/rm -f "$STATE_PATH"
+/bin/rm -f "$HOME/Library/Application Support/CodexDreamSkinStudio/state.json"
 seed_bundled_presets
 if [ ! -f "$THEME_DIR/theme.json" ]; then
   "$SCRIPT_DIR/switch-theme-macos.sh" --id preset-classic-codex --no-apply >/dev/null

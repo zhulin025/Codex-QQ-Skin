@@ -8,7 +8,7 @@ import { readImageMetadata } from "./image-metadata.mjs";
 const scriptPath = fileURLToPath(import.meta.url);
 const here = path.dirname(scriptPath);
 const root = path.resolve(here, "..");
-const SKIN_VERSION = "1.5.1";
+const SKIN_VERSION = "1.5.2";
 const LOOPBACK_HOSTS = new Set(["127.0.0.1", "localhost", "[::1]"]);
 const CDP_ID_PATTERN = /^[A-Za-z0-9._-]{1,200}$/;
 const MAX_ART_BYTES = 16 * 1024 * 1024;
@@ -537,6 +537,8 @@ async function removeFromSession(session) {
     document.getElementById('codex-qq-skin-style')?.remove();
     document.getElementById('codex-qq-skin-chrome')?.remove();
     document.getElementById('codex-qq-skin-companion')?.remove();
+    document.getElementById('codex-qq-skin-home-pet')?.remove();
+    document.getElementById('codex-qq-skin-right-tray')?.remove();
     document.getElementById('codex-qq-skin-retro-shell')?.remove();
     document.getElementById('codex-qq-skin-retro-profile')?.remove();
     document.querySelectorAll('.dream-retro-profile-host').forEach((node) =>
@@ -556,6 +558,8 @@ async function verifyRemovedSession(session) {
     !document.getElementById('codex-qq-skin-style') &&
     !document.getElementById('codex-qq-skin-chrome') &&
     !document.getElementById('codex-qq-skin-companion') &&
+    !document.getElementById('codex-qq-skin-home-pet') &&
+    !document.getElementById('codex-qq-skin-right-tray') &&
     !document.getElementById('codex-qq-skin-retro-shell') &&
     !window.__CODEX_QQ_SKIN_STATE__
   )()`);

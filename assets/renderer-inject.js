@@ -4,6 +4,8 @@
   const STYLE_ID = "codex-qq-skin-style";
   const CHROME_ID = "codex-qq-skin-chrome";
   const COMPANION_ID = "codex-qq-skin-companion";
+  const HOME_PET_ID = "codex-qq-skin-home-pet";
+  const RIGHT_TRAY_ID = "codex-qq-skin-right-tray";
   const RETRO_SHELL_ID = "codex-qq-skin-retro-shell";
   const RETRO_PROFILE_ID = "codex-qq-skin-retro-profile";
   const SHELL_ATTR = "data-dream-shell";
@@ -31,6 +33,7 @@
     "--qq-skin-name", "--qq-skin-tagline", "--qq-skin-project-prefix",
     "--qq-skin-project-label", "--dream-three-pane-min-width", "--dream-right-panel-width",
     "--dream-retro-frame", "--dream-summary-panel-width",
+    "--dream-right-tray-inset", "--dream-right-panel-right",
   ];
   const installToken = {};
   const autoOpenedSummaryToggles = new WeakSet();
@@ -599,6 +602,89 @@
     return companion;
   };
 
+  const ensureRightTray = () => {
+    let tray = document.getElementById(RIGHT_TRAY_ID);
+    if (!tray || tray.parentElement !== document.body) {
+      tray?.remove();
+      tray = document.createElement("div");
+      tray.id = RIGHT_TRAY_ID;
+      tray.setAttribute("aria-hidden", "true");
+      document.body.appendChild(tray);
+    }
+    return tray;
+  };
+
+  const ensureHomePet = (home) => {
+    let pet = document.getElementById(HOME_PET_ID);
+    if (!home) {
+      pet?.remove();
+      return null;
+    }
+    // Matches the hero card targeted by `.qq-skin-home > div > div > div` styles.
+    const hero = home.querySelector(":scope > div:first-child > div:first-child > div:first-child");
+    if (!hero) {
+      pet?.remove();
+      return null;
+    }
+    if (!pet || pet.parentElement !== hero) {
+      pet?.remove();
+      pet = document.createElement("img");
+      pet.id = HOME_PET_ID;
+      pet.className = "qq-skin-home-pet";
+      pet.alt = "";
+      pet.draggable = false;
+      pet.setAttribute("aria-hidden", "true");
+      hero.appendChild(pet);
+    }
+    if (pet.src !== petUrl) pet.src = petUrl;
+    return pet;
+  };
+
+  /* Mark the shared nav-section-title row (toggle + …/+) so 置顶/项目/任务 bars
+     all paint at the same width. The toggle itself sits in a narrower flex-1. */
+  const ensureSidebarSectionBars = () => {
+    const aside = document.querySelector("aside.app-shell-left-panel");
+    const live = new Set();
+    if (!aside) {
+      document.querySelectorAll(".qq-skin-section-bar").forEach((node) =>
+        node.classList.remove("qq-skin-section-bar"));
+      return;
+    }
+    const asideWidth = typeof aside.getBoundingClientRect === "function"
+      ? aside.getBoundingClientRect().width : 0;
+    for (const toggle of aside.querySelectorAll("[data-app-action-sidebar-section-toggle]")) {
+      const titled = toggle.closest('[class*="nav-section-title"]');
+      let row = titled || toggle.parentElement;
+      let best = row;
+      while (row && aside.contains(row) && row !== aside) {
+        const width = typeof row.getBoundingClientRect === "function"
+          ? row.getBoundingClientRect().width : 0;
+        if (width >= Math.max(asideWidth - 2, 0)) {
+          // Prefer the titled row over the outer px-row-x padding wrapper when
+          // both are full-bleed; painting px-row-x would cover the list below.
+          if (!titled || row === titled || width < asideWidth) best = row;
+          else best = titled;
+          break;
+        }
+        if (
+          width > 0 &&
+          width >= (typeof best?.getBoundingClientRect === "function"
+            ? best.getBoundingClientRect().width : 0)
+        ) {
+          best = row;
+        }
+        row = row.parentElement;
+      }
+      best = titled || best;
+      if (!best || best === aside) continue;
+      best.classList.add("qq-skin-section-bar");
+      live.add(best);
+    }
+    for (const node of aside.querySelectorAll(".qq-skin-section-bar")) {
+      if (!live.has(node)) node.classList.remove("qq-skin-section-bar");
+    }
+  };
+
   const findRetroTitle = () => {
     const header = document.querySelector("main.main-surface > header.app-header-tint");
     const preferred = header
@@ -776,7 +862,7 @@
     const home = homeIndicator?.closest('[role="main"]') ||
       [...document.querySelectorAll('[role="main"]')].find((candidate) =>
         candidate.querySelector('[data-feature="game-source"]') &&
-        candidate.querySelector('.group\\\\/home-suggestions')) || null;
+        candidate.querySelector('.group\\/home-suggestions')) || null;
     for (const candidate of document.querySelectorAll('[role="main"].qq-skin-home')) {
       if (candidate !== home) candidate.classList.remove("qq-skin-home");
     }
@@ -800,6 +886,8 @@
       layout = true;
     }
     shellMain.classList.toggle("qq-skin-home-shell", Boolean(home));
+    ensureHomePet(home);
+    ensureSidebarSectionBars();
     const companion = ensureCompanion();
     const leftSidebarToggle = findLeftSidebarToggle();
     const leftSidebarLabel = leftSidebarToggle?.getAttribute("aria-label") || "";
@@ -845,11 +933,29 @@
     setStyleProperty(root, "--dream-right-panel-width", `${layoutRightWidth}px`);
     const summaryPanel = summaryOpen
       ? document.querySelector('[data-pip-obstacle="thread-summary-panel"]') : null;
+    const rightTray = ensureRightTray();
     if (summaryPanel && typeof summaryPanel.getBoundingClientRect === "function") {
-      const summaryWidth = Math.round(summaryPanel.getBoundingClientRect().width);
+      const summaryBox = summaryPanel.getBoundingClientRect();
+      const summaryWidth = Math.round(summaryBox.width);
       if (summaryWidth >= 272 && summaryWidth <= 420) {
         setStyleProperty(root, "--dream-summary-panel-width", `${summaryWidth}px`);
       }
+      // Paint a wider blue tray behind Output/Source + companion, inset from the
+      // window chrome and extending from the title bar down to the bottom edge.
+      const trayPad = 14;
+      const panelRight = Math.max(8, Math.round(window.innerWidth - summaryBox.right));
+      const trayLeft = Math.max(0, Math.round(summaryBox.left) - trayPad);
+      const trayRight = Math.max(6, panelRight - trayPad);
+      const trayWidth = Math.max(summaryWidth + trayPad * 2, Math.round(window.innerWidth - trayLeft - trayRight));
+      setStyleProperty(rightTray, "left", `${trayLeft}px`);
+      setStyleProperty(rightTray, "right", `${trayRight}px`);
+      setStyleProperty(rightTray, "width", `${trayWidth}px`);
+      setStyleProperty(root, "--dream-right-tray-inset", `${trayPad}px`);
+      setStyleProperty(root, "--dream-right-panel-right", `${panelRight}px`);
+      rightTray.classList.add("is-visible");
+    } else {
+      rightTray.classList.remove("is-visible");
+      root.style.removeProperty("--dream-right-panel-right");
     }
     companion.classList.toggle("is-visible", summaryOpen);
     let chrome = document.getElementById(CHROME_ID);
@@ -921,9 +1027,12 @@
     document.querySelectorAll(".qq-skin-home").forEach((node) => node.classList.remove("qq-skin-home"));
     document.querySelectorAll(".qq-skin-home-shell").forEach((node) => node.classList.remove("qq-skin-home-shell"));
     document.querySelectorAll(".qq-skin-home-utility").forEach((node) => node.classList.remove("qq-skin-home-utility"));
+    document.querySelectorAll(".qq-skin-section-bar").forEach((node) => node.classList.remove("qq-skin-section-bar"));
     document.getElementById(STYLE_ID)?.remove();
     document.getElementById(CHROME_ID)?.remove();
     document.getElementById(COMPANION_ID)?.remove();
+    document.getElementById(HOME_PET_ID)?.remove();
+    document.getElementById(RIGHT_TRAY_ID)?.remove();
     document.getElementById(RETRO_SHELL_ID)?.remove();
     document.getElementById(RETRO_PROFILE_ID)?.remove();
     document.querySelectorAll(".dream-retro-profile-host").forEach((node) =>

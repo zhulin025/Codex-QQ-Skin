@@ -6,21 +6,36 @@
 
 ## 安装
 
+安装前请确保官方 Codex/ChatGPT 桌面端至少成功启动过一次，并完全退出 Codex。项目不要求另行安装 Node.js。
+
+### 安装方式 1：通过终端安装（推荐）
+
+1. 在 GitHub 项目页点击 **Code → Download ZIP**，下载后解压。
+2. 打开“终端”，依次执行：
+
+```bash
+cd ~/Downloads/Codex-QQ-Skin
+xattr -dr com.apple.quarantine .
+chmod +x ./*.command scripts/*.sh
+./scripts/install-qq-skin-macos.sh
+```
+
+如果项目不在 `~/Downloads/Codex-QQ-Skin`，请输入 `cd `（末尾保留空格），将解压后的项目文件夹拖进终端窗口，然后按回车，再执行后面三条命令。
+
+`xattr` 命令用于移除 GitHub 下载文件的 macOS 隔离标记。请只对确认来自本项目官方仓库的文件执行该命令，不需要使用 `sudo`。
+
+### 安装方式 2：双击命令文件
+
 1. 在 GitHub 项目页点击 **Code → Download ZIP**，下载后解压。
 2. 完全退出 Codex。
 3. 双击 `Install Codex QQ Skin.command`。
-4. 如果 macOS 提示无法验证开发者，请右键该文件，选择“打开”，再确认一次。
-5. 等待安装完成，然后使用桌面上生成的 `Codex QQ Skin.command` 启动主题版 Codex。
+4. 等待安装完成，然后使用桌面上生成的 `Codex QQ Skin.command` 启动主题版 Codex。
 
-安装前请确保官方 Codex/ChatGPT 桌面端至少成功启动过一次。通常不需要打开终端，也不需要另行安装 Node.js。
+如果 macOS 提示“Apple 无法验证”：
 
-如需通过终端安装：
-
-```bash
-cd Codex-QQ-Skin
-chmod +x ./*.command scripts/*.sh tests/*.sh
-./scripts/install-qq-skin-macos.sh
-```
+1. 先右键 `Install Codex QQ Skin.command`，选择“打开”，然后再次确认。
+2. 如果仍被拦截，请打开“系统设置 → 隐私与安全性”，在安全提示处点击“仍要打开”并完成身份验证。
+3. 如果系统没有显示“仍要打开”，请改用上面的“安装方式 1”，通过 `xattr` 命令移除隔离标记后安装。
 
 运行引擎会安装到 `~/.codex/codex-qq-skin-studio`，主题和运行状态保存在 `~/Library/Application Support/CodexQQSkin`。
 

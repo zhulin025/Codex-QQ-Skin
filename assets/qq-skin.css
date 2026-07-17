@@ -184,7 +184,7 @@ html.codex-qq-skin body {
   color: var(--ds-text) !important;
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Microsoft YaHei UI", "Segoe UI", system-ui, sans-serif !important;
   height: 100vh !important;
-  padding: 72px 12px 12px !important;
+  padding: 72px 20px 16px !important;
   box-sizing: border-box !important;
   overflow: hidden !important;
 }
@@ -194,10 +194,14 @@ html.codex-qq-skin body::before {
 }
 
 html.codex-qq-skin body > #root {
-  width: calc(100vw - 24px) !important;
-  height: calc(100vh - 84px) !important;
+  /* Keep native UI above the decorative right tray (tray z-index must stay lower). */
+  position: relative !important;
+  z-index: 3 !important;
+  width: calc(100vw - 40px) !important;
+  height: calc(100vh - 88px) !important;
   min-width: 0 !important;
   min-height: 0 !important;
+  background: transparent !important;
 }
 
 html.codex-qq-skin body > #root > div:first-of-type {
@@ -225,12 +229,12 @@ html.codex-qq-skin body > #root > div:first-of-type {
   content: "";
   position: absolute;
   z-index: 2;
-  top: 0;
+  top: 70px;
   bottom: 0;
-  width: 8px;
+  width: 14px;
   background:
     linear-gradient(90deg, #0865c7 0 2px, #63aff5 2px 3px,
-      #d9efff 3px 4px, #398fdc 4px 6px, #0759b5 6px 8px);
+      #d9efff 3px 4px, #6fb4ec 4px 7px, #3d92dd 7px 11px, #0b67c4 11px 13px, #0759b5 13px 14px);
   box-shadow: 0 0 4px rgb(5 67 142 / .45);
 }
 
@@ -284,7 +288,7 @@ html.codex-qq-skin body > #root > div:first-of-type {
 
 .dream-retro-toolbar {
   position: absolute;
-  inset: 41px 8px auto;
+  inset: 41px 4px auto;
   height: 29px;
   display: flex;
   align-items: center;
@@ -316,12 +320,12 @@ html.codex-qq-skin body > #root > div:first-of-type {
 
 .dream-retro-body-frame {
   position: absolute;
-  inset: 72px 0 0;
+  inset: 70px 0 0;
   border: solid transparent;
-  border-width: 0 0 10px;
+  border-width: 0 0 14px;
   border-image-source: var(--dream-retro-frame);
   border-image-slice: 110 34 34 34;
-  border-image-width: 0 0 10px;
+  border-image-width: 0 0 14px;
   border-image-repeat: stretch;
   box-shadow:
     inset 0 0 0 1px rgb(255 255 255 / .38),
@@ -425,7 +429,7 @@ html.codex-qq-skin body > #root > div:first-of-type {
 
 @media (max-width: 760px) {
   html.codex-qq-skin body { padding-top: 64px !important; }
-  html.codex-qq-skin body > #root { height: calc(100vh - 76px) !important; }
+  html.codex-qq-skin body > #root { height: calc(100vh - 80px) !important; }
   .dream-retro-titlebar { height: 35px; }
   .dream-retro-title-penguin { left: 76px; width: 31px; height: 31px; }
   .dream-retro-titlebar strong {
@@ -435,8 +439,10 @@ html.codex-qq-skin body > #root > div:first-of-type {
     font-size: 16px;
     line-height: 34px;
   }
-  .dream-retro-toolbar { inset: 38px 8px auto; height: 24px; gap: 14px; font-size: 11px; }
-  .dream-retro-body-frame { inset: 64px 0 0; }
+  .dream-retro-toolbar { inset: 38px 4px auto; height: 24px; gap: 14px; font-size: 11px; }
+  .dream-retro-body-frame { inset: 62px 0 0; }
+  #codex-qq-skin-retro-shell::before,
+  #codex-qq-skin-retro-shell::after { top: 62px; }
 }
 
 html.codex-qq-skin aside.app-shell-left-panel {
@@ -694,15 +700,44 @@ html.codex-qq-skin main.main-surface > header.app-header-tint {
   border-radius: 16px 0 0 0;
 }
 
+/* Full-height blue tray behind the native Output/Source panel and companion.
+   Wider than the white cards so their left borders no longer sit on the tray edge. */
+#codex-qq-skin-right-tray {
+  position: fixed;
+  /* Must stay below body > #root (z-index: 3). A higher tray paints over Output/Source
+     while pointer-events:none still lets clicks through — the “invisible but clickable” bug. */
+  z-index: 1;
+  top: 70px;
+  bottom: 12px;
+  overflow: hidden;
+  border: 1px solid rgb(46 108 172 / .78);
+  border-radius: 8px 4px 8px 8px;
+  background:
+    linear-gradient(180deg, rgb(214 234 251 / .97) 0%, rgb(196 224 247 / .96) 48%, rgb(210 232 250 / .97) 100%);
+  box-shadow:
+    inset 0 0 0 1px rgb(255 255 255 / .62),
+    0 10px 28px rgb(20 62 108 / .18);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity .18s ease, visibility 0s linear .18s;
+}
+
+#codex-qq-skin-right-tray.is-visible {
+  opacity: 1;
+  visibility: visible;
+  transition-delay: 0s;
+}
+
 /* Classic three-pane companion rail. Codex owns the pinned summary panel in
    the upper-right; this non-interactive card occupies only the lower section. */
 #codex-qq-skin-companion {
   --dream-companion-height: clamp(250px, 36vh, 318px);
   position: fixed;
-  right: 12px;
-  bottom: 12px;
+  right: var(--dream-right-panel-right, 20px);
+  bottom: calc(12px + var(--dream-right-tray-inset, 10px));
   z-index: 42;
-  width: min(var(--dream-summary-panel-width, var(--dream-right-panel-width, 300px)), calc(100vw - 24px));
+  width: min(var(--dream-summary-panel-width, var(--dream-right-panel-width, 300px)), calc(100vw - 60px));
   height: var(--dream-companion-height);
   display: grid;
   grid-template-rows: 34px minmax(0, 1fr) 32px;
@@ -738,7 +773,13 @@ html.codex-qq-skin:has(input[placeholder*="设置"])
 html.codex-qq-skin:has(input[placeholder*="設定"])
   #codex-qq-skin-companion,
 html.codex-qq-skin:has(input[placeholder*="settings" i])
-  #codex-qq-skin-companion {
+  #codex-qq-skin-companion,
+html.codex-qq-skin:has(input[placeholder*="设置"])
+  #codex-qq-skin-right-tray,
+html.codex-qq-skin:has(input[placeholder*="設定"])
+  #codex-qq-skin-right-tray,
+html.codex-qq-skin:has(input[placeholder*="settings" i])
+  #codex-qq-skin-right-tray {
   display: none !important;
 }
 
@@ -772,6 +813,7 @@ html.codex-qq-skin:has(input[placeholder*="settings" i])
   min-height: 0;
   place-items: center;
   overflow: hidden;
+  padding: 10px 12px 6px;
   background:
     radial-gradient(circle at 50% 44%, rgb(255 255 255 / .94) 0 22%, transparent 58%),
     linear-gradient(135deg, rgb(217 239 255 / .92), rgb(242 248 255 / .94));
@@ -799,10 +841,11 @@ html.codex-qq-skin:has(input[placeholder*="settings" i])
   position: relative;
   z-index: 2;
   width: auto;
-  height: 94%;
-  max-width: 92%;
+  height: 100%;
+  max-height: 168px;
+  max-width: 72%;
   object-fit: contain;
-  object-position: center bottom;
+  object-position: center;
   filter: drop-shadow(0 10px 12px rgb(28 78 139 / .24));
   animation: qq-skin-pet-float 4.8s ease-in-out infinite;
 }
@@ -858,19 +901,63 @@ html.codex-qq-skin[data-dream-three-pane="true"] aside.app-shell-left-panel {
   color: #17395f !important;
 }
 
-/* Codex reserves its native 46px application header inside task routes. The
-   retro title + toolbar already occupy that space, so lift only task content;
-   settings and other split views retain their native geometry. */
+/* Codex reserves its native 46px application header. The retro title + toolbar
+   already occupy that space, so lift task and settings content into the framed
+   body instead of leaving an empty band under the title bar. */
 html.codex-qq-skin[data-dream-task-route="true"]
-  aside.app-shell-left-panel > .max-w-full.overflow-hidden {
+  aside.app-shell-left-panel > .max-w-full.overflow-hidden,
+html.codex-qq-skin:is(
+  :has(input[placeholder*="设置"]),
+  :has(input[placeholder*="設定"]),
+  :has(input[placeholder*="settings" i])
+)
+  aside.app-shell-left-panel > .max-w-full.overflow-hidden,
+html.codex-qq-skin:is(
+  :has(input[placeholder*="设置"]),
+  :has(input[placeholder*="設定"]),
+  :has(input[placeholder*="settings" i])
+)
+  main.main-surface > .max-w-full.overflow-hidden,
+html.codex-qq-skin:is(
+  :has(input[placeholder*="设置"]),
+  :has(input[placeholder*="設定"]),
+  :has(input[placeholder*="settings" i])
+)
+  main.main-surface > div:first-of-type {
   position: relative !important;
   top: -46px !important;
   height: calc(100% + 46px) !important;
+  margin-top: 0 !important;
+  padding-top: 0 !important;
+}
+
+/* Settings: collapse the empty native header band above「返回应用」. */
+html.codex-qq-skin:is(
+  :has(input[placeholder*="设置"]),
+  :has(input[placeholder*="設定"]),
+  :has(input[placeholder*="settings" i])
+)
+  main.main-surface > header.app-header-tint {
+  display: none !important;
+  height: 0 !important;
+  min-height: 0 !important;
+  max-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  overflow: hidden !important;
 }
 
 html.codex-qq-skin[data-dream-task-route="true"] main.main-surface
+  .app-shell-main-content-frame,
+html.codex-qq-skin:is(
+  :has(input[placeholder*="设置"]),
+  :has(input[placeholder*="設定"]),
+  :has(input[placeholder*="settings" i])
+) main.main-surface
   .app-shell-main-content-frame {
   margin-top: 0 !important;
+  padding-top: 0 !important;
 }
 
 html.codex-qq-skin[data-dream-three-pane="true"] main.main-surface > header.app-header-tint {
@@ -879,20 +966,51 @@ html.codex-qq-skin[data-dream-three-pane="true"] main.main-surface > header.app-
 }
 
 html.codex-qq-skin[data-dream-three-pane="true"] [data-pip-obstacle="thread-summary-panel"] {
-  height: calc(100vh - clamp(250px, 36vh, 318px) - 64px) !important;
-  max-height: calc(100vh - clamp(250px, 36vh, 318px) - 64px) !important;
+  position: relative !important;
+  z-index: 4 !important;
+  isolation: isolate !important;
+  height: calc(100vh - clamp(250px, 36vh, 318px) - 92px) !important;
+  max-height: calc(100vh - clamp(250px, 36vh, 318px) - 92px) !important;
   min-height: 220px !important;
   align-self: flex-start !important;
-  border-color: rgb(64 122 187 / .72) !important;
-  background: rgb(238 247 255 / .97) !important;
-  color: #234d78 !important;
-  box-shadow: 0 12px 30px rgb(20 62 108 / .22) !important;
+  margin-top: 8px !important;
+  margin-right: var(--dream-right-tray-inset, 14px) !important;
+  border: 1px solid rgb(64 122 187 / .55) !important;
+  border-radius: 8px !important;
+  background: #f8fcff !important;
+  color: #17395f !important;
+  box-shadow:
+    0 8px 20px rgb(20 62 108 / .14),
+    inset 0 0 0 1px rgb(255 255 255 / .78) !important;
+}
+
+/* Let the blue tray show through around Output/Source instead of opaque shells. */
+html.codex-qq-skin[data-dream-three-pane="true"]
+  main.main-surface,
+html.codex-qq-skin[data-dream-three-pane="true"]
+  main.main-surface > .max-w-full.overflow-hidden,
+html.codex-qq-skin[data-dream-three-pane="true"]
+  .app-shell-main-content-frame {
+  background: transparent !important;
+}
+
+html.codex-qq-skin[data-dream-three-pane="true"]
+  [data-pip-obstacle="thread-summary-panel"],
+html.codex-qq-skin[data-dream-three-pane="true"]
+  [data-pip-obstacle="thread-summary-panel"] * {
+  color: #17395f !important;
+}
+
+html.codex-qq-skin[data-dream-three-pane="true"]
+  [data-pip-obstacle="thread-summary-panel"] svg {
+  color: #3f74ab !important;
+  opacity: 1 !important;
 }
 
 /* Classic blue-silver workspace. These selectors use Codex's stable action
    and conversation attributes so native navigation, drag/drop and virtualized
    turn measurement keep working. */
-html.codex-qq-skin[data-dream-shell="light"][data-dream-three-pane="true"] {
+html.codex-qq-skin[data-dream-shell="light"] {
   --dream-classic-blue: #2d74bc;
   --dream-classic-line: rgb(70 125 184 / .58);
   --dream-classic-line-soft: rgb(105 151 196 / .34);
@@ -910,7 +1028,7 @@ html.codex-qq-skin[data-dream-shell="light"][data-dream-three-pane="true"]
   background: var(--dream-classic-panel) !important;
 }
 
-html.codex-qq-skin[data-dream-shell="light"][data-dream-three-pane="true"]
+html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], :has(main.main-surface.qq-skin-home-shell))
   aside.app-shell-left-panel {
   border-right: 1px solid rgb(46 108 172 / .72) !important;
   border-radius: 0 !important;
@@ -921,41 +1039,116 @@ html.codex-qq-skin[data-dream-shell="light"][data-dream-three-pane="true"]
     4px 0 14px rgb(41 91 143 / .12) !important;
 }
 
-html.codex-qq-skin[data-dream-shell="light"][data-dream-three-pane="true"]
-  aside.app-shell-left-panel nav {
-  padding-inline: 4px !important;
+html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], :has(main.main-surface.qq-skin-home-shell))
+  aside.app-shell-left-panel nav,
+html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], :has(main.main-surface.qq-skin-home-shell))
+  aside.app-shell-left-panel [role="list"],
+html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], :has(main.main-surface.qq-skin-home-shell))
+  aside.app-shell-left-panel .overflow-y-auto,
+html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], :has(main.main-surface.qq-skin-home-shell))
+  aside.app-shell-left-panel [class*="overflow-y"] {
+  width: 100% !important;
+  max-width: none !important;
+  padding-inline: 0 !important;
+  box-sizing: border-box !important;
 }
 
-/* Sidebar section captions: 置顶 / 项目 / 任务 become full-width XP bars. */
-html.codex-qq-skin[data-dream-shell="light"][data-dream-three-pane="true"]
-  aside.app-shell-left-panel [data-app-action-sidebar-section-toggle] {
-  width: calc(100% + 12px) !important;
+/* Full-bleed XP bars for 置顶 / 项目 / 任务.
+   Target the shared `nav-section-title` row (JS also marks `.qq-skin-section-bar`).
+   Break out of `px-row-x` / `pl-2` so all three bars share the aside width. */
+html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], :has(main.main-surface.qq-skin-home-shell))
+  aside.app-shell-left-panel .qq-skin-section-bar,
+html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], :has(main.main-surface.qq-skin-home-shell))
+  aside.app-shell-left-panel [class*="nav-section-title"] {
+  display: flex !important;
+  align-items: center !important;
+  align-self: stretch !important;
+  width: calc(100% + 16px) !important;
+  min-width: calc(100% + 16px) !important;
   max-width: none !important;
-  flex: 0 0 calc(100% + 12px) !important;
   min-height: 31px !important;
-  margin: 5px -6px 4px !important;
-  padding: 5px 11px !important;
+  margin: 5px 0 4px !important;
+  margin-left: -8px !important;
+  margin-right: -8px !important;
+  padding: 0 8px 0 8px !important;
   border-top: 1px solid rgb(98 151 204 / .46) !important;
   border-bottom: 1px solid rgb(98 151 204 / .52) !important;
   border-radius: 0 !important;
   background:
     linear-gradient(180deg, #f8fcff 0%, #e6f2fd 48%, #d4e8fa 50%, #eef7ff 100%) !important;
+  box-sizing: border-box !important;
+}
+
+/* Inner flex-1 wrappers around the toggle must not keep their own inset bar. */
+html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], :has(main.main-surface.qq-skin-home-shell))
+  aside.app-shell-left-panel [class*="nav-section-title"]
+  *:has(> [data-app-action-sidebar-section-toggle]),
+html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], :has(main.main-surface.qq-skin-home-shell))
+  aside.app-shell-left-panel .qq-skin-section-bar
+  *:has(> [data-app-action-sidebar-section-toggle]),
+html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], :has(main.main-surface.qq-skin-home-shell))
+  aside.app-shell-left-panel [class*="nav-section-title"]
+  > *:not(button),
+html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], :has(main.main-surface.qq-skin-home-shell))
+  aside.app-shell-left-panel .qq-skin-section-bar
+  > *:not(button) {
+  width: auto !important;
+  min-width: 0 !important;
+  margin: 0 !important;
+  padding-block: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  flex: 1 1 auto !important;
+}
+
+html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], :has(main.main-surface.qq-skin-home-shell))
+  aside.app-shell-left-panel [data-app-action-sidebar-section-toggle] {
+  display: flex !important;
+  flex: 1 1 auto !important;
+  width: auto !important;
+  min-width: 0 !important;
+  max-width: none !important;
+  align-self: stretch !important;
+  min-height: 31px !important;
+  margin: 0 !important;
+  padding: 5px 10px !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
   color: #285f99 !important;
   font-size: 13px !important;
   font-weight: 780 !important;
   text-shadow: 0 1px rgb(255 255 255 / .96) !important;
+  box-shadow: none !important;
+  box-sizing: border-box !important;
 }
 
-html.codex-qq-skin[data-dream-shell="light"][data-dream-three-pane="true"]
+html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], :has(main.main-surface.qq-skin-home-shell))
+  aside.app-shell-left-panel .qq-skin-section-bar > button:not([data-app-action-sidebar-section-toggle]),
+html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], :has(main.main-surface.qq-skin-home-shell))
+  aside.app-shell-left-panel *:has(> [data-app-action-sidebar-section-toggle])
+  > button:not([data-app-action-sidebar-section-toggle]) {
+  flex: 0 0 auto !important;
+  color: #3f74ab !important;
+  background: transparent !important;
+}
+
+html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], :has(main.main-surface.qq-skin-home-shell))
   aside.app-shell-left-panel [data-app-action-sidebar-section-toggle] svg {
   color: #477eaf !important;
   opacity: .86 !important;
 }
 
-/* Each project is a small folder panel; its native task rows remain clickable. */
-html.codex-qq-skin[data-dream-shell="light"][data-dream-three-pane="true"]
+/* Each project is a small folder panel; stretch to the full sidebar width. */
+html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], :has(main.main-surface.qq-skin-home-shell))
   aside.app-shell-left-panel [data-sidebar-project-kind][role="listitem"] {
-  margin: 4px 3px 9px !important;
+  display: block !important;
+  align-self: stretch !important;
+  width: calc(100% - 8px) !important;
+  min-width: calc(100% - 8px) !important;
+  max-width: none !important;
+  margin: 4px 4px 9px !important;
   overflow: hidden !important;
   border: 1px solid var(--dream-classic-line-soft) !important;
   border-radius: 6px !important;
@@ -963,10 +1156,15 @@ html.codex-qq-skin[data-dream-shell="light"][data-dream-three-pane="true"]
   box-shadow:
     0 2px 6px rgb(52 102 153 / .09),
     inset 0 0 0 1px rgb(255 255 255 / .72) !important;
+  box-sizing: border-box !important;
 }
 
-html.codex-qq-skin[data-dream-shell="light"][data-dream-three-pane="true"]
+html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], :has(main.main-surface.qq-skin-home-shell))
   aside.app-shell-left-panel [data-app-action-sidebar-project-row] {
+  display: flex !important;
+  width: 100% !important;
+  min-width: 100% !important;
+  max-width: none !important;
   min-height: 32px !important;
   border-radius: 5px 5px 0 0 !important;
   background:
@@ -974,16 +1172,22 @@ html.codex-qq-skin[data-dream-shell="light"][data-dream-three-pane="true"]
   color: #204f7d !important;
   font-weight: 720 !important;
   box-shadow: inset 0 -1px var(--dream-classic-line-soft) !important;
+  box-sizing: border-box !important;
 }
 
-html.codex-qq-skin[data-dream-shell="light"][data-dream-three-pane="true"]
+/* Keep the native transparent/outline folder glyph. */
+html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], :has(main.main-surface.qq-skin-home-shell))
   aside.app-shell-left-panel [data-app-action-sidebar-project-row] [data-sidebar-project-kind] {
-  color: #d49b32 !important;
-  filter: drop-shadow(0 1px rgb(255 255 255 / .92));
+  color: #5b87b4 !important;
+  opacity: .92 !important;
+  filter: none;
 }
 
-html.codex-qq-skin[data-dream-shell="light"][data-dream-three-pane="true"]
+html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], :has(main.main-surface.qq-skin-home-shell))
   aside.app-shell-left-panel [data-app-action-sidebar-thread-row] {
+  display: flex !important;
+  width: calc(100% - 8px) !important;
+  min-width: calc(100% - 8px) !important;
   min-height: 29px !important;
   margin: 2px 4px !important;
   padding-inline: 9px 5px !important;
@@ -992,15 +1196,16 @@ html.codex-qq-skin[data-dream-shell="light"][data-dream-three-pane="true"]
   background: rgb(244 249 253 / .82) !important;
   color: #315b82 !important;
   box-shadow: inset 0 1px rgb(255 255 255 / .82) !important;
+  box-sizing: border-box !important;
 }
 
-html.codex-qq-skin[data-dream-shell="light"][data-dream-three-pane="true"]
+html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], :has(main.main-surface.qq-skin-home-shell))
   aside.app-shell-left-panel [data-app-action-sidebar-thread-row]:hover {
   border-color: rgb(81 139 194 / .34) !important;
   background: #e6f2fd !important;
 }
 
-html.codex-qq-skin[data-dream-shell="light"][data-dream-three-pane="true"]
+html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], :has(main.main-surface.qq-skin-home-shell))
   aside.app-shell-left-panel [data-app-action-sidebar-thread-row][aria-current="page"] {
   border-color: rgb(57 125 190 / .54) !important;
   background: linear-gradient(180deg, #deeffd, #c8e3f9) !important;
@@ -1189,19 +1394,23 @@ html.codex-qq-skin [role="main"] {
 
 html.codex-qq-skin .qq-skin-home {
   --thread-content-max-width: min(1180px, calc(100cqw - 44px)) !important;
-  overflow-x: hidden !important;
+  /* Do not use overflow-x:hidden here — it forces overflow-y to clip and hides the
+     absolutely positioned shortcut cards below the hero. */
+  overflow: visible !important;
 }
 
 .qq-skin-home > div:first-child {
   min-height: 100% !important;
   padding-top: 15px !important;
+  overflow: visible !important;
 }
 
 .qq-skin-home > div:first-child > div:first-child {
-  flex: 0 0 440px !important;
-  min-height: 440px !important;
+  flex: 0 0 auto !important;
+  min-height: 380px !important;
   align-items: flex-start !important;
-  padding-bottom: 0 !important;
+  padding-bottom: 148px !important;
+  overflow: visible !important;
 }
 
 .qq-skin-home > div:first-child > div:first-child > div:first-child {
@@ -1342,10 +1551,13 @@ html.codex-qq-skin:is([data-dream-art-safe="center"], [data-dream-art-safe-area=
 }
 
 .qq-skin-home > div:first-child > div:first-child > div:first-child > div:nth-child(2) {
+  position: absolute !important;
   left: 14px !important;
   right: 14px !important;
   top: 100% !important;
   margin-top: 13px !important;
+  z-index: 2 !important;
+  overflow: visible !important;
 }
 
 .qq-skin-home .group\/home-suggestions { overflow: visible !important; }
@@ -1712,6 +1924,267 @@ html.codex-qq-skin [data-message-author-role] { border-radius: 16px; }
   .qq-skin-home [data-feature="game-source"]::before { margin-bottom: 7px; font-size: 10px; }
   .qq-skin-home [data-feature="game-source"]::after { margin-top: 9px; font-size: 11px; }
   .qq-skin-home .group\/home-suggestions button { min-height: 112px !important; font-size: 12px !important; }
+}
+
+/* ——— Classic blue-silver home (new-task page) ——— */
+html.codex-qq-skin[data-dream-shell="light"] main.main-surface.qq-skin-home-shell {
+  background:
+    radial-gradient(circle at 12% 18%, rgb(255 255 255 / .75), transparent 28%),
+    radial-gradient(circle at 88% 72%, rgb(185 220 255 / .45), transparent 32%),
+    linear-gradient(180deg, #eef7ff 0%, #e2f0fc 48%, #f4f9fd 100%) !important;
+  border: 1px solid rgb(46 108 172 / .62) !important;
+  border-radius: 0 !important;
+  box-shadow: inset 0 1px rgb(255 255 255 / .82) !important;
+}
+
+html.codex-qq-skin[data-dream-shell="light"] main.main-surface.qq-skin-home-shell
+  > header.app-header-tint {
+  background: transparent !important;
+  border-bottom: 0 !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+}
+
+html.codex-qq-skin[data-dream-shell="light"]
+  .qq-skin-home > div:first-child {
+  padding-top: 18px !important;
+}
+
+html.codex-qq-skin[data-dream-shell="light"]
+  .qq-skin-home > div:first-child > div:first-child {
+  flex-basis: auto !important;
+  min-height: 360px !important;
+  padding-bottom: 148px !important;
+  overflow: visible !important;
+}
+
+html.codex-qq-skin[data-dream-shell="light"]
+  .qq-skin-home > div:first-child > div:first-child > div:first-child {
+  width: calc(100% - 36px) !important;
+  height: clamp(220px, 28cqw, 300px) !important;
+  min-height: 220px !important;
+  /* Keep visible so the four shortcut cards (top:100%) are not clipped. */
+  overflow: visible !important;
+  border: 1px solid #4e8ec8 !important;
+  border-radius: 10px !important;
+  background-color: #eaf5ff !important;
+  background-image:
+    radial-gradient(circle at 12% 28%, rgb(255 255 255 / .95) 0 2px, transparent 3px),
+    radial-gradient(circle at 22% 62%, rgb(255 255 255 / .80) 0 1.5px, transparent 2.5px),
+    radial-gradient(circle at 78% 24%, rgb(255 255 255 / .92) 0 2px, transparent 3px),
+    radial-gradient(circle at 86% 58%, rgb(255 255 255 / .78) 0 1.5px, transparent 2.5px),
+    radial-gradient(circle at 64% 78%, rgb(255 255 255 / .70) 0 1px, transparent 2px),
+    radial-gradient(circle at 34% 18%, rgb(170 214 255 / .55) 0 18px, transparent 40px),
+    radial-gradient(circle at 70% 70%, rgb(190 226 255 / .48) 0 24px, transparent 48px),
+    linear-gradient(180deg, #f7fbff 0%, #dff0ff 46%, #cfe7fb 100%) !important;
+  background-repeat: no-repeat !important;
+  background-position: center !important;
+  background-size: auto, auto, auto, auto, auto, auto, auto, 100% 100% !important;
+  box-shadow:
+    0 6px 18px rgb(44 91 137 / .16),
+    inset 0 0 0 1px rgb(255 255 255 / .88),
+    inset 0 1px rgb(255 255 255 / .95) !important;
+}
+
+html.codex-qq-skin[data-dream-shell="light"]
+  .qq-skin-home > div:first-child > div:first-child > div:first-child::before {
+  inset: 0 !important;
+  width: auto !important;
+  border-radius: 9px !important;
+  background:
+    radial-gradient(circle at 18% 36%, rgb(255 255 255 / .55), transparent 26%),
+    radial-gradient(circle at 82% 42%, rgb(255 255 255 / .35), transparent 30%),
+    linear-gradient(90deg, rgb(236 247 255 / .18), transparent 28%, transparent 72%, rgb(236 247 255 / .12)) !important;
+}
+
+html.codex-qq-skin[data-dream-shell="light"]
+  .qq-skin-home > div:first-child > div:first-child > div:first-child > div:first-child {
+  justify-content: center !important;
+  padding: 0 190px 0 36px !important;
+}
+
+html.codex-qq-skin[data-dream-shell="light"]
+  .qq-skin-home > div:first-child > div:first-child > div:first-child > div:first-child > div:first-child {
+  width: min(72%, 720px) !important;
+  align-items: center !important;
+  text-align: center !important;
+}
+
+html.codex-qq-skin[data-dream-shell="light"]
+  .qq-skin-home [data-feature="game-source"] {
+  color: #17395f !important;
+  font-size: clamp(22px, 2.1vw, 30px) !important;
+  text-shadow: 0 1px rgb(255 255 255 / .92) !important;
+}
+
+html.codex-qq-skin[data-dream-shell="light"]
+  .qq-skin-home [data-feature="game-source"]::after {
+  margin-top: 14px;
+  color: #4d7398;
+  font-size: 14px;
+}
+
+html.codex-qq-skin[data-dream-shell="light"]
+  .qq-skin-home [data-feature="game-source"] button {
+  margin: 0 6px;
+  padding: 3px 12px 4px;
+  border: 1px solid #6aa0d4;
+  border-radius: 8px;
+  background: linear-gradient(180deg, #ffffff, #e5f1fc);
+  color: #1d558f !important;
+  box-shadow:
+    inset 0 1px rgb(255 255 255 / .96),
+    0 1px 2px rgb(48 105 159 / .14);
+}
+
+/* Codex pet sits on the right of the new-task hero card. */
+#codex-qq-skin-home-pet,
+.qq-skin-home-pet {
+  position: absolute;
+  z-index: 3;
+  right: 28px;
+  bottom: 10px;
+  width: auto;
+  height: min(78%, 210px);
+  max-width: 170px;
+  object-fit: contain;
+  object-position: center bottom;
+  pointer-events: none;
+  filter: drop-shadow(0 8px 10px rgb(28 78 139 / .22));
+  animation: qq-skin-pet-float 4.8s ease-in-out infinite;
+}
+
+html.codex-qq-skin[data-dream-shell="light"]
+  .qq-skin-home > div:first-child > div:first-child > div:first-child > div:nth-child(2) {
+  position: absolute !important;
+  left: 18px !important;
+  right: 18px !important;
+  top: 100% !important;
+  margin-top: 16px !important;
+  z-index: 2 !important;
+  overflow: visible !important;
+}
+
+html.codex-qq-skin[data-dream-shell="light"]
+  .qq-skin-home .group\/home-suggestions {
+  gap: 12px !important;
+}
+
+html.codex-qq-skin[data-dream-shell="light"]
+  .qq-skin-home .group\/home-suggestions button {
+  min-height: 124px !important;
+  padding: 16px 12px 14px !important;
+  border: 1px solid #7eb0de !important;
+  border-radius: 10px !important;
+  background:
+    linear-gradient(180deg, #ffffff 0%, #f3f9ff 48%, #e4f1fc 100%) !important;
+  color: #1f507d !important;
+  font-weight: 700 !important;
+  box-shadow:
+    0 3px 8px rgb(52 102 153 / .12),
+    inset 0 0 0 1px rgb(255 255 255 / .92),
+    inset 0 1px rgb(255 255 255 / .98) !important;
+  backdrop-filter: none !important;
+}
+
+html.codex-qq-skin[data-dream-shell="light"]
+  .qq-skin-home .group\/home-suggestions button:hover {
+  transform: translateY(-2px) !important;
+  border-color: #4f91cb !important;
+  background:
+    linear-gradient(180deg, #ffffff 0%, #eef6ff 48%, #d9ecfb 100%) !important;
+  box-shadow:
+    0 6px 14px rgb(48 105 159 / .18),
+    inset 0 0 0 1px rgb(255 255 255 / .96) !important;
+}
+
+html.codex-qq-skin[data-dream-shell="light"]
+  .qq-skin-home .group\/home-suggestions button > span:first-child > span:first-child {
+  width: 44px;
+  height: 44px;
+  border: 1px solid #6aa0d4;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 35% 30%, rgb(255 255 255 / .95), transparent 42%),
+    linear-gradient(180deg, #eaf5ff, #cfe6fb);
+  color: #1f64ad !important;
+  box-shadow:
+    inset 0 1px rgb(255 255 255 / .96),
+    0 2px 4px rgb(48 105 159 / .12);
+}
+
+html.codex-qq-skin[data-dream-shell="light"]
+  .qq-skin-home .group\/home-suggestions button svg {
+  width: 22px !important;
+  height: 22px !important;
+  color: #1f64ad !important;
+}
+
+html.codex-qq-skin[data-dream-shell="light"] .qq-skin-home-utility {
+  border-radius: 10px 10px 0 0 !important;
+  background: linear-gradient(180deg, #ffffff, #eef6fd) !important;
+  box-shadow:
+    inset 1px 0 #7eb0de,
+    inset -1px 0 #7eb0de,
+    inset 0 1px #7eb0de !important;
+  backdrop-filter: none !important;
+}
+
+html.codex-qq-skin[data-dream-shell="light"]
+  .qq-skin-home:has(.qq-skin-home-utility) .composer-surface-chrome {
+  border: 0 !important;
+  border-radius: 0 0 10px 10px !important;
+  background: linear-gradient(180deg, #ffffff, #f2f8fd) !important;
+  box-shadow:
+    0 5px 14px rgb(44 91 137 / .13),
+    inset 1px 0 #7eb0de,
+    inset -1px 0 #7eb0de,
+    inset 0 -1px #7eb0de !important;
+  backdrop-filter: none !important;
+}
+
+html.codex-qq-skin[data-dream-shell="light"]
+  .qq-skin-home div:has(> .horizontal-scroll-fade-mask .group\/project-selector) {
+  border: 1px solid #8bb8e0;
+  border-bottom: 0;
+  background: linear-gradient(180deg, #f8fcff, #e9f3fc) !important;
+}
+
+html.codex-qq-skin[data-dream-shell="light"]
+  .qq-skin-home .group\/project-selector > button {
+  border: 1px solid #6aa0d4 !important;
+  background: linear-gradient(180deg, #ffffff, #e5f1fc) !important;
+  color: #204f7d !important;
+  box-shadow: inset 0 1px rgb(255 255 255 / .92) !important;
+}
+
+@media (max-width: 1100px) {
+  html.codex-qq-skin[data-dream-shell="light"]
+    .qq-skin-home > div:first-child > div:first-child > div:first-child > div:first-child {
+    padding-right: 150px !important;
+  }
+  #codex-qq-skin-home-pet,
+  .qq-skin-home-pet {
+    right: 16px;
+    height: min(72%, 170px);
+    max-width: 132px;
+  }
+}
+
+@media (max-width: 820px) {
+  html.codex-qq-skin[data-dream-shell="light"]
+    .qq-skin-home > div:first-child > div:first-child > div:first-child > div:first-child {
+    padding: 0 22px 72px !important;
+  }
+  #codex-qq-skin-home-pet,
+  .qq-skin-home-pet {
+    right: 50%;
+    bottom: 4px;
+    height: 64px;
+    max-width: 86px;
+    transform: translateX(50%);
+    animation: none;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

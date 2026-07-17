@@ -26,7 +26,7 @@ START_ERROR_LOG="$STATE_ROOT/start-error.log"
 CODEX_APP_JOB_LABEL="com.openai.codex-qq-skin-studio.app"
 INJECTOR_JOB_LABEL="com.openai.codex-qq-skin-studio.injector"
 EXPECTED_CODEX_TEAM_ID="${CODEX_EXPECTED_TEAM_ID:-2DC432GLL2}"
-SKIN_VERSION="1.5.1"
+SKIN_VERSION="1.5.2"
 
 fail() {
   local message="$*"
@@ -174,7 +174,10 @@ codex_is_running() {
 }
 
 process_started_at() {
-  /bin/ps -p "$1" -o lstart= 2>/dev/null | /usr/bin/awk '{$1=$1; print}'
+  # LC_ALL=C keeps the lstart format stable across shells: a state file written
+  # from a Chinese-locale Terminal must still match when checked from a
+  # double-clicked .command (and vice versa).
+  /usr/bin/env LC_ALL=C /bin/ps -p "$1" -o lstart= 2>/dev/null | /usr/bin/awk '{$1=$1; print}'
 }
 
 recorded_injector_process_matches() {
@@ -469,6 +472,52 @@ stop_recorded_injector() {
     printf 'Could not stop the recorded QQ Skin injector (PID %s).\n' "$pid" >&2
     return 1
   fi
+  return 0
+}
+
+# Stop watchers whose command line still points at a known engine injector path.
+# Safe for rebrand cleanup (dream-skin → qq-skin): only processes that literally
+# run injector.mjs --watch from an install or repo path are signalled.
+# True when a process command line is one of our skin injectors.
+# Keep this loose: macOS `ps` often truncates argv, so requiring the full
+# "injector.mjs --watch --port" suffix leaves zombie injectors alive — and those
+# zombies keep re-applying an old in-memory CSS payload over the fresh one.
+is_skin_injector_command() {
+  local command_line="$1"
+  case "$command_line" in
+    *injector.mjs*)
+      case "$command_line" in
+        *codex-qq-skin*|*codex-dream-skin*|*codex-qq-skin-studio*|*codex-dream-skin-studio*|*codex-qq-skin/scripts*|*downloads/codex-qq-skin*)
+          return 0
+          ;;
+      esac
+      ;;
+  esac
+  return 1
+}
+
+stop_known_skin_injectors() {
+  local pid=""
+  local command_line=""
+
+  /bin/launchctl remove "$INJECTOR_JOB_LABEL" >/dev/null 2>&1 || true
+  /bin/launchctl remove "com.openai.codex-dream-skin-studio.injector" >/dev/null 2>&1 || true
+  /bin/launchctl remove "com.openai.codex-qq-skin-studio.injector" >/dev/null 2>&1 || true
+
+  while IFS= read -r pid command_line; do
+    [ -n "$pid" ] || continue
+    command_line="$(printf '%s' "$command_line" | /usr/bin/tr '[:upper:]' '[:lower:]')"
+    is_skin_injector_command "$command_line" || continue
+    /bin/kill -TERM "$pid" 2>/dev/null || true
+  done < <(/bin/ps -axo pid=,command= 2>/dev/null || true)
+
+  /bin/sleep 0.35
+  while IFS= read -r pid command_line; do
+    [ -n "$pid" ] || continue
+    command_line="$(printf '%s' "$command_line" | /usr/bin/tr '[:upper:]' '[:lower:]')"
+    is_skin_injector_command "$command_line" || continue
+    /bin/kill -KILL "$pid" 2>/dev/null || true
+  done < <(/bin/ps -axo pid=,command= 2>/dev/null || true)
   return 0
 }
 

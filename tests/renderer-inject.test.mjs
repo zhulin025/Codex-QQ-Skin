@@ -131,6 +131,41 @@ assert.match(
   "The classic three-pane skin must ship a dedicated Codex companion card.",
 );
 assert.match(
+  css,
+  /#codex-qq-skin-right-tray[\s\S]{0,700}top:\s*70px;/,
+  "The right tray must extend from under the title bar to the bottom chrome.",
+);
+assert.match(
+  css,
+  /#codex-qq-skin-right-tray[\s\S]{0,360}z-index:\s*1;/,
+  "The right tray must stay behind body > #root so Output/Source stay visible.",
+);
+assert.match(
+  css,
+  /body\s*>\s*#root\s*\{[\s\S]{0,220}z-index:\s*3 !important;/,
+  "Native root must stack above the decorative right tray.",
+);
+assert.match(
+  css,
+  /nav-section-title|\.qq-skin-section-bar/,
+  "Section bars must paint on the full nav-section-title row so 项目/任务 match 置顶 width.",
+);
+assert.match(
+  css,
+  /\.qq-skin-home[\s\S]{0,180}overflow:\s*visible !important;/,
+  "Home page must not clip the absolutely positioned shortcut cards.",
+);
+assert.match(
+  template,
+  /ensureSidebarSectionBars/,
+  "Renderer must mark full-width sidebar section bars for 置顶/项目/任务.",
+);
+assert.match(
+  css,
+  /#codex-qq-skin-home-pet|\.qq-skin-home-pet/,
+  "The new-task hero must reserve space for the Codex pet decoration.",
+);
+assert.match(
   template,
   /findPinnedSummaryToggle[\s\S]{0,1800}summaryToggle\.click\(\)/,
   "The renderer should open Codex's native pinned summary instead of cloning Outputs and Sources.",
@@ -169,7 +204,7 @@ assert.match(css, /\.dream-retro-toolbar[\s\S]{0,700}height:\s*29px;/,
   "The compact titlebar must be joined to a separate retro toolbar filler row.");
 assert.match(
   css,
-  /body\s*>\s*#root\s*\{[\s\S]{0,220}height:\s*calc\(100vh - 84px\) !important;/,
+  /body\s*>\s*#root\s*\{[\s\S]{0,220}height:\s*calc\(100vh - 88px\) !important;/,
   "The native root must shrink into the framed body instead of clipping the composer.",
 );
 assert.match(
@@ -177,8 +212,10 @@ assert.match(
   /#root\s*>\s*div:first-of-type[\s\S]{0,180}height:\s*100% !important;/,
   "Only the native top-level shell must inherit the framed height so settings split panes remain intact.",
 );
-assert.match(css, /data-dream-task-route="true"[\s\S]{0,180}top:\s*-46px !important;/,
-  "Only task routes should remove the native application-header offset.");
+assert.match(css, /data-dream-task-route="true"[\s\S]{0,900}top:\s*-46px !important;/,
+  "Task and settings routes should remove the native application-header offset.");
+assert.match(css, /placeholder\*="设置"[\s\S]{0,420}top:\s*-46px !important;/,
+  "Settings pages should also lift content under the retro title bar.");
 
 function createStyleDeclaration() {
   const values = new Map();
@@ -262,6 +299,20 @@ function createFixture(theme, {
       summaryButtonAttributes.set("aria-pressed", "true");
     },
   };
+  const summaryPanel = {
+    getBoundingClientRect() {
+      return {
+        left: viewportWidth - 332,
+        right: viewportWidth - 20,
+        top: 96,
+        bottom: 520,
+        width: 312,
+        height: 424,
+        x: viewportWidth - 332,
+        y: 96,
+      };
+    },
+  };
   const leftSidebarButtonAttributes = new Map([
     ["aria-label", leftSidebar === "closed" ? "显示边栏" : "隐藏边栏"],
   ]);
@@ -314,6 +365,12 @@ function createFixture(theme, {
     getElementById(id) { return nodes.get(id) ?? null; },
     querySelector(selector) {
       if (selector === "main.main-surface" || selector === "main") return shellMain;
+      if (
+        selector === '[data-pip-obstacle="thread-summary-panel"]' &&
+        summaryButtonAttributes.get("aria-pressed") === "true"
+      ) {
+        return summaryPanel;
+      }
       return null;
     },
     querySelectorAll(selector) {
@@ -449,6 +506,7 @@ assert.equal(defaults.attributes.get("data-dream-art-task-mode"), "ambient");
 assert.equal(defaults.attributes.get("data-dream-art-ready"), "false");
 assert.equal(defaults.attributes.get("data-dream-three-pane"), "false");
 assert.ok(defaults.nodes.has("codex-qq-skin-companion"));
+assert.ok(defaults.nodes.has("codex-qq-skin-right-tray"));
 assert.ok(defaults.nodes.has("codex-qq-skin-retro-shell"));
 assert.equal(defaults.rootStyle.values.get("--dream-retro-frame"), 'url("blob:fixture-3")');
 assert.equal(defaults.rootStyle.values.get("--dream-art-position"), "50.00% 50.00%");
@@ -489,6 +547,11 @@ assert.equal(
   threePane.nodes.get("codex-qq-skin-companion").classList.contains("is-visible"),
   true,
   "The Codex pet should appear only with the real pinned summary panel.",
+);
+assert.equal(
+  threePane.nodes.get("codex-qq-skin-right-tray").classList.contains("is-visible"),
+  true,
+  "The blue right tray should appear behind Output/Source and the companion.",
 );
 threePane.observers[0].callback([]);
 threePane.flushTimers(64);
@@ -658,6 +721,8 @@ assert.equal(explicit.rootStyle.values.has("--dream-art-position"), false);
 assert.equal(explicit.nodes.has("codex-qq-skin-style"), false);
 assert.equal(explicit.nodes.has("codex-qq-skin-chrome"), false);
 assert.equal(explicit.nodes.has("codex-qq-skin-companion"), false);
+assert.equal(explicit.nodes.has("codex-qq-skin-home-pet"), false);
+assert.equal(explicit.nodes.has("codex-qq-skin-right-tray"), false);
 assert.equal(explicit.nodes.has("codex-qq-skin-retro-shell"), false);
 assert.deepEqual(explicit.revokedUrls, [
   "blob:fixture-1", "blob:fixture-2", "blob:fixture-3", "blob:fixture-4",

@@ -51,10 +51,17 @@ if codex_is_running && [ "$DEBUG_READY" = "false" ]; then
   stop_codex true
 fi
 
+# Clear any previous session before launching. A live PID whose recorded
+# identity no longer matches (PID reuse after a crash, or a path rename such
+# as dream-skin → qq-skin) must not block a fresh start: refuse to signal the
+# foreign process, drop the stale state, and continue.
 if [ -f "$STATE_PATH" ]; then
-  stop_recorded_injector
+  if ! stop_recorded_injector; then
+    printf 'Previous skin state could not stop its recorded injector safely; clearing stale state and continuing.\n' >&2
+  fi
   /bin/rm -f "$STATE_PATH"
 fi
+stop_known_skin_injectors || true
 
 INJECTOR_PID=""
 if [ "$DEBUG_READY" = "false" ]; then
