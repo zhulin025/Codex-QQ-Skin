@@ -308,6 +308,40 @@ html.codex-qq-skin body > #root > div:first-of-type {
   font-weight: 650;
   text-shadow: 0 1px white;
   white-space: nowrap;
+  pointer-events: auto;
+}
+
+.dream-retro-toolbar button {
+  appearance: none;
+  min-width: 0;
+  margin: 0;
+  padding: 2px 5px;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-shadow: inherit;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.dream-retro-toolbar button:hover,
+.dream-retro-toolbar button:focus-visible {
+  border-color: rgb(82 139 195 / .56);
+  background: linear-gradient(180deg, #ffffff, #d7ebfc);
+  box-shadow: inset 0 1px white, 0 1px 2px rgb(30 76 122 / .16);
+  outline: none;
+}
+
+.dream-retro-toolbar button:active {
+  padding: 3px 4px 1px 6px;
+  background: linear-gradient(180deg, #c8e1f7, #edf7ff);
+}
+
+.dream-retro-toolbar button:disabled {
+  opacity: .5;
+  cursor: default;
 }
 
 .dream-retro-toolbar i {
@@ -708,7 +742,7 @@ html.codex-qq-skin main.main-surface > header.app-header-tint {
      while pointer-events:none still lets clicks through — the “invisible but clickable” bug. */
   z-index: 1;
   top: 0;
-  bottom: 12px;
+  bottom: 0;
   overflow: hidden;
   border: 1px solid rgb(46 108 172 / .78);
   border-radius: 8px 4px 8px 8px;
@@ -735,7 +769,7 @@ html.codex-qq-skin main.main-surface > header.app-header-tint {
   --dream-companion-height: clamp(250px, 36vh, 318px);
   position: fixed;
   right: calc(var(--dream-right-panel-right, 20px) + 7px);
-  bottom: calc(12px + var(--dream-right-tray-inset, 10px));
+  bottom: var(--dream-right-tray-inset, 10px);
   z-index: 42;
   width: min(calc(var(--dream-summary-panel-width, var(--dream-right-panel-width, 300px)) - 14px), calc(100vw - 74px));
   height: var(--dream-companion-height);
@@ -1314,6 +1348,16 @@ html.codex-qq-skin[data-dream-shell="light"][data-dream-three-pane="true"]
     0 5px 14px rgb(44 91 137 / .13),
     inset 0 0 0 1px rgb(255 255 255 / .88) !important;
   backdrop-filter: none !important;
+}
+
+/* The sticky composer sits immediately after the real conversation column.
+   Keep the final task/assistant row clear of its rounded cap and shadow. */
+html.codex-qq-skin[data-dream-shell="light"]
+  main.main-surface:not(.qq-skin-home-shell)
+  .thread-scroll-container > div:first-child
+  > [data-mcp-app-portal-target="true"] {
+  padding-bottom: 80px !important;
+  scroll-margin-bottom: 80px !important;
 }
 
 @media (max-width: 1179px) {

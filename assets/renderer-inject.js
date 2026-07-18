@@ -702,20 +702,24 @@
     if (
       !retroShell || retroShell.parentElement !== document.body ||
       !retroShell.querySelector(".dream-retro-toolbar") ||
+      !retroShell.querySelector('.dream-retro-toolbar button[data-retro-action="new-task"]') ||
       !retroShell.querySelector(".dream-retro-native-controls")
     ) {
       retroShell?.remove();
       retroShell = document.createElement("div");
       retroShell.id = RETRO_SHELL_ID;
-      retroShell.setAttribute("aria-hidden", "true");
       retroShell.innerHTML = `
         <div class="dream-retro-titlebar">
           <img class="dream-retro-title-penguin" alt="" draggable="false">
           <strong></strong>
         </div>
-        <div class="dream-retro-toolbar">
-          <span>📝 新建任务</span><span>🗓 已安排</span><i></i><span>🧩 插件</span>
-          <span>🌐 站点</span><span>↗ 拉取请求</span><span>💬 聊天</span>
+        <div class="dream-retro-toolbar" role="toolbar" aria-label="Codex 快捷导航">
+          <button type="button" data-retro-action="new-task">📝 新建任务</button>
+          <button type="button" data-retro-action="scheduled">🗓 已安排</button><i></i>
+          <button type="button" data-retro-action="plugins">🧩 插件</button>
+          <button type="button" data-retro-action="sites">🌐 站点</button>
+          <button type="button" data-retro-action="pull-requests">↗ 拉取请求</button>
+          <button type="button" data-retro-action="chat">💬 聊天</button>
         </div>
         <div class="dream-retro-native-controls"></div>
         <div class="dream-retro-body-frame"></div>`;
@@ -735,6 +739,48 @@
     }
     setTextContent(retroShellParts.title, `Codex 2007 - ${findRetroTitle()}`);
     return retroShell;
+  };
+
+  const retroActionMatchers = {
+    "new-task": { text: /^(新建任务|new task)$/i },
+    scheduled: { text: /^(已安排|scheduled)$/i },
+    plugins: { text: /^(插件|plugins?)$/i },
+    sites: { text: /^(站点|sites?)$/i },
+    "pull-requests": { text: /^(拉取请求|pull requests?)$/i },
+    chat: { text: /^(聊天|chat)$/i, aria: /^(quick chat|快速聊天|快捷聊天)$/i },
+  };
+
+  const findNativeRetroAction = (action) => {
+    const matcher = retroActionMatchers[action];
+    const sidebar = document.querySelector("aside.app-shell-left-panel");
+    if (!matcher || !sidebar) return null;
+    const candidates = [...sidebar.querySelectorAll("button, a")];
+    return candidates.find((candidate) => {
+      if (candidate.disabled || candidate.closest?.(`#${RETRO_SHELL_ID}`)) return false;
+      const text = String(candidate.textContent || "").replace(/\s+/g, " ").trim();
+      const aria = String(candidate.getAttribute?.("aria-label") || "").trim();
+      const box = candidate.getBoundingClientRect?.();
+      if (!box || box.width < 8 || box.height < 8) return false;
+      return Boolean(matcher.text?.test(text) || matcher.aria?.test(aria));
+    }) || null;
+  };
+
+  const syncRetroToolbarActions = () => {
+    const toolbar = document.querySelector(`#${RETRO_SHELL_ID} .dream-retro-toolbar`);
+    if (!toolbar) return;
+    for (const button of toolbar.querySelectorAll("button[data-retro-action]")) {
+      const action = button.dataset.retroAction;
+      const target = findNativeRetroAction(action);
+      button.disabled = !target;
+      button.setAttribute("aria-disabled", target ? "false" : "true");
+      if (button.dataset.retroActionBound === "true") continue;
+      button.dataset.retroActionBound = "true";
+      button.addEventListener("click", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        findNativeRetroAction(action)?.click();
+      });
+    }
   };
 
   const syncRetroWindowControls = () => {
@@ -877,6 +923,7 @@
 
     if (!shellMain || !document.body) return;
     ensureRetroShell();
+    syncRetroToolbarActions();
     syncRetroWindowControls();
     ensureRetroProfile();
     if (observedShellMain !== shellMain) {

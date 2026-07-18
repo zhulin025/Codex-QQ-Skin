@@ -217,6 +217,12 @@ assert.match(
 );
 assert.match(css, /\.dream-retro-toolbar[\s\S]{0,700}height:\s*29px;/,
   "The compact titlebar must be joined to a separate retro toolbar filler row.");
+assert.match(css, /\.dream-retro-toolbar button[\s\S]{0,260}cursor:\s*pointer;/,
+  "Retro toolbar entries must expose real button interaction styling.");
+assert.match(template, /data-retro-action="new-task"[\s\S]{0,500}data-retro-action="chat"/,
+  "Retro toolbar must render actionable navigation buttons instead of decorative labels.");
+assert.match(template, /syncRetroToolbarActions\(\);/,
+  "Route synchronization must wire retro toolbar buttons to native Codex actions.");
 assert.match(
   css,
   /body\s*>\s*#root\s*\{[\s\S]{0,220}height:\s*calc\(100vh - 88px\) !important;/,
