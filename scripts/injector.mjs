@@ -8,7 +8,7 @@ import { readImageMetadata } from "./image-metadata.mjs";
 const scriptPath = fileURLToPath(import.meta.url);
 const here = path.dirname(scriptPath);
 const root = path.resolve(here, "..");
-const SKIN_VERSION = "1.5.2";
+const SKIN_VERSION = "1.5.3";
 const LOOPBACK_HOSTS = new Set(["127.0.0.1", "localhost", "[::1]"]);
 const CDP_ID_PATTERN = /^[A-Za-z0-9._-]{1,200}$/;
 const MAX_ART_BYTES = 16 * 1024 * 1024;
@@ -938,7 +938,13 @@ if (path.resolve(process.argv[1] || "") === path.resolve(scriptPath)) {
         timings: loaded.timings,
       }, null, 2));
     } else if (options.mode === "watch") await runWatch(options);
-    else await runOneShot(options);
+    else {
+      await runOneShot(options);
+      // Verification/removal/screenshot commands are one-shot helpers. Force
+      // the CLI to release any idle CDP/fetch handles so the launcher cannot
+      // leave a second injector process sitting beside the real watcher.
+      process.exit(process.exitCode ?? 0);
+    }
   } catch (error) {
     console.error(`[qq-skin] ${error.stack || error.message}`);
     process.exitCode = 1;

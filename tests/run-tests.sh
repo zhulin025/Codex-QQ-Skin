@@ -372,6 +372,11 @@ if /usr/bin/grep -F -q 'index($0, "--port " port)' "$ROOT/scripts/common-macos.s
   printf 'injector discovery still accepts a near-prefix port.\n' >&2
   exit 1
 fi
+if /usr/bin/sed -n '/^stop_known_skin_injectors()/,/^}/p' "$ROOT/scripts/common-macos.sh" \
+  | /usr/bin/grep -F -q 'while IFS= read -r pid command_line'; then
+  printf 'known injector cleanup still disables PID/command field splitting.\n' >&2
+  exit 1
+fi
 
 # Corrupt or structurally incomplete state must be preserved and fail closed;
 # otherwise pause/restore could overwrite evidence while a watcher survives.
@@ -733,7 +738,7 @@ CRLF_BACKUP="$TMP/config-crlf-backup.json"
 "$NODE" "$ROOT/scripts/theme-config.mjs" restore "$CRLF_CONFIG" "$CRLF_BACKUP" >/dev/null
 /usr/bin/cmp -s "$CRLF_CONFIG" "$TMP/original-crlf.toml"
 
-/usr/bin/env -u HOME /bin/bash -c '. "$1/scripts/common-macos.sh"; [ -n "$HOME" ] && [ "$SKIN_VERSION" = "1.5.2" ]' _ "$ROOT"
+/usr/bin/env -u HOME /bin/bash -c '. "$1/scripts/common-macos.sh"; [ -n "$HOME" ] && [ "$SKIN_VERSION" = "1.5.3" ]' _ "$ROOT"
 DOCTOR_HOME="$TMP/doctor-home"
 /bin/mkdir -p "$DOCTOR_HOME/.codex" "$DOCTOR_HOME/Library/Application Support/CodexQQSkin/theme"
 /usr/bin/printf '%s\n' 'model = "gpt-5"' > "$DOCTOR_HOME/.codex/config.toml"

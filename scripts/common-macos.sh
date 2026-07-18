@@ -26,7 +26,7 @@ START_ERROR_LOG="$STATE_ROOT/start-error.log"
 CODEX_APP_JOB_LABEL="com.openai.codex-qq-skin-studio.app"
 INJECTOR_JOB_LABEL="com.openai.codex-qq-skin-studio.injector"
 EXPECTED_CODEX_TEAM_ID="${CODEX_EXPECTED_TEAM_ID:-2DC432GLL2}"
-SKIN_VERSION="1.5.2"
+SKIN_VERSION="1.5.3"
 
 fail() {
   local message="$*"
@@ -504,7 +504,10 @@ stop_known_skin_injectors() {
   /bin/launchctl remove "com.openai.codex-dream-skin-studio.injector" >/dev/null 2>&1 || true
   /bin/launchctl remove "com.openai.codex-qq-skin-studio.injector" >/dev/null 2>&1 || true
 
-  while IFS= read -r pid command_line; do
+  # Keep the default field splitting here: the first column is the PID and the
+  # remainder is the complete command line. `IFS=` assigns the whole ps row to
+  # pid and leaves command_line empty, so no stale watcher is ever matched.
+  while read -r pid command_line; do
     [ -n "$pid" ] || continue
     command_line="$(printf '%s' "$command_line" | /usr/bin/tr '[:upper:]' '[:lower:]')"
     is_skin_injector_command "$command_line" || continue
@@ -512,7 +515,7 @@ stop_known_skin_injectors() {
   done < <(/bin/ps -axo pid=,command= 2>/dev/null || true)
 
   /bin/sleep 0.35
-  while IFS= read -r pid command_line; do
+  while read -r pid command_line; do
     [ -n "$pid" ] || continue
     command_line="$(printf '%s' "$command_line" | /usr/bin/tr '[:upper:]' '[:lower:]')"
     is_skin_injector_command "$command_line" || continue

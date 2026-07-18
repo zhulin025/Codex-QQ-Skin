@@ -132,8 +132,8 @@ assert.match(
 );
 assert.match(
   css,
-  /#codex-qq-skin-right-tray[\s\S]{0,700}top:\s*70px;/,
-  "The right tray must extend from under the title bar to the bottom chrome.",
+  /#codex-qq-skin-right-tray[\s\S]{0,700}top:\s*0;/,
+  "The right tray must extend through the title area to the bottom chrome.",
 );
 assert.match(
   css,
@@ -149,6 +149,21 @@ assert.match(
   css,
   /nav-section-title|\.qq-skin-section-bar/,
   "Section bars must paint on the full nav-section-title row so 项目/任务 match 置顶 width.",
+);
+assert.match(
+  css,
+  /\.qq-skin-home \[data-feature="game-source"\][\s\S]{0,260}white-space:\s*nowrap !important;/,
+  "The home prompt must stay on one line.",
+);
+assert.match(
+  css,
+  /\.app-shell-left-panel > :first-child:not\(nav\)[\s\S]{0,100}display:\s*none !important;/,
+  "Settings navigation must remove the reserved native header sibling.",
+);
+assert.match(
+  css,
+  /\.app-shell-left-panel > nav[\s\S]{0,180}position:\s*static !important;/,
+  "Settings navigation must retain its native clickable layout position.",
 );
 assert.match(
   css,

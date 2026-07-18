@@ -707,7 +707,7 @@ html.codex-qq-skin main.main-surface > header.app-header-tint {
   /* Must stay below body > #root (z-index: 3). A higher tray paints over Output/Source
      while pointer-events:none still lets clicks through — the “invisible but clickable” bug. */
   z-index: 1;
-  top: 70px;
+  top: 0;
   bottom: 12px;
   overflow: hidden;
   border: 1px solid rgb(46 108 172 / .78);
@@ -734,10 +734,10 @@ html.codex-qq-skin main.main-surface > header.app-header-tint {
 #codex-qq-skin-companion {
   --dream-companion-height: clamp(250px, 36vh, 318px);
   position: fixed;
-  right: var(--dream-right-panel-right, 20px);
+  right: calc(var(--dream-right-panel-right, 20px) + 7px);
   bottom: calc(12px + var(--dream-right-tray-inset, 10px));
   z-index: 42;
-  width: min(var(--dream-summary-panel-width, var(--dream-right-panel-width, 300px)), calc(100vw - 60px));
+  width: min(calc(var(--dream-summary-panel-width, var(--dream-right-panel-width, 300px)) - 14px), calc(100vw - 74px));
   height: var(--dream-companion-height);
   display: grid;
   grid-template-rows: 34px minmax(0, 1fr) 32px;
@@ -969,12 +969,12 @@ html.codex-qq-skin[data-dream-three-pane="true"] [data-pip-obstacle="thread-summ
   position: relative !important;
   z-index: 4 !important;
   isolation: isolate !important;
-  height: calc(100vh - clamp(250px, 36vh, 318px) - 92px) !important;
-  max-height: calc(100vh - clamp(250px, 36vh, 318px) - 92px) !important;
+  height: calc(100vh - clamp(250px, 36vh, 318px) - 132px) !important;
+  max-height: calc(100vh - clamp(250px, 36vh, 318px) - 132px) !important;
   min-height: 220px !important;
   align-self: flex-start !important;
   margin-top: 8px !important;
-  margin-right: var(--dream-right-tray-inset, 14px) !important;
+  margin-right: 7px !important;
   border: 1px solid rgb(64 122 187 / .55) !important;
   border-radius: 8px !important;
   background: #f8fcff !important;
@@ -1059,7 +1059,7 @@ html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], 
 html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], :has(main.main-surface.qq-skin-home-shell))
   aside.app-shell-left-panel .qq-skin-section-bar,
 html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], :has(main.main-surface.qq-skin-home-shell))
-  aside.app-shell-left-panel [class*="nav-section-title"] {
+  aside.app-shell-left-panel [class~="group/nav-section-title"] {
   display: flex !important;
   align-items: center !important;
   align-self: stretch !important;
@@ -1081,13 +1081,13 @@ html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], 
 
 /* Inner flex-1 wrappers around the toggle must not keep their own inset bar. */
 html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], :has(main.main-surface.qq-skin-home-shell))
-  aside.app-shell-left-panel [class*="nav-section-title"]
+  aside.app-shell-left-panel [class~="group/nav-section-title"]
   *:has(> [data-app-action-sidebar-section-toggle]),
 html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], :has(main.main-surface.qq-skin-home-shell))
   aside.app-shell-left-panel .qq-skin-section-bar
   *:has(> [data-app-action-sidebar-section-toggle]),
 html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], :has(main.main-surface.qq-skin-home-shell))
-  aside.app-shell-left-panel [class*="nav-section-title"]
+  aside.app-shell-left-panel [class~="group/nav-section-title"]
   > *:not(button),
 html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], :has(main.main-surface.qq-skin-home-shell))
   aside.app-shell-left-panel .qq-skin-section-bar
@@ -1132,6 +1132,29 @@ html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], 
   flex: 0 0 auto !important;
   color: #3f74ab !important;
   background: transparent !important;
+}
+
+/* Project/task action glyphs should float on the existing XP caption, without
+   the native hover pill painting a second bar behind the ellipsis and plus. */
+html.codex-qq-skin[data-dream-shell="light"]
+  aside.app-shell-left-panel .qq-skin-section-bar
+  *:has(> button:not([data-app-action-sidebar-section-toggle])):not(.qq-skin-section-bar),
+html.codex-qq-skin[data-dream-shell="light"]
+  aside.app-shell-left-panel .qq-skin-section-bar
+  *:has(> button:not([data-app-action-sidebar-section-toggle])):not(.qq-skin-section-bar):hover,
+html.codex-qq-skin[data-dream-shell="light"]
+  aside.app-shell-left-panel .qq-skin-section-bar
+  button:not([data-app-action-sidebar-section-toggle]),
+html.codex-qq-skin[data-dream-shell="light"]
+  aside.app-shell-left-panel .qq-skin-section-bar
+  button:not([data-app-action-sidebar-section-toggle]):hover,
+html.codex-qq-skin[data-dream-shell="light"]
+  aside.app-shell-left-panel .qq-skin-section-bar
+  button:not([data-app-action-sidebar-section-toggle]):focus-visible {
+  border-color: transparent !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  outline: none !important;
 }
 
 html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], :has(main.main-surface.qq-skin-home-shell))
@@ -2005,7 +2028,8 @@ html.codex-qq-skin[data-dream-shell="light"]
 
 html.codex-qq-skin[data-dream-shell="light"]
   .qq-skin-home > div:first-child > div:first-child > div:first-child > div:first-child > div:first-child {
-  width: min(72%, 720px) !important;
+  width: calc(100% - 190px) !important;
+  max-width: none !important;
   align-items: center !important;
   text-align: center !important;
 }
@@ -2013,7 +2037,9 @@ html.codex-qq-skin[data-dream-shell="light"]
 html.codex-qq-skin[data-dream-shell="light"]
   .qq-skin-home [data-feature="game-source"] {
   color: #17395f !important;
-  font-size: clamp(22px, 2.1vw, 30px) !important;
+  font-size: clamp(20px, 1.72vw, 27px) !important;
+  line-height: 1.2 !important;
+  white-space: nowrap !important;
   text-shadow: 0 1px rgb(255 255 255 / .92) !important;
 }
 
@@ -2022,6 +2048,7 @@ html.codex-qq-skin[data-dream-shell="light"]
   margin-top: 14px;
   color: #4d7398;
   font-size: 14px;
+  white-space: nowrap;
 }
 
 html.codex-qq-skin[data-dream-shell="light"]
@@ -2102,6 +2129,9 @@ html.codex-qq-skin[data-dream-shell="light"]
   .qq-skin-home .group\/home-suggestions button > span:first-child > span:first-child {
   width: 44px;
   height: 44px;
+  position: relative !important;
+  display: grid !important;
+  place-items: center !important;
   border: 1px solid #6aa0d4;
   border-radius: 50%;
   background:
@@ -2118,6 +2148,35 @@ html.codex-qq-skin[data-dream-shell="light"]
   width: 22px !important;
   height: 22px !important;
   color: #1f64ad !important;
+  display: block !important;
+  position: static !important;
+  place-self: center !important;
+  margin: auto !important;
+  transform: translateX(1px) !important;
+}
+
+/* Settings uses a div.app-shell-left-panel rather than the task-page aside.
+   Remove the reserved native header sibling instead of visually dragging nav
+   upward: a negative offset puts 返回应用 underneath an invisible hit layer. */
+html.codex-qq-skin:is(
+  :has(input[placeholder*="设置"]),
+  :has(input[placeholder*="設定"]),
+  :has(input[placeholder*="settings" i])
+)
+  .app-shell-left-panel > :first-child:not(nav) {
+  display: none !important;
+}
+
+html.codex-qq-skin:is(
+  :has(input[placeholder*="设置"]),
+  :has(input[placeholder*="設定"]),
+  :has(input[placeholder*="settings" i])
+)
+  .app-shell-left-panel > nav {
+  position: static !important;
+  top: auto !important;
+  height: 100% !important;
+  margin-bottom: 0 !important;
 }
 
 html.codex-qq-skin[data-dream-shell="light"] .qq-skin-home-utility {
