@@ -4,6 +4,16 @@
 
 > 非 OpenAI、腾讯或 QQ 官方产品。本项目不会修改官方 `.app`、`app.asar`、代码签名、API Key 或 Base URL。
 
+## 效果预览
+
+### 任务详情
+
+![Codex QQ Skin 任务详情界面](./assets/任务详情截图.png)
+
+### 新建任务
+
+![Codex QQ Skin 新建任务界面](./assets/新建任务截图.png)
+
 ## 安装
 
 安装前请确保官方 Codex/ChatGPT 桌面端至少成功启动过一次，并完全退出 Codex。项目不要求另行安装 Node.js。
