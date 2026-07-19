@@ -1126,12 +1126,19 @@
     const sidebar = document.querySelector("aside.app-shell-left-panel");
     if (!sidebar || typeof sidebar.getBoundingClientRect !== "function") return null;
     const sidebarBox = sidebar.getBoundingClientRect();
-    const profileButton = [...sidebar.querySelectorAll("button")].find((button) => {
+    const profileActionPattern = /^(open profile menu|open account menu|打开个人资料菜单|打开账户菜单|開啟個人資料選單|開啟帳戶選單|プロフィールメニューを開く|프로필 메뉴 열기)$/i;
+    const buttons = [...sidebar.querySelectorAll("button")];
+    const isVisibleFooterButton = (button) => {
       if (typeof button.getBoundingClientRect !== "function") return false;
       const box = button.getBoundingClientRect();
       const text = String(button.textContent || "").replace(/\s+/g, " ").trim();
-      return box.width > 120 && box.bottom > sidebarBox.bottom - 90 && text.length >= 2 && text.length <= 48;
-    });
+      return box.width > 120 && box.height > 16 &&
+        box.top >= sidebarBox.top && box.bottom <= sidebarBox.bottom + 2 &&
+        box.bottom > sidebarBox.bottom - 120 && text.length >= 2 && text.length <= 48;
+    };
+    const profileButton = buttons.find((button) =>
+      profileActionPattern.test(String(button.getAttribute?.("aria-label") || "").trim()) &&
+      isVisibleFooterButton(button)) || buttons.find(isVisibleFooterButton);
     const host = profileButton?.closest('[class*="container-type"]') || profileButton?.parentElement;
     if (!host) return null;
     for (const stale of document.querySelectorAll(".dream-retro-profile-host")) {

@@ -221,6 +221,13 @@ assert.match(css, /\.dream-retro-toolbar button[\s\S]{0,260}cursor:\s*pointer;/,
   "Retro toolbar entries must expose real button interaction styling.");
 assert.match(template, /data-retro-action="new-task"[\s\S]{0,500}data-retro-action="chat"/,
   "Retro toolbar must render actionable navigation buttons instead of decorative labels.");
+assert.match(template, /profileActionPattern[\s\S]{0,900}打开个人资料菜单/,
+  "The retro profile must prefer the stable native profile-menu action.");
+assert.match(
+  template,
+  /box\.top >= sidebarBox\.top && box\.bottom <= sidebarBox\.bottom \+ 2/,
+  "Offscreen virtualized sidebar buttons must never become the retro profile host.",
+);
 assert.match(template, /syncRetroToolbarActions\(\);/,
   "Route synchronization must wire retro toolbar buttons to native Codex actions.");
 assert.match(template, /createSoundMonitor[\s\S]{0,1800}stopPattern/,
