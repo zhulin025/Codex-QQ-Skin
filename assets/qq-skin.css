@@ -184,7 +184,10 @@ html.codex-qq-skin body {
   color: var(--ds-text) !important;
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Microsoft YaHei UI", "Segoe UI", system-ui, sans-serif !important;
   height: 100vh !important;
-  padding: 72px 20px 16px !important;
+  /* The retro header overlays Codex's native fixed shell. A top padding here
+     shifts the shell during its first normal-flow render, before Codex applies
+     the fixed app layout, leaving the composer/account footer below viewport. */
+  padding: 0 20px 16px !important;
   box-sizing: border-box !important;
   overflow: hidden !important;
 }
@@ -198,13 +201,16 @@ html.codex-qq-skin body > #root {
   position: relative !important;
   z-index: 3 !important;
   width: calc(100vw - 40px) !important;
-  height: calc(100vh - 88px) !important;
+  height: calc(100vh - 16px) !important;
   min-width: 0 !important;
   min-height: 0 !important;
   background: transparent !important;
 }
 
-html.codex-qq-skin body > #root > div:first-of-type {
+/* Codex prepends invisible portal nodes under #root. Select the real app host
+   by structure instead of :first-of-type, which targets the portal and leaves
+   the sidebar/composer shell at an unconstrained 100vh. */
+html.codex-qq-skin body > #root > div:has(> div > .app-shell-left-panel) {
   width: 100% !important;
   height: 100% !important;
   min-width: 0 !important;
@@ -462,8 +468,8 @@ html.codex-qq-skin body > #root > div:first-of-type {
 #codex-qq-skin-retro-profile b { color: #2e66a2; font-size: 10px; }
 
 @media (max-width: 760px) {
-  html.codex-qq-skin body { padding-top: 64px !important; }
-  html.codex-qq-skin body > #root { height: calc(100vh - 80px) !important; }
+  html.codex-qq-skin body { padding-top: 0 !important; }
+  html.codex-qq-skin body > #root { height: calc(100vh - 16px) !important; }
   .dream-retro-titlebar { height: 35px; }
   .dream-retro-title-penguin { left: 76px; width: 31px; height: 31px; }
   .dream-retro-titlebar strong {
@@ -477,6 +483,8 @@ html.codex-qq-skin body > #root > div:first-of-type {
   .dream-retro-body-frame { inset: 62px 0 0; }
   #codex-qq-skin-retro-shell::before,
   #codex-qq-skin-retro-shell::after { top: 62px; }
+  html.codex-qq-skin aside.app-shell-left-panel,
+  html.codex-qq-skin main.main-surface { padding-top: 62px !important; }
 }
 
 html.codex-qq-skin aside.app-shell-left-panel {
@@ -490,6 +498,24 @@ html.codex-qq-skin aside.app-shell-left-panel {
   box-shadow: 10px 0 30px rgb(var(--ds-bg-rgb) / .22) !important;
   color: var(--ds-text) !important;
   backdrop-filter: none !important;
+  padding-top: 70px !important;
+  box-sizing: border-box !important;
+}
+
+/* Keep native navigation and page content below the 38px title row + 29px
+   toolbar. The old -46px lift placed the first controls underneath our chrome. */
+html.codex-qq-skin main.main-surface {
+  padding-top: 70px !important;
+  box-sizing: border-box !important;
+}
+
+html.codex-qq-skin aside.app-shell-left-panel > .max-w-full.overflow-hidden {
+  position: relative !important;
+  top: 0 !important;
+  height: 100% !important;
+  max-height: 100% !important;
+  margin-top: 0 !important;
+  padding-top: 0 !important;
 }
 
 html.codex-qq-skin aside.app-shell-left-panel nav { background: transparent !important; }
@@ -764,7 +790,7 @@ html.codex-qq-skin main.main-surface > header.app-header-tint {
 }
 
 /* Classic three-pane companion rail. Codex owns the pinned summary panel in
-   the upper-right; this non-interactive card occupies only the lower section. */
+   the upper-right; only the small sound toggle is interactive here. */
 #codex-qq-skin-companion {
   --dream-companion-height: clamp(250px, 36vh, 318px);
   position: fixed;
@@ -916,6 +942,38 @@ html.codex-qq-skin:has(input[placeholder*="settings" i])
   box-shadow: inset 0 1px rgb(255 255 255 / .82);
 }
 
+.qq-skin-pet-status span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.qq-skin-pet-status button {
+  min-width: 68px;
+  margin-left: auto;
+  padding: 3px 7px;
+  border: 1px solid rgb(61 111 164 / .56);
+  border-radius: 4px;
+  background: linear-gradient(180deg, #fff, #d8e9f8);
+  color: #285681;
+  font: inherit;
+  line-height: 1.2;
+  cursor: pointer;
+  pointer-events: auto;
+  box-shadow: inset 0 1px rgb(255 255 255 / .92);
+}
+
+.qq-skin-pet-status button:hover {
+  border-color: #2f75b8;
+  background: linear-gradient(180deg, #fff, #c8e1f5);
+}
+
+.qq-skin-pet-status button:focus-visible {
+  outline: 2px solid #2f75b8;
+  outline-offset: 1px;
+}
+
 @keyframes qq-skin-pet-float {
   0%, 100% { transform: translateY(1px); }
   50% { transform: translateY(-5px); }
@@ -933,36 +991,6 @@ html.codex-qq-skin[data-dream-three-pane="true"] aside.app-shell-left-panel {
   background:
     linear-gradient(180deg, rgb(238 247 255 / .96), rgb(205 226 245 / .94)) !important;
   color: #17395f !important;
-}
-
-/* Codex reserves its native 46px application header. The retro title + toolbar
-   already occupy that space, so lift task and settings content into the framed
-   body instead of leaving an empty band under the title bar. */
-html.codex-qq-skin[data-dream-task-route="true"]
-  aside.app-shell-left-panel > .max-w-full.overflow-hidden,
-html.codex-qq-skin:is(
-  :has(input[placeholder*="设置"]),
-  :has(input[placeholder*="設定"]),
-  :has(input[placeholder*="settings" i])
-)
-  aside.app-shell-left-panel > .max-w-full.overflow-hidden,
-html.codex-qq-skin:is(
-  :has(input[placeholder*="设置"]),
-  :has(input[placeholder*="設定"]),
-  :has(input[placeholder*="settings" i])
-)
-  main.main-surface > .max-w-full.overflow-hidden,
-html.codex-qq-skin:is(
-  :has(input[placeholder*="设置"]),
-  :has(input[placeholder*="設定"]),
-  :has(input[placeholder*="settings" i])
-)
-  main.main-surface > div:first-of-type {
-  position: relative !important;
-  top: -46px !important;
-  height: calc(100% + 46px) !important;
-  margin-top: 0 !important;
-  padding-top: 0 !important;
 }
 
 /* Settings: collapse the empty native header band above「返回应用」. */

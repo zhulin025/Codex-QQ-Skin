@@ -8,7 +8,7 @@ import { readImageMetadata } from "./image-metadata.mjs";
 const scriptPath = fileURLToPath(import.meta.url);
 const here = path.dirname(scriptPath);
 const root = path.resolve(here, "..");
-const SKIN_VERSION = "1.5.4";
+const SKIN_VERSION = "1.6.1";
 const LOOPBACK_HOSTS = new Set(["127.0.0.1", "localhost", "[::1]"]);
 const CDP_ID_PATTERN = /^[A-Za-z0-9._-]{1,200}$/;
 const MAX_ART_BYTES = 16 * 1024 * 1024;
@@ -342,6 +342,11 @@ async function loadTheme(themeDir) {
     }
     return Math.round(value);
   };
+  const boolean = (value, name) => {
+    if (value === undefined) return undefined;
+    if (typeof value !== "boolean") throw new Error(`${configPath} has an invalid ${name} field`);
+    return value;
+  };
   const rawColors = raw.colors && typeof raw.colors === "object" && !Array.isArray(raw.colors)
     ? raw.colors : null;
   const colorKeys = [
@@ -369,6 +374,17 @@ async function loadTheme(themeDir) {
     minWidth: boundedNumber(rawLayout.minWidth, "layout.minWidth", 1080, 2400) ?? 1180,
     rightWidth: boundedNumber(rawLayout.rightWidth, "layout.rightWidth", 272, 360) ?? 300,
   };
+  if (raw.sound !== undefined && (!raw.sound || typeof raw.sound !== "object" || Array.isArray(raw.sound))) {
+    throw new Error(`${configPath} has an invalid sound field`);
+  }
+  const rawSound = raw.sound || {};
+  const sound = {
+    enabled: boolean(rawSound.enabled, "sound.enabled") ?? true,
+    volume: unit(rawSound.volume, "sound.volume") ?? 0.48,
+    completed: choice(rawSound.completed, "sound.completed", ["cough", "didi"]) ?? "cough",
+    approval: choice(rawSound.approval, "sound.approval", ["alert", "didi"]) ?? "alert",
+    online: choice(rawSound.online, "sound.online", ["knock", "didi"]) ?? "knock",
+  };
   const theme = {
     schemaVersion: 1,
     id: text(raw.id, "custom", 80, "id"),
@@ -381,6 +397,7 @@ async function loadTheme(themeDir) {
     quote: text(raw.quote, "MAKE SOMETHING WONDERFUL", 80, "quote"),
     image: raw.image,
     layout,
+    sound,
     colorMode: rawColors ? "explicit" : "auto",
     explicitColorKeys: rawColors ? colorKeys.filter((key) => Object.hasOwn(rawColors, key)) : [],
     colors: {
@@ -452,13 +469,14 @@ async function loadStaticPayloadAssets() {
       fs.readFile(path.join(root, "assets", "codex-pet.png")),
       fs.readFile(path.join(root, "assets", "retro-window-frame.png")),
       fs.readFile(path.join(root, "assets", "qq-avatar.png")),
+      fs.readFile(path.join(root, "assets", "audio", "qq-system-cough.mp3")),
     ]).catch((error) => {
       staticPayloadAssets = null;
       throw error;
     });
   }
-  const [css, template, pet, retroFrame, qqAvatar] = await staticPayloadAssets;
-  return { css, template, pet, retroFrame, qqAvatar, cacheHit };
+  const [css, template, pet, retroFrame, qqAvatar, coughAudio] = await staticPayloadAssets;
+  return { css, template, pet, retroFrame, qqAvatar, coughAudio, cacheHit };
 }
 
 function invalidateStaticPayloadAssets() {
@@ -471,7 +489,7 @@ async function loadPayload(themeDir) {
     loadStaticPayloadAssets(),
     loadTheme(themeDir),
   ]);
-  const { css, template, pet, retroFrame, qqAvatar } = staticAssets;
+  const { css, template, pet, retroFrame, qqAvatar, coughAudio } = staticAssets;
   const { art, extension, theme } = loaded;
   const styleRevision = createHash("sha256").update(css).digest("hex").slice(0, 20);
   const artMetadata = readImageMetadata(art, extension);
@@ -487,12 +505,14 @@ async function loadPayload(themeDir) {
   const petDataUrl = `data:image/png;base64,${pet.toString("base64")}`;
   const retroFrameDataUrl = `data:image/png;base64,${retroFrame.toString("base64")}`;
   const qqAvatarDataUrl = `data:image/png;base64,${qqAvatar.toString("base64")}`;
+  const coughAudioDataUrl = `data:audio/mpeg;base64,${coughAudio.toString("base64")}`;
   const payload = template
     .replace("__QQ_SKIN_CSS_JSON__", JSON.stringify(css))
     .replace("__QQ_SKIN_ART_JSON__", JSON.stringify(artDataUrl))
     .replace("__QQ_SKIN_PET_JSON__", JSON.stringify(petDataUrl))
     .replace("__QQ_SKIN_RETRO_FRAME_JSON__", JSON.stringify(retroFrameDataUrl))
     .replace("__QQ_SKIN_QQ_AVATAR_JSON__", JSON.stringify(qqAvatarDataUrl))
+    .replace("__QQ_SKIN_COUGH_AUDIO_JSON__", JSON.stringify(coughAudioDataUrl))
     .replace("__QQ_SKIN_THEME_JSON__", JSON.stringify(theme))
     .replace("__QQ_SKIN_VERSION_JSON__", JSON.stringify(SKIN_VERSION))
     .replace("__QQ_SKIN_STYLE_REVISION_JSON__", JSON.stringify(styleRevision));
@@ -503,6 +523,7 @@ async function loadPayload(themeDir) {
     .update(pet)
     .update(retroFrame)
     .update(qqAvatar)
+    .update(coughAudio)
     .update(JSON.stringify(theme))
     .digest("hex")
     .slice(0, 20);
@@ -511,6 +532,7 @@ async function loadPayload(themeDir) {
     petBytes: pet.length,
     frameBytes: retroFrame.length,
     qqAvatarBytes: qqAvatar.length,
+    coughAudioBytes: coughAudio.length,
     payload,
     revision,
     theme,
@@ -754,7 +776,7 @@ function watchPayloadSources(themeDir, onDirty) {
         const staticChanged = directory === assetsRoot &&
           (!name || name === "qq-skin.css" || name === "renderer-inject.js" ||
             name === "codex-pet.png" || name === "retro-window-frame.png" ||
-            name === "qq-avatar.png");
+            name === "qq-avatar.png" || name === "audio");
         if (kind === "static" && !staticChanged) return;
         onDirty({ staticChanged });
       });

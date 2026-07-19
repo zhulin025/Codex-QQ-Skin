@@ -223,20 +223,55 @@ assert.match(template, /data-retro-action="new-task"[\s\S]{0,500}data-retro-acti
   "Retro toolbar must render actionable navigation buttons instead of decorative labels.");
 assert.match(template, /syncRetroToolbarActions\(\);/,
   "Route synchronization must wire retro toolbar buttons to native Codex actions.");
+assert.match(template, /createSoundMonitor[\s\S]{0,1800}stopPattern/,
+  "Renderer must monitor Codex's running state instead of relying on a fixed completion delay.");
+assert.match(template, /approvalActionPattern[\s\S]{0,1200}findApproval/,
+  "Renderer must recognize newly rendered approval controls.");
+assert.match(template, /playCough[\s\S]{0,2600}playNotes/,
+  "Completion and approval must use separate original synthesized cues.");
+assert.match(template, /playKnock[\s\S]{0,2600}eventName === "online"/,
+  "Startup and network reconnection must use a dedicated knock cue.");
+assert.match(template, /addEventListener\?\.\("online", handleOnline\)/,
+  "The renderer must play the online cue when network connectivity returns.");
+assert.match(template, /cancelledUntil[\s\S]{0,6000}isStopButton/,
+  "A user-cancelled task must suppress the completion cue.");
+assert.doesNotMatch(
+  template,
+  /attributeFilter:\s*\[[^\]]*"style"/,
+  "Root observers must not feed skin-owned inline style writes back into full theme passes.",
+);
+assert.match(
+  template,
+  /startupResizePasses[\s\S]{0,1400}dispatchEvent\(new window\.Event\("resize"\)\)/,
+  "Startup stabilization must refresh native layout without a manual panel toggle.",
+);
+assert.match(
+  template,
+  /setInterval\(\(\) => ensure\(\{ root: false, route: true, layout: true \}\), 4000\)/,
+  "The fallback interval must not repeat root appearance detection every four seconds.",
+);
+assert.match(css, /\.qq-skin-pet-status button[\s\S]{0,500}pointer-events:\s*auto;/,
+  "The companion card must expose an interactive sound toggle.");
 assert.match(
   css,
-  /body\s*>\s*#root\s*\{[\s\S]{0,220}height:\s*calc\(100vh - 88px\) !important;/,
-  "The native root must shrink into the framed body instead of clipping the composer.",
+  /body\s*>\s*#root\s*\{[\s\S]{0,220}height:\s*calc\(100vh - 16px\) !important;/,
+  "The native root must reserve only the lower frame instead of shifting below the retro header.",
 );
 assert.match(
   css,
-  /#root\s*>\s*div:first-of-type[\s\S]{0,180}height:\s*100% !important;/,
-  "Only the native top-level shell must inherit the framed height so settings split panes remain intact.",
+  /#root\s*>\s*div:has\(> div > \.app-shell-left-panel\)[\s\S]{0,180}height:\s*100% !important;/,
+  "The real app host, not an earlier portal node, must inherit the framed height.",
 );
-assert.match(css, /data-dream-task-route="true"[\s\S]{0,900}top:\s*-46px !important;/,
-  "Task and settings routes should remove the native application-header offset.");
-assert.match(css, /placeholder\*="设置"[\s\S]{0,420}top:\s*-46px !important;/,
-  "Settings pages should also lift content under the retro title bar.");
+assert.doesNotMatch(css, /#root\s*>\s*div:first-of-type/,
+  "App-shell sizing must not depend on Codex portal insertion order.");
+assert.doesNotMatch(css, /top:\s*-46px !important;/,
+  "Native content must not be lifted underneath the retro toolbar.");
+assert.match(css, /aside\.app-shell-left-panel[\s\S]{0,420}padding-top:\s*70px !important;/,
+  "Sidebar navigation must begin below the full retro header.");
+assert.match(css, /main\.main-surface\s*\{[\s\S]{0,180}padding-top:\s*70px !important;/,
+  "Home and task content must begin below the full retro header.");
+assert.match(template, /const taskRoute = !home && !settingsRoute && Boolean\(shellMain\);/,
+  "The new-task home must not be marked as a task route.");
 
 function createStyleDeclaration() {
   const values = new Map();
@@ -269,6 +304,8 @@ function createFixture(theme, {
   summaryToggle = false,
   leftSidebar = "open",
   viewportWidth = 1400,
+  notificationButtons = [],
+  soundEvents = null,
 } = {}) {
   let fixtureShell = nativeShell;
   const nodes = new Map();
@@ -401,6 +438,7 @@ function createFixture(theme, {
           ...(summaryToggle ? [summaryButton] : []),
         ];
       }
+      if (selector === 'button, [role="button"]') return notificationButtons;
       return [];
     },
   };
@@ -412,6 +450,7 @@ function createFixture(theme, {
   const revokedUrls = [];
   const window = {
     innerWidth: viewportWidth,
+    location: { pathname: "/thread/fixture", search: "" },
     addEventListener() {},
     removeEventListener() {},
     matchMedia() {
@@ -419,6 +458,59 @@ function createFixture(theme, {
       return mediaQuery;
     },
   };
+  if (soundEvents) {
+    window.Audio = class {
+      volume = 1;
+      onended = null;
+      play() { soundEvents.coughAudioPlays += 1; return Promise.resolve(); }
+      pause() {}
+    };
+    window.AudioContext = class {
+      state = "running";
+      currentTime = 0;
+      sampleRate = 8000;
+      destination = {};
+      createOscillator() {
+        return {
+          frequency: { setValueAtTime() {} },
+          connect(target) { return target; },
+          start() { soundEvents.tones += 1; },
+          stop() {},
+        };
+      }
+      createGain() {
+        return {
+          gain: {
+            value: 0,
+            setValueAtTime() {},
+            exponentialRampToValueAtTime() {},
+          },
+          connect(target) { return target; },
+        };
+      }
+      createBuffer(_channels, frameCount) {
+        const data = new Float32Array(frameCount);
+        return { getChannelData() { return data; } };
+      }
+      createBufferSource() {
+        return {
+          buffer: null,
+          connect(target) { return target; },
+          start() { soundEvents.coughBursts += 1; },
+        };
+      }
+      createBiquadFilter() {
+        return {
+          type: "",
+          frequency: { setValueAtTime() {} },
+          Q: { value: 0 },
+          connect(target) { return target; },
+        };
+      }
+      close() { this.state = "closed"; }
+      resume() { this.state = "running"; return Promise.resolve(); }
+    };
+  }
   if (analysisCache) window.__CODEX_QQ_SKIN_ANALYSIS_CACHE__ = analysisCache;
   if (analysisFixture) {
     window.Image = class {
@@ -478,6 +570,7 @@ function createFixture(theme, {
     .replace("__QQ_SKIN_PET_JSON__", JSON.stringify("data:image/png;base64,AA=="))
     .replace("__QQ_SKIN_RETRO_FRAME_JSON__", JSON.stringify("data:image/png;base64,AA=="))
     .replace("__QQ_SKIN_QQ_AVATAR_JSON__", JSON.stringify("data:image/png;base64,AA=="))
+    .replace("__QQ_SKIN_COUGH_AUDIO_JSON__", JSON.stringify("data:audio/mpeg;base64,SUQz"))
     .replace("__QQ_SKIN_THEME_JSON__", JSON.stringify(nextTheme))
     .replace("__QQ_SKIN_VERSION_JSON__", JSON.stringify("test"))
     .replace("__QQ_SKIN_STYLE_REVISION_JSON__", JSON.stringify(cssText));
@@ -529,6 +622,8 @@ assert.equal(defaults.attributes.get("data-dream-three-pane"), "false");
 assert.ok(defaults.nodes.has("codex-qq-skin-companion"));
 assert.ok(defaults.nodes.has("codex-qq-skin-right-tray"));
 assert.ok(defaults.nodes.has("codex-qq-skin-retro-shell"));
+assert.equal(typeof defaults.window.__CODEX_QQ_SKIN_STATE__.soundMonitor.preview, "function");
+assert.equal(defaults.window.__CODEX_QQ_SKIN_STATE__.soundMonitor.enabled, true);
 assert.equal(defaults.rootStyle.values.get("--dream-retro-frame"), 'url("blob:fixture-3")');
 assert.equal(defaults.rootStyle.values.get("--dream-art-position"), "50.00% 50.00%");
 const defaultMetrics = defaults.window.__CODEX_QQ_SKIN_STATE__.metrics;
@@ -578,6 +673,41 @@ threePane.observers[0].callback([]);
 threePane.flushTimers(64);
 assert.equal(threePane.summaryButton.clickCount, 1, "Mutation passes must not toggle the native panel repeatedly.");
 assert.equal(threePane.leftSidebarButton.clickCount, 1, "Mutation passes must not toggle the left sidebar repeatedly.");
+
+const notificationButtons = [];
+const soundEvents = { tones: 0, coughBursts: 0, coughAudioPlays: 0 };
+const notificationFixture = createFixture({
+  id: "sound-notification-contract",
+  sound: { enabled: true, volume: 0.48, completed: "cough", approval: "alert" },
+}, { notificationButtons, soundEvents });
+vm.runInNewContext(notificationFixture.payload, notificationFixture.context);
+const stopButton = {
+  disabled: false,
+  textContent: "",
+  getAttribute(name) { return name === "aria-label" ? "停止任务" : null; },
+};
+notificationButtons.push(stopButton);
+notificationFixture.window.__CODEX_QQ_SKIN_STATE__.ensure();
+notificationButtons.length = 0;
+notificationFixture.window.__CODEX_QQ_SKIN_STATE__.ensure();
+notificationFixture.flushTimers(520);
+assert.equal(soundEvents.coughAudioPlays, 1, "A running-to-idle task transition should play the bundled cough audio once.");
+assert.equal(soundEvents.coughBursts, 0, "The synthesized cough should remain idle while bundled audio playback succeeds.");
+const approvalHost = {
+  textContent: "Codex 需要授权运行命令 Allow once Decline",
+  getAttribute(name) { return name === "data-turn-key" ? "turn-approval" : null; },
+};
+const approvalButton = {
+  disabled: false,
+  textContent: "Allow once",
+  getAttribute() { return null; },
+  closest() { return approvalHost; },
+};
+notificationButtons.push(approvalButton);
+notificationFixture.window.__CODEX_QQ_SKIN_STATE__.ensure();
+assert.equal(soundEvents.tones, 4, "A newly rendered approval card should play the distinct four-note alert.");
+notificationFixture.window.__CODEX_QQ_SKIN_STATE__.ensure();
+assert.equal(soundEvents.tones, 4, "The same approval card must not alert twice.");
 
 // Auto appearance must continue following the native shell after the skin is
 // already installed. The fixture makes the injected root color-scheme win
@@ -668,9 +798,9 @@ vm.runInNewContext(synchronousWide.payloadFor({
 assert.equal(synchronousWide.nodes.get("codex-qq-skin-style"), stableStyle);
 assert.equal(stableStyle.textContent, ".fixture { color: red; }");
 assert.equal(stableStyle.dataset.dreamSkinVersion, "test");
-assert.equal(synchronousWide.rootStyle.values.get("--qq-skin-art"), 'url("blob:fixture-5")');
+assert.equal(synchronousWide.rootStyle.values.get("--qq-skin-art"), 'url("blob:fixture-6")');
 assert.deepEqual(synchronousWide.revokedUrls, [
-  "blob:fixture-1", "blob:fixture-2", "blob:fixture-3", "blob:fixture-4",
+  "blob:fixture-1", "blob:fixture-2", "blob:fixture-3", "blob:fixture-4", "blob:fixture-5",
 ]);
 assert.equal(previousWideState.cleanup(), false, "An old async cleanup must not remove the new theme.");
 
@@ -746,7 +876,7 @@ assert.equal(explicit.nodes.has("codex-qq-skin-home-pet"), false);
 assert.equal(explicit.nodes.has("codex-qq-skin-right-tray"), false);
 assert.equal(explicit.nodes.has("codex-qq-skin-retro-shell"), false);
 assert.deepEqual(explicit.revokedUrls, [
-  "blob:fixture-1", "blob:fixture-2", "blob:fixture-3", "blob:fixture-4",
+  "blob:fixture-1", "blob:fixture-2", "blob:fixture-3", "blob:fixture-4", "blob:fixture-5",
 ]);
 await Promise.resolve();
 await Promise.resolve();
