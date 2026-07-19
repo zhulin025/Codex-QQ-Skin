@@ -586,6 +586,9 @@
     let routeKey = "";
     let cancelledUntil = 0;
     let completionTimer = null;
+    let statusTimer = null;
+    let statusListener = null;
+    let currentStatus = "idle";
     let boundButton = null;
     let activeCoughAudio = null;
     let startupCuePending = false;
@@ -600,6 +603,22 @@
     const stopPattern = /^(stop|stop generating|stop task|cancel generation|停止|停止生成|停止任务|终止任务|中止任务)$/i;
     const approvalActionPattern = /^(allow once|approve)(\b.*)?$|^yes,? (allow|proceed)$|^run( command)?$|^continue$|^允许(一次|本次|此操作)?$|^批准(一次|本次)?$|^同意$|^授权$|^运行(命令)?$|^继续执行$/i;
     const approvalContextPattern = /(permission|approval|approve|authorize|authorization|command|权限|授权|批准|审批|命令|沙盒)/i;
+
+    const setStatus = (next, { transient = false } = {}) => {
+      if (statusTimer && !transient) {
+        clearTimeout(statusTimer);
+        statusTimer = null;
+      }
+      currentStatus = next;
+      statusListener?.(currentStatus);
+      if (transient) {
+        if (statusTimer) clearTimeout(statusTimer);
+        statusTimer = setTimeout(() => {
+          statusTimer = null;
+          setStatus(window.navigator?.onLine === false ? "offline" : "idle");
+        }, 4200);
+      }
+    };
 
     const visibleButtons = () => [...document.querySelectorAll('button, [role="button"]')]
       .filter((button) => !button.disabled && button.getAttribute?.("aria-disabled") !== "true" &&
@@ -789,6 +808,7 @@
         activeApproval = approval;
         if (completionTimer) clearTimeout(completionTimer);
         completionTimer = null;
+        setStatus(window.navigator?.onLine === false ? "offline" : approval ? "approval" : running ? "running" : "idle");
         return;
       }
       if (approval && approval !== activeApproval) play("approval");
@@ -801,10 +821,17 @@
         if (completionTimer) clearTimeout(completionTimer);
         completionTimer = setTimeout(() => {
           completionTimer = null;
-          if (!findRunning() && !findApproval() && Date.now() >= cancelledUntil) play("completed");
+          if (!findRunning() && !findApproval() && Date.now() >= cancelledUntil) {
+            play("completed");
+            setStatus("completed", { transient: true });
+          }
         }, 520);
       }
       previousRunning = running;
+      if (window.navigator?.onLine === false) setStatus("offline");
+      else if (approval) setStatus("approval");
+      else if (running) setStatus("running");
+      else if (!statusTimer) setStatus("idle");
     };
 
     const unlock = () => {
@@ -819,7 +846,11 @@
       if (context?.state === "suspended") context.resume().then(playStartupCue).catch(() => {});
       else if (context) playStartupCue();
     };
-    const handleOnline = () => play("online");
+    const handleOnline = () => {
+      play("online");
+      setStatus(findApproval() ? "approval" : findRunning() ? "running" : "idle");
+    };
+    const handleOffline = () => setStatus("offline");
     const clickGuard = (event) => {
       const button = event.target?.closest?.('button, [role="button"]');
       if (button && isStopButton(button)) cancelledUntil = Date.now() + 3000;
@@ -829,21 +860,29 @@
     document.addEventListener?.("keydown", unlock, true);
     document.addEventListener?.("click", clickGuard, true);
     window.addEventListener?.("online", handleOnline);
+    window.addEventListener?.("offline", handleOffline);
 
     return {
       bindButton,
+      bindStatus(listener) {
+        statusListener = typeof listener === "function" ? listener : null;
+        statusListener?.(currentStatus);
+      },
       cleanup() {
         if (completionTimer) clearTimeout(completionTimer);
+        if (statusTimer) clearTimeout(statusTimer);
         document.removeEventListener?.("pointerdown", unlock, true);
         document.removeEventListener?.("keydown", unlock, true);
         document.removeEventListener?.("click", clickGuard, true);
         window.removeEventListener?.("online", handleOnline);
+        window.removeEventListener?.("offline", handleOffline);
         try { activeCoughAudio?.pause?.(); } catch {}
         activeCoughAudio = null;
         try { audioContext?.close?.(); } catch {}
         audioContext = null;
       },
       get enabled() { return enabled; },
+      get status() { return currentStatus; },
       play,
       preview: play,
       scan,
@@ -867,6 +906,93 @@
     return null;
   };
 
+  const statusLabels = {
+    idle: "在线 · 随时待命",
+    running: "正在工作…",
+    approval: "需要你的确认",
+    completed: "任务已完成",
+    offline: "连接已断开",
+  };
+  const weeklyUsageStorageKey = "codex-qq-skin-weekly-remaining";
+  const weeklyPattern = /(本周|每周|每週|一周|一週|week|weekly)/i;
+  const remainingPattern = /(?:剩余|剩餘)\s*(\d+(?:\.\d+)?)\s*%|(?:remaining|left)\s*:?\s*(\d+(?:\.\d+)?)\s*%/i;
+
+  const findWeeklyRemaining = () => {
+    for (const node of document.querySelectorAll('[role="status"], [role="alert"]')) {
+      const text = String(node.textContent || "").replace(/\s+/g, " ").trim();
+      if (!weeklyPattern.test(text)) continue;
+      const match = remainingPattern.exec(text);
+      const value = Number(match?.[1] ?? match?.[2]);
+      if (Number.isFinite(value)) return clamp(Math.round(value), 0, 100);
+    }
+    for (const progress of document.querySelectorAll("progress")) {
+      let host = progress;
+      let text = "";
+      for (let depth = 0; host && depth < 6; depth += 1, host = host.parentElement) {
+        text = String(host.textContent || "").replace(/\s+/g, " ").trim();
+        if (weeklyPattern.test(text)) break;
+      }
+      if (!weeklyPattern.test(text)) continue;
+      const match = remainingPattern.exec(text);
+      const parsed = Number(match?.[1] ?? match?.[2]);
+      if (Number.isFinite(parsed)) return clamp(Math.round(parsed), 0, 100);
+      const maximum = Number(progress.max || progress.getAttribute?.("max") || 100);
+      const used = Number(progress.value ?? progress.getAttribute?.("value"));
+      if (Number.isFinite(maximum) && maximum > 0 && Number.isFinite(used)) {
+        return clamp(Math.round(100 - used / maximum * 100), 0, 100);
+      }
+    }
+    return null;
+  };
+
+  const syncWeeklyUsage = (node) => {
+    if (!node) return;
+    let remaining = findWeeklyRemaining();
+    if (remaining != null) {
+      try { window.localStorage?.setItem(weeklyUsageStorageKey, String(remaining)); } catch {}
+    } else {
+      try {
+        const saved = window.localStorage?.getItem(weeklyUsageStorageKey);
+        const cached = Number(saved);
+        if (saved != null && Number.isFinite(cached)) remaining = clamp(Math.round(cached), 0, 100);
+      } catch {}
+    }
+    node.textContent = remaining == null ? "本周剩余 --" : `本周剩余 ${remaining}%`;
+    if (node.dataset) node.dataset.level = remaining == null ? "unknown" : remaining <= 5 ? "critical" : remaining <= 20 ? "low" : "normal";
+  };
+
+  const openAvatarOverlay = () => {
+    try {
+      const result = window.electronBridge?.sendMessageFromView?.({ type: "avatar-overlay-open" });
+      result?.catch?.(() => {});
+      return Boolean(result !== undefined || window.electronBridge?.sendMessageFromView);
+    } catch { return false; }
+  };
+
+  const toggleNativeTerminal = () => {
+    const labelPattern = /(toggle bottom panel visibility|切换底部面板显示|切換底部面板顯示|顯示\/隱藏底部面板)/i;
+    const candidates = [...document.querySelectorAll('button[aria-label], [role="button"][aria-label]')]
+      .filter((button) => !button.closest?.(`#${COMPANION_ID}`) && labelPattern.test(button.getAttribute?.("aria-label") || ""));
+    const visible = candidates.find((button) => {
+      const box = button.getBoundingClientRect?.();
+      if (!box) return true;
+      const style = window.getComputedStyle?.(button);
+      return box.width > 0 && box.height > 0 && box.left > 0 && box.top >= 0 &&
+        box.right <= window.innerWidth && box.bottom <= window.innerHeight &&
+        style?.display !== "none" && style?.visibility !== "hidden" && style?.opacity !== "0";
+    });
+    const target = visible || candidates[0];
+    target?.click?.();
+    return Boolean(target);
+  };
+
+  const syncCompanionStatus = (status) => {
+    const companion = companionParts?.companion;
+    if (!companion) return;
+    if (companion.dataset) companion.dataset.status = status;
+    setTextContent(companionParts.statusText, statusLabels[status] || statusLabels.idle);
+  };
+
   const ensureCompanion = () => {
     let companion = document.getElementById(COMPANION_ID);
     if (!companion || companion.parentElement !== document.body) {
@@ -882,7 +1008,12 @@
           <img class="qq-skin-pet-image" alt="" draggable="false">
           <div class="qq-skin-pet-glow"></div>
         </div>
-        <div class="qq-skin-pet-status"><i></i><span>在线 · 随时待命</span><button type="button"></button></div>`;
+        <div class="qq-skin-companion-actions">
+          <button type="button" data-companion-action="pet">🐾 打开宠物</button>
+          <button type="button" data-companion-action="terminal">⌨ 终端</button>
+          <button type="button" data-companion-action="sound"></button>
+        </div>
+        <div class="qq-skin-pet-status"><i></i><span>在线 · 随时待命</span><b class="qq-skin-weekly-usage">本周剩余 --</b></div>`;
       document.body.appendChild(companion);
       companionParts = null;
     }
@@ -890,11 +1021,30 @@
       companionParts = {
         companion,
         image: companion.querySelector(".qq-skin-pet-image"),
-        soundButton: companion.querySelector(".qq-skin-pet-status button"),
+        petButton: companion.querySelector('[data-companion-action="pet"]'),
+        terminalButton: companion.querySelector('[data-companion-action="terminal"]'),
+        soundButton: companion.querySelector('[data-companion-action="sound"]'),
+        statusText: companion.querySelector(".qq-skin-pet-status span"),
+        weeklyUsage: companion.querySelector(".qq-skin-weekly-usage"),
       };
+      const bindAction = (button, action, label) => {
+        if (!button?.dataset || button.dataset.qqCompanionBound === "true" || typeof button.addEventListener !== "function") return;
+        button.dataset.qqCompanionBound = "true";
+        button.setAttribute?.("aria-label", label);
+        button.addEventListener("click", (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          action();
+        });
+      };
+      bindAction(companionParts.petButton, openAvatarOverlay, "打开 Codex 宠物");
+      bindAction(companionParts.terminalButton, toggleNativeTerminal, "显示或隐藏终端");
     }
     if (companionParts.image && companionParts.image.src !== petUrl) companionParts.image.src = petUrl;
     soundMonitor.bindButton(companionParts.soundButton);
+    soundMonitor.bindStatus(syncCompanionStatus);
+    syncCompanionStatus(soundMonitor.status);
+    syncWeeklyUsage(companionParts.weeklyUsage);
     return companion;
   };
 
@@ -1362,8 +1512,8 @@
     if (!root) return;
     metrics.ensureCalls += 1;
     const shell = rootPass ? applyRootState(root) : null;
-    if (route) syncRouteState(shell, { layout });
     soundMonitor.scan();
+    if (route) syncRouteState(shell, { layout });
   };
 
   const cleanup = () => {

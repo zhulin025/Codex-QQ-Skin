@@ -157,8 +157,23 @@ assert.match(
 );
 assert.match(
   css,
-  /\.app-shell-left-panel > :first-child:not\(nav\)[\s\S]{0,100}display:\s*none !important;/,
-  "Settings navigation must remove the reserved native header sibling.",
+  /div:has\(> div\.app-shell-left-panel > nav\)[\s\S]{0,160}padding-top:\s*var\(--qq-retro-content-top\) !important;[\s\S]{0,100}height:\s*100% !important;/,
+  "The complete settings layout must begin below the retro title and toolbar.",
+);
+assert.match(
+  css,
+  /:root\.codex-qq-skin\s*\{[\s\S]{0,120}--qq-retro-content-top:\s*70px;/,
+  "Desktop settings content must reserve the full 70px retro header.",
+);
+assert.match(
+  css,
+  /\.app-shell-left-panel > :first-child:not\(nav\):not\(:has\(button, a, \[role="button"\], \[role="link"\]\)\)[\s\S]{0,100}display:\s*none !important;/,
+  "Settings navigation may remove only a non-interactive reserved native header sibling.",
+);
+assert.doesNotMatch(
+  css,
+  /\.app-shell-left-panel > :first-child:not\(nav\)\s*\{[\s\S]{0,100}display:\s*none !important;/,
+  "Settings navigation must never blanket-hide a first-child return control.",
 );
 assert.match(
   css,
@@ -240,6 +255,18 @@ assert.match(template, /playKnock[\s\S]{0,2600}eventName === "online"/,
   "Startup and network reconnection must use a dedicated knock cue.");
 assert.match(template, /addEventListener\?\.\("online", handleOnline\)/,
   "The renderer must play the online cue when network connectivity returns.");
+assert.match(template, /statusLabels[\s\S]{0,500}approval:\s*"需要你的确认"[\s\S]{0,200}completed:\s*"任务已完成"/,
+  "The companion must reflect live running, approval, completion, and connectivity states.");
+assert.match(template, /data-companion-action="pet"[\s\S]{0,300}data-companion-action="terminal"[\s\S]{0,300}data-companion-action="sound"/,
+  "The companion must expose exactly the requested pet, terminal, and sound shortcuts.");
+assert.match(template, /sendMessageFromView\?\.\(\{ type: "avatar-overlay-open" \}\)/,
+  "The pet shortcut must open Codex's native avatar overlay.");
+assert.match(template, /toggleNativeTerminal[\s\S]{0,900}切换底部面板显示[\s\S]{0,900}target\?\.click\?\.\(\)/,
+  "The terminal shortcut must forward to Codex's native bottom-panel control.");
+assert.match(template, /findWeeklyRemaining[\s\S]{0,1800}100 - used \/ maximum \* 100/,
+  "The weekly badge must derive remaining quota from Codex's real used-usage progress.");
+assert.match(template, /weeklyUsageStorageKey[\s\S]{0,2000}本周剩余 \$\{remaining\}%/,
+  "The weekly badge must retain the most recently observed real percentage.");
 assert.match(template, /cancelledUntil[\s\S]{0,6000}isStopButton/,
   "A user-cancelled task must suppress the completion cue.");
 assert.doesNotMatch(
@@ -257,8 +284,10 @@ assert.match(
   /setInterval\(\(\) => ensure\(\{ root: false, route: true, layout: true \}\), 4000\)/,
   "The fallback interval must not repeat root appearance detection every four seconds.",
 );
-assert.match(css, /\.qq-skin-pet-status button[\s\S]{0,500}pointer-events:\s*auto;/,
-  "The companion card must expose an interactive sound toggle.");
+assert.match(css, /\.qq-skin-companion-actions button[\s\S]{0,500}pointer-events:\s*auto;/,
+  "The companion card must expose three interactive action buttons.");
+assert.match(css, /\.qq-skin-weekly-usage[\s\S]{0,700}data-level="critical"/,
+  "The companion card must visually flag low and critical weekly quota.");
 assert.match(
   css,
   /body\s*>\s*#root\s*\{[\s\S]{0,220}height:\s*calc\(100vh - 16px\) !important;/,
