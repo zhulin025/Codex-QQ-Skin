@@ -15,6 +15,13 @@
     "minWidth": 1180,
     "rightWidth": 300
   },
+  "sound": {
+    "enabled": true,
+    "volume": 0.48,
+    "completed": "cough",
+    "approval": "alert",
+    "online": "knock"
+  },
   "colors": {
     "background": "#F7F4F5",
     "panel": "#FFFFFF",

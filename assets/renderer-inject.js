@@ -1,4 +1,4 @@
-((cssText, artDataUrl, petDataUrl, retroFrameDataUrl, qqAvatarDataUrl, themeConfig) => {
+((cssText, artDataUrl, petDataUrl, retroFrameDataUrl, qqAvatarDataUrl, coughAudioDataUrl, themeConfig) => {
   const STATE_KEY = "__CODEX_QQ_SKIN_STATE__";
   const DISABLED_KEY = "__CODEX_QQ_SKIN_DISABLED__";
   const STYLE_ID = "codex-qq-skin-style";
@@ -19,6 +19,7 @@
   const THEME = themeConfig && typeof themeConfig === "object" ? themeConfig : {};
   const ART = THEME.art && typeof THEME.art === "object" ? THEME.art : {};
   const LAYOUT = THEME.layout && typeof THEME.layout === "object" ? THEME.layout : {};
+  const SOUND = THEME.sound && typeof THEME.sound === "object" ? THEME.sound : {};
   const ART_METADATA = THEME.artMetadata && typeof THEME.artMetadata === "object"
     ? THEME.artMetadata : null;
   const ANALYSIS_CACHE_KEY = "__CODEX_QQ_SKIN_ANALYSIS_CACHE__";
@@ -59,6 +60,7 @@
     textWrites: 0,
     analysisRuns: 0,
     analysisCacheHits: artAnalysis ? 1 : 0,
+    startupPasses: 0,
     firstEnsureMs: null,
     analysisMs: null,
   };
@@ -77,11 +79,13 @@
   const petUrl = dataUrlToObjectUrl(petDataUrl, "image/png");
   const retroFrameUrl = dataUrlToObjectUrl(retroFrameDataUrl, "image/png");
   const qqAvatarUrl = dataUrlToObjectUrl(qqAvatarDataUrl, "image/png");
+  const coughAudioUrl = dataUrlToObjectUrl(coughAudioDataUrl, "audio/mpeg");
 
   if (previous?.observer) previous.observer.disconnect();
   if (previous?.rootObserver) previous.rootObserver.disconnect();
   if (previous?.resizeObserver) previous.resizeObserver.disconnect();
   if (previous?.timer) clearInterval(previous.timer);
+  if (previous?.startupTimer) clearInterval(previous.startupTimer);
   if (previous?.scheduler?.timeout) clearTimeout(previous.scheduler.timeout);
   if (previous?.scheduler?.frame != null && typeof cancelAnimationFrame === "function") {
     cancelAnimationFrame(previous.scheduler.frame);
@@ -91,6 +95,7 @@
   if (previous?.routeInteractionHandler && typeof document.removeEventListener === "function") {
     document.removeEventListener("click", previous.routeInteractionHandler, true);
   }
+  previous?.soundMonitor?.cleanup?.();
   if (previous?.mediaHandler && previous?.mediaQuery) {
     try { previous.mediaQuery.removeEventListener("change", previous.mediaHandler); } catch {}
   }
@@ -558,6 +563,295 @@
   const showSidebarLabel = /^(show sidebar|显示边栏|显示侧边栏|顯示邊欄|顯示側邊欄|サイドバーを表示|사이드바 표시)$/i;
   const hideSidebarLabel = /^(hide sidebar|隐藏边栏|隐藏侧边栏|隱藏邊欄|隱藏側邊欄|サイドバーを非表示|사이드바 숨기기)$/i;
 
+  /* Original, synthesized notification sounds. No QQ audio is copied or
+     bundled: completion is a short filtered-noise "cough", approval is an
+     urgent IM-style alert, and startup/reconnection is a two-part knock. */
+  const createSoundMonitor = () => {
+    const storageKey = "codex-qq-skin-sound-enabled";
+    const configuredVolume = typeof SOUND.volume === "number"
+      ? clamp(SOUND.volume, 0, 1) : 0.48;
+    const completionStyle = SOUND.completed === "didi" ? "didi" : "cough";
+    const approvalStyle = SOUND.approval === "didi" ? "didi" : "alert";
+    const onlineStyle = SOUND.online === "didi" ? "didi" : "knock";
+    let enabled = SOUND.enabled !== false;
+    try {
+      const saved = window.localStorage?.getItem(storageKey);
+      if (saved === "true" || saved === "false") enabled = saved === "true";
+    } catch {}
+
+    let audioContext = null;
+    let initialized = false;
+    let previousRunning = false;
+    let activeApproval = null;
+    let routeKey = "";
+    let cancelledUntil = 0;
+    let completionTimer = null;
+    let boundButton = null;
+    let activeCoughAudio = null;
+    let startupCuePending = false;
+    try {
+      startupCuePending = window.sessionStorage?.getItem("codex-qq-skin-online-cue-played") !== "true";
+    } catch { startupCuePending = true; }
+
+    const normalize = (value) => String(value || "").replace(/\s+/g, " ").trim();
+    const buttonLabel = (button) => normalize(
+      button.getAttribute?.("aria-label") || button.getAttribute?.("title") || button.textContent,
+    );
+    const stopPattern = /^(stop|stop generating|stop task|cancel generation|停止|停止生成|停止任务|终止任务|中止任务)$/i;
+    const approvalActionPattern = /^(allow once|approve)(\b.*)?$|^yes,? (allow|proceed)$|^run( command)?$|^continue$|^允许(一次|本次|此操作)?$|^批准(一次|本次)?$|^同意$|^授权$|^运行(命令)?$|^继续执行$/i;
+    const approvalContextPattern = /(permission|approval|approve|authorize|authorization|command|权限|授权|批准|审批|命令|沙盒)/i;
+
+    const visibleButtons = () => [...document.querySelectorAll('button, [role="button"]')]
+      .filter((button) => !button.disabled && button.getAttribute?.("aria-disabled") !== "true" &&
+        button.getAttribute?.("aria-hidden") !== "true");
+    const isStopButton = (button) => stopPattern.test(buttonLabel(button));
+    const findRunning = () => visibleButtons().some(isStopButton);
+    const findApproval = () => {
+      const action = visibleButtons().find((button) => {
+        const label = buttonLabel(button);
+        if (!approvalActionPattern.test(label)) return false;
+        const turn = button.closest?.('[data-turn-key], [data-testid*="approval" i]');
+        if (!turn) return false;
+        if (!/^(run( command)?|continue|运行(命令)?|继续执行)$/i.test(label)) return true;
+        return approvalContextPattern.test(normalize(turn.textContent));
+      });
+      if (!action) return null;
+      const host = action.closest?.('[data-turn-key], [data-testid*="approval" i]') || action.parentElement;
+      const hostText = normalize(host?.textContent).slice(0, 320);
+      const turnKey = host?.getAttribute?.("data-turn-key") || "";
+      return `${turnKey}|${buttonLabel(action)}|${hostText}`;
+    };
+
+    const ensureAudioContext = () => {
+      if (audioContext && audioContext.state !== "closed") return audioContext;
+      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+      if (typeof AudioContextClass !== "function") return null;
+      try { audioContext = new AudioContextClass(); } catch { audioContext = null; }
+      return audioContext;
+    };
+
+    const playNotes = (notes) => {
+      const context = ensureAudioContext();
+      if (!context) return;
+      const start = context.currentTime + 0.025;
+      for (const [frequency, offset, duration] of notes) {
+        const oscillator = context.createOscillator();
+        const gain = context.createGain();
+        oscillator.type = "sine";
+        oscillator.frequency.setValueAtTime(frequency, start + offset);
+        gain.gain.setValueAtTime(0.0001, start + offset);
+        gain.gain.exponentialRampToValueAtTime(Math.max(0.0002, configuredVolume * 0.24), start + offset + 0.012);
+        gain.gain.exponentialRampToValueAtTime(0.0001, start + offset + duration);
+        oscillator.connect(gain).connect(context.destination);
+        oscillator.start(start + offset);
+        oscillator.stop(start + offset + duration + 0.02);
+      }
+    };
+
+    const playSynthesizedCough = () => {
+      const context = ensureAudioContext();
+      if (!context) return;
+      const sampleRate = context.sampleRate;
+      for (const [offset, duration, frequency, strength] of [
+        [0.02, 0.19, 620, 1],
+        [0.28, 0.26, 470, 0.82],
+      ]) {
+        const frameCount = Math.max(1, Math.floor(sampleRate * duration));
+        const buffer = context.createBuffer(1, frameCount, sampleRate);
+        const data = buffer.getChannelData(0);
+        let randomState = 0x51f15e + Math.floor(offset * 1000);
+        for (let index = 0; index < frameCount; index += 1) {
+          randomState = (randomState * 1664525 + 1013904223) >>> 0;
+          const noise = randomState / 0xffffffff * 2 - 1;
+          const phase = index / frameCount;
+          const envelope = Math.sin(Math.PI * phase) * Math.exp(-phase * 2.1);
+          data[index] = noise * envelope;
+        }
+        const source = context.createBufferSource();
+        const filter = context.createBiquadFilter();
+        const gain = context.createGain();
+        source.buffer = buffer;
+        filter.type = "bandpass";
+        filter.frequency.setValueAtTime(frequency, context.currentTime + offset);
+        filter.Q.value = 0.85;
+        gain.gain.value = configuredVolume * 0.7 * strength;
+        source.connect(filter).connect(gain).connect(context.destination);
+        source.start(context.currentTime + offset);
+      }
+    };
+
+    const playCough = () => {
+      if (typeof window.Audio !== "function") {
+        playSynthesizedCough();
+        return;
+      }
+      try {
+        activeCoughAudio?.pause?.();
+        const audio = new window.Audio(coughAudioUrl);
+        activeCoughAudio = audio;
+        audio.volume = configuredVolume;
+        audio.onended = () => { if (activeCoughAudio === audio) activeCoughAudio = null; };
+        const playback = audio.play();
+        playback?.catch?.(() => {
+          if (activeCoughAudio === audio) activeCoughAudio = null;
+          playSynthesizedCough();
+        });
+      } catch {
+        activeCoughAudio = null;
+        playSynthesizedCough();
+      }
+    };
+
+    const playKnock = () => {
+      const context = ensureAudioContext();
+      if (!context) return;
+      const start = context.currentTime + 0.025;
+      for (const [offset, frequency, strength] of [
+        [0.00, 165, 1], [0.19, 138, 0.84],
+      ]) {
+        const oscillator = context.createOscillator();
+        const filter = context.createBiquadFilter();
+        const gain = context.createGain();
+        oscillator.type = "triangle";
+        oscillator.frequency.setValueAtTime(frequency, start + offset);
+        oscillator.frequency.exponentialRampToValueAtTime(frequency * 0.55, start + offset + 0.115);
+        filter.type = "lowpass";
+        filter.frequency.value = 720;
+        gain.gain.setValueAtTime(Math.max(0.0002, configuredVolume * 0.52 * strength), start + offset);
+        gain.gain.exponentialRampToValueAtTime(0.0001, start + offset + 0.14);
+        oscillator.connect(filter).connect(gain).connect(context.destination);
+        oscillator.start(start + offset);
+        oscillator.stop(start + offset + 0.16);
+      }
+    };
+
+    const synthesize = (style) => {
+      if (style === "cough") playCough();
+      else if (style === "knock") playKnock();
+      else if (style === "didi") playNotes([
+        [880, 0.00, 0.075], [1175, 0.105, 0.075], [1320, 0.21, 0.095],
+      ]);
+      else playNotes([
+        [740, 0.00, 0.075], [1047, 0.11, 0.085], [740, 0.23, 0.075], [1319, 0.34, 0.13],
+      ]);
+    };
+
+    const play = (eventName) => {
+      if (!enabled || configuredVolume <= 0) return false;
+      const context = ensureAudioContext();
+      if (!context) return false;
+      const style = eventName === "approval" ? approvalStyle
+        : eventName === "online" ? onlineStyle : completionStyle;
+      const perform = () => synthesize(style);
+      if (context.state === "suspended" && typeof context.resume === "function") {
+        context.resume().then(perform).catch(() => {});
+      } else {
+        perform();
+      }
+      return true;
+    };
+
+    const updateButton = () => {
+      if (!boundButton) return;
+      boundButton.textContent = enabled ? "🔊 提示音" : "🔇 已静音";
+      boundButton.setAttribute?.("aria-label", enabled ? "关闭 Codex QQ 提示音" : "开启 Codex QQ 提示音");
+      boundButton.setAttribute?.("aria-pressed", enabled ? "true" : "false");
+    };
+    const setEnabled = (next, { preview = false } = {}) => {
+      enabled = Boolean(next);
+      try { window.localStorage?.setItem(storageKey, String(enabled)); } catch {}
+      updateButton();
+      if (enabled && preview) play("approval");
+      return enabled;
+    };
+    const bindButton = (button) => {
+      if (boundButton === button) return;
+      boundButton = button;
+      if (button?.dataset && button.dataset.qqSoundBound !== "true" && typeof button.addEventListener === "function") {
+        button.dataset.qqSoundBound = "true";
+        button.addEventListener("click", (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          setEnabled(!enabled, { preview: !enabled });
+        });
+      }
+      updateButton();
+    };
+
+    const scan = () => {
+      const nextRoute = `${window.location?.pathname || ""}${window.location?.search || ""}`;
+      const running = findRunning();
+      const approval = findApproval();
+      if (!initialized || nextRoute !== routeKey) {
+        initialized = true;
+        routeKey = nextRoute;
+        previousRunning = running;
+        activeApproval = approval;
+        if (completionTimer) clearTimeout(completionTimer);
+        completionTimer = null;
+        return;
+      }
+      if (approval && approval !== activeApproval) play("approval");
+      activeApproval = approval;
+      if (running && completionTimer) {
+        clearTimeout(completionTimer);
+        completionTimer = null;
+      }
+      if (previousRunning && !running && !approval && Date.now() >= cancelledUntil) {
+        if (completionTimer) clearTimeout(completionTimer);
+        completionTimer = setTimeout(() => {
+          completionTimer = null;
+          if (!findRunning() && !findApproval() && Date.now() >= cancelledUntil) play("completed");
+        }, 520);
+      }
+      previousRunning = running;
+    };
+
+    const unlock = () => {
+      if (!enabled) return;
+      const context = ensureAudioContext();
+      const playStartupCue = () => {
+        if (!startupCuePending) return;
+        startupCuePending = false;
+        try { window.sessionStorage?.setItem("codex-qq-skin-online-cue-played", "true"); } catch {}
+        play("online");
+      };
+      if (context?.state === "suspended") context.resume().then(playStartupCue).catch(() => {});
+      else if (context) playStartupCue();
+    };
+    const handleOnline = () => play("online");
+    const clickGuard = (event) => {
+      const button = event.target?.closest?.('button, [role="button"]');
+      if (button && isStopButton(button)) cancelledUntil = Date.now() + 3000;
+      unlock();
+    };
+    document.addEventListener?.("pointerdown", unlock, true);
+    document.addEventListener?.("keydown", unlock, true);
+    document.addEventListener?.("click", clickGuard, true);
+    window.addEventListener?.("online", handleOnline);
+
+    return {
+      bindButton,
+      cleanup() {
+        if (completionTimer) clearTimeout(completionTimer);
+        document.removeEventListener?.("pointerdown", unlock, true);
+        document.removeEventListener?.("keydown", unlock, true);
+        document.removeEventListener?.("click", clickGuard, true);
+        window.removeEventListener?.("online", handleOnline);
+        try { activeCoughAudio?.pause?.(); } catch {}
+        activeCoughAudio = null;
+        try { audioContext?.close?.(); } catch {}
+        audioContext = null;
+      },
+      get enabled() { return enabled; },
+      play,
+      preview: play,
+      scan,
+      setEnabled,
+    };
+  };
+  const soundMonitor = createSoundMonitor();
+
   const findPinnedSummaryToggle = () => {
     for (const button of document.querySelectorAll('button[aria-label]')) {
       if (pinnedSummaryLabel.test(button.getAttribute("aria-label") || "")) return button;
@@ -579,7 +873,7 @@
       companion?.remove();
       companion = document.createElement("section");
       companion.id = COMPANION_ID;
-      companion.setAttribute("aria-hidden", "true");
+      companion.setAttribute("aria-label", "Codex 伙伴");
       companion.innerHTML = `
         <div class="qq-skin-companion-title">
           <span>Codex 伙伴</span><i></i>
@@ -588,7 +882,7 @@
           <img class="qq-skin-pet-image" alt="" draggable="false">
           <div class="qq-skin-pet-glow"></div>
         </div>
-        <div class="qq-skin-pet-status"><i></i><span>在线 · 随时待命</span></div>`;
+        <div class="qq-skin-pet-status"><i></i><span>在线 · 随时待命</span><button type="button"></button></div>`;
       document.body.appendChild(companion);
       companionParts = null;
     }
@@ -596,9 +890,11 @@
       companionParts = {
         companion,
         image: companion.querySelector(".qq-skin-pet-image"),
+        soundButton: companion.querySelector(".qq-skin-pet-status button"),
       };
     }
     if (companionParts.image && companionParts.image.src !== petUrl) companionParts.image.src = petUrl;
+    soundMonitor.bindButton(companionParts.soundButton);
     return companion;
   };
 
@@ -949,7 +1245,7 @@
       const box = input.getBoundingClientRect();
       return box.width > 120 && box.height > 12;
     });
-    const taskRoute = !settingsRoute && Boolean(shellMain);
+    const taskRoute = !home && !settingsRoute && Boolean(shellMain);
     setAttribute(root, "data-dream-task-route", taskRoute ? "true" : "false");
     const layoutBaseEligible = layoutMode === "classic-three-pane" &&
       !home && taskRoute && wideEnough;
@@ -1060,6 +1356,7 @@
     metrics.ensureCalls += 1;
     const shell = rootPass ? applyRootState(root) : null;
     if (route) syncRouteState(shell, { layout });
+    soundMonitor.scan();
   };
 
   const cleanup = () => {
@@ -1093,6 +1390,7 @@
     state?.rootObserver?.disconnect();
     state?.resizeObserver?.disconnect();
     if (state?.timer) clearInterval(state.timer);
+    if (state?.startupTimer) clearInterval(state.startupTimer);
     if (state?.scheduler?.timeout) clearTimeout(state.scheduler.timeout);
     if (state?.scheduler?.frame != null && typeof cancelAnimationFrame === "function") {
       cancelAnimationFrame(state.scheduler.frame);
@@ -1103,6 +1401,7 @@
     if (state?.routeInteractionHandler && typeof document.removeEventListener === "function") {
       document.removeEventListener("click", state.routeInteractionHandler, true);
     }
+    state?.soundMonitor?.cleanup?.();
     if (state?.mediaHandler && state?.mediaQuery) {
       try { state.mediaQuery.removeEventListener("change", state.mediaHandler); } catch {}
     }
@@ -1110,6 +1409,7 @@
     if (state?.petUrl) URL.revokeObjectURL(state.petUrl);
     if (state?.retroFrameUrl) URL.revokeObjectURL(state.retroFrameUrl);
     if (state?.qqAvatarUrl) URL.revokeObjectURL(state.qqAvatarUrl);
+    if (state?.coughAudioUrl) URL.revokeObjectURL(state.coughAudioUrl);
     delete window[STATE_KEY];
     return true;
   };
@@ -1171,15 +1471,18 @@
     rootObserver,
     resizeObserver,
     timer: null,
+    startupTimer: null,
     scheduler,
     resizeHandler,
     routeInteractionHandler,
+    soundMonitor,
     mediaQuery,
     mediaHandler,
     artUrl,
     petUrl,
     retroFrameUrl,
     qqAvatarUrl,
+    coughAudioUrl,
     installToken,
     analysis: artAnalysis,
     artMetadata: ART_METADATA,
@@ -1199,6 +1502,9 @@
   if (previous?.qqAvatarUrl && previous.qqAvatarUrl !== qqAvatarUrl) {
     URL.revokeObjectURL(previous.qqAvatarUrl);
   }
+  if (previous?.coughAudioUrl && previous.coughAudioUrl !== coughAudioUrl) {
+    URL.revokeObjectURL(previous.coughAudioUrl);
+  }
 
   observer.observe(document.documentElement, {
     childList: true,
@@ -1206,15 +1512,17 @@
   });
   rootObserver.observe(document.documentElement, {
     attributes: true,
-    attributeFilter: ["class", "data-theme", "data-appearance", "data-color-mode", "style"],
+    // Inline styles on <html> are owned by applyRootState. Observing them
+    // feeds our own CSS-variable writes back into another full root pass.
+    attributeFilter: ["class", "data-theme", "data-appearance", "data-color-mode"],
   });
   if (document.body) {
     rootObserver.observe(document.body, {
       attributes: true,
-      attributeFilter: ["class", "data-theme", "data-appearance", "data-color-mode", "style"],
+      attributeFilter: ["class", "data-theme", "data-appearance", "data-color-mode"],
     });
   }
-  const timer = setInterval(() => ensure(), 4000);
+  const timer = setInterval(() => ensure({ root: false, route: true, layout: true }), 4000);
   window[STATE_KEY].timer = timer;
   window.addEventListener("resize", resizeHandler, { passive: true });
   if (typeof document.addEventListener === "function") {
@@ -1223,6 +1531,32 @@
   if (mediaHandler && mediaQuery) {
     mediaQuery.addEventListener("change", mediaHandler);
   }
+  // Codex mounts its fixed shell, composer and account footer across several
+  // React commits. Refresh their cached geometry during that bounded startup
+  // window, reproducing the useful layout effect of toggling a native panel.
+  const startupResizePasses = new Set([1, 2, 4, 8, 12, 16]);
+  let startupPass = 0;
+  const startupTimer = setInterval(() => {
+    const state = window[STATE_KEY];
+    if (state?.installToken !== installToken || window[DISABLED_KEY]) {
+      clearInterval(startupTimer);
+      return;
+    }
+    startupPass += 1;
+    metrics.startupPasses = startupPass;
+    scheduleEnsure({ route: true, layout: true });
+    if (
+      startupResizePasses.has(startupPass) &&
+      typeof window.dispatchEvent === "function" && typeof window.Event === "function"
+    ) {
+      window.dispatchEvent(new window.Event("resize"));
+    }
+    if (startupPass >= 16) {
+      clearInterval(startupTimer);
+      if (state.startupTimer === startupTimer) state.startupTimer = null;
+    }
+  }, 250);
+  window[STATE_KEY].startupTimer = startupTimer;
   const analysisPromise = artAnalysis ? Promise.resolve(null) : analyzeArt();
   window[STATE_KEY].analysisTimer = analysisTimer;
   analysisPromise.then((analysis) => {
@@ -1249,5 +1583,6 @@
   __QQ_SKIN_PET_JSON__,
   __QQ_SKIN_RETRO_FRAME_JSON__,
   __QQ_SKIN_QQ_AVATAR_JSON__,
+  __QQ_SKIN_COUGH_AUDIO_JSON__,
   __QQ_SKIN_THEME_JSON__
 )
