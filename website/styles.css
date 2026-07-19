@@ -74,6 +74,15 @@ body {
   text-align: center;
 }
 
+.project-logo {
+  display: block;
+  width: clamp(118px, 23vw, 164px);
+  height: auto;
+  margin: 0 auto 28px;
+  border-radius: 24%;
+  filter: drop-shadow(0 14px 22px rgba(31, 65, 145, 0.2));
+}
+
 .eyebrow {
   margin: 0 0 14px;
   color: #3276b8;

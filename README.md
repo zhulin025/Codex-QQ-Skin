@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="./website/project-logo.png" width="180" alt="Codex QQ Skin 项目 Logo">
+</p>
+
 # Codex QQ Skin
 
 一套面向 macOS Codex 桌面端的复古 QQ 风格外观：双层蓝银标题栏、三栏工作区、QQ 在线资料卡，以及独立的 Codex 伙伴面板。
