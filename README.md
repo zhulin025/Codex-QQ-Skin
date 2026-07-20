@@ -22,7 +22,7 @@
 
 安装前请确保官方 Codex/ChatGPT 桌面端至少成功启动过一次，并完全退出 Codex。项目不要求另行安装 Node.js。
 
-### 安装方式 1：通过终端安装（推荐）
+### 安装方式 1：通过终端安装
 
 1. 在 GitHub 项目页点击 **Code → Download ZIP**，下载后解压。
 2. 打开“终端”，依次执行：
@@ -38,7 +38,25 @@ chmod +x ./*.command scripts/*.sh
 
 `xattr` 命令用于移除 GitHub 下载文件的 macOS 隔离标记。请只对确认来自本项目官方仓库的文件执行该命令，不需要使用 `sudo`。
 
-### 安装方式 2：双击命令文件
+### 安装方式 2：使用 APP 一键安装（普通用户推荐）
+
+1. 前往 [GitHub Releases](https://github.com/zhulin025/Codex-QQ-Skin/releases)，下载最新版本的 `Codex QQ Skin.app.zip`。
+2. 解压后将 **Codex QQ Skin.app** 拖入“应用程序”文件夹。
+3. 双击打开 APP，首次点击“一键安装并启动”。
+4. 安装完成后，以后直接双击 APP 即可启动 QQ 皮肤版 Codex，不需要打开终端或手动修改文件权限。
+
+由于当前 APP 未使用 Apple Developer ID 签名和公证，首次打开时可能出现“无法验证开发者”或“Apple 无法检查是否包含恶意软件”。请确认 APP 下载自本项目的官方 GitHub Release，然后按以下步骤放行：
+
+1. 打开“系统设置”。
+2. 进入“隐私与安全性”。
+3. 向下滚动到“安全性”，会看到关于 `Codex QQ Skin.app` 的提示。
+4. 点击“仍要打开”。
+5. 输入 Mac 登录密码或使用 Touch ID。
+6. 再次点击“打开”。
+
+这个安全确认通常只需完成一次，之后可以像普通 APP 一样直接双击打开。不要关闭 macOS 的整体安全保护，也不需要使用终端执行 `chmod` 或 `xattr`。
+
+### 安装方式 3：双击命令文件
 
 1. 在 GitHub 项目页点击 **Code → Download ZIP**，下载后解压。
 2. 完全退出 Codex。
@@ -137,7 +155,10 @@ chmod +x ./*.command scripts/*.sh
 ```bash
 npm test
 ./scripts/doctor-macos.sh
+npm run build:app
 ```
+
+`npm run build:app` 会在 `release/` 生成同时支持 Apple Silicon 与 Intel 的 `Codex QQ Skin.app`。设置 `DEVELOPER_ID_APPLICATION` 环境变量后会使用对应证书签名；公开分发前还需使用 Apple 公证服务处理最终 ZIP/DMG。
 
 测试覆盖注入 payload、图片元数据、主题切换、UTF-8 配置往返、回环 CDP 限制、清理恢复和官方签名检查。
 
