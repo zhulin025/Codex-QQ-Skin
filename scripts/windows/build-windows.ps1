@@ -27,11 +27,15 @@ try {
     $node = (Get-Command node.exe -ErrorAction Stop).Source
     Copy-Item -LiteralPath $node -Destination (Join-Path $runtime 'node.exe')
   } else {
+    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
     $archiveName = "node-v$NodeVersion-win-x64.zip"
     $archive = Join-Path $work $archiveName
     $baseUrl = "https://nodejs.org/dist/v$NodeVersion"
-    Invoke-WebRequest -Uri "$baseUrl/$archiveName" -OutFile $archive
-    $checksums = (Invoke-WebRequest -Uri "$baseUrl/SHASUMS256.txt").Content
+    $webClient = [Net.WebClient]::new()
+    try {
+      $webClient.DownloadFile("$baseUrl/$archiveName", $archive)
+      $checksums = $webClient.DownloadString("$baseUrl/SHASUMS256.txt")
+    } finally { $webClient.Dispose() }
     $match = [regex]::Match($checksums, "(?m)^([a-f0-9]{64})  $([regex]::Escape($archiveName))$")
     if (-not $match.Success) { throw 'The official Node.js checksum entry was not found.' }
     $actual = (Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash.ToLowerInvariant()

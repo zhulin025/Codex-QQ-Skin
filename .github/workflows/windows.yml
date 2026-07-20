@@ -33,10 +33,10 @@ jobs:
     timeout-minutes: 20
     steps:
       - name: Check out source
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: '22'
 
@@ -68,7 +68,7 @@ jobs:
           & (Join-Path $package 'runtime\node.exe') (Join-Path $package 'scripts\injector.mjs') --check-payload --theme-dir (Join-Path $package 'presets\preset-classic-codex')
 
       - name: Upload Windows package
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: Codex-QQ-Skin-Windows-x64
           path: |
