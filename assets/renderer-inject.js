@@ -914,8 +914,42 @@
     offline: "连接已断开",
   };
   const weeklyUsageStorageKey = "codex-qq-skin-weekly-remaining";
+  const profileActionPattern = /^(open profile menu|open account menu|打开个人资料菜单|打开账户菜单|開啟個人資料選單|開啟帳戶選單|プロフィールメニューを開く|프로필 메뉴 열기)$/i;
   const weeklyPattern = /(本周|每周|每週|一周|一週|week|weekly)/i;
   const remainingPattern = /(?:剩余|剩餘)\s*(\d+(?:\.\d+)?)\s*%|(?:remaining|left)\s*:?\s*(\d+(?:\.\d+)?)\s*%/i;
+
+  const findReactWeeklyUsage = () => {
+    const firstFiber = window.__codexRoot?._internalRoot?.current;
+    if (!firstFiber || typeof firstFiber !== "object") return null;
+    const visited = new WeakSet();
+    const pending = [firstFiber];
+    let scanned = 0;
+    while (pending.length && scanned < 20000) {
+      const fiber = pending.pop();
+      if (!fiber || typeof fiber !== "object" || visited.has(fiber)) continue;
+      visited.add(fiber);
+      scanned += 1;
+      for (const props of [fiber.memoizedProps, fiber.alternate?.memoizedProps]) {
+        const rateLimit = props?.rateLimit;
+        const windowData = rateLimit?.rate_limit?.primary_window;
+        const windowSeconds = Number(windowData?.limit_window_seconds);
+        const usedPercent = Number(windowData?.used_percent);
+        if (
+          Number.isFinite(windowSeconds) && windowSeconds >= 6 * 86400 && windowSeconds <= 8 * 86400 &&
+          Number.isFinite(usedPercent)
+        ) {
+          const accountIdentity = String(rateLimit.account_id || rateLimit.user_id || "").trim();
+          return {
+            accountIdentity,
+            remaining: clamp(Math.round(100 - usedPercent), 0, 100),
+          };
+        }
+      }
+      if (fiber.sibling) pending.push(fiber.sibling);
+      if (fiber.child) pending.push(fiber.child);
+    }
+    return null;
+  };
 
   const findWeeklyRemaining = () => {
     for (const node of document.querySelectorAll('[role="status"], [role="alert"]')) {
@@ -945,20 +979,44 @@
     return null;
   };
 
+  const findCurrentAccountIdentity = () => {
+    const profileButton = [...document.querySelectorAll("button[aria-label]")].find((button) =>
+      profileActionPattern.test(String(button.getAttribute?.("aria-label") || "").trim()) &&
+      String(button.textContent || "").trim());
+    const visibleName = String(profileButton?.textContent || retroProfileParts?.name?.textContent || "")
+      .replace(/\s+/g, " ").trim();
+    return visibleName.slice(0, 120);
+  };
+
+  const weeklyUsageCacheKey = (accountIdentity) => accountIdentity
+    ? `${weeklyUsageStorageKey}:${encodeURIComponent(accountIdentity.toLocaleLowerCase())}`
+    : "";
+
   const syncWeeklyUsage = (node) => {
     if (!node) return;
-    let remaining = findWeeklyRemaining();
+    const reactUsage = findReactWeeklyUsage();
+    const accountIdentity = reactUsage?.accountIdentity || findCurrentAccountIdentity();
+    const accountCacheKey = weeklyUsageCacheKey(accountIdentity);
+    let remaining = reactUsage?.remaining ?? findWeeklyRemaining();
     if (remaining != null) {
-      try { window.localStorage?.setItem(weeklyUsageStorageKey, String(remaining)); } catch {}
-    } else {
+      if (accountCacheKey) {
+        try { window.localStorage?.setItem(accountCacheKey, String(remaining)); } catch {}
+      }
+    } else if (accountCacheKey) {
       try {
-        const saved = window.localStorage?.getItem(weeklyUsageStorageKey);
+        const saved = window.localStorage?.getItem(accountCacheKey);
         const cached = Number(saved);
         if (saved != null && Number.isFinite(cached)) remaining = clamp(Math.round(cached), 0, 100);
       } catch {}
     }
+    // Version 1.6.1 stored one global value. It cannot safely be associated
+    // with the account currently signed in, so never use it after migration.
+    try { window.localStorage?.removeItem(weeklyUsageStorageKey); } catch {}
     node.textContent = remaining == null ? "本周剩余 --" : `本周剩余 ${remaining}%`;
-    if (node.dataset) node.dataset.level = remaining == null ? "unknown" : remaining <= 5 ? "critical" : remaining <= 20 ? "low" : "normal";
+    if (node.dataset) {
+      node.dataset.level = remaining == null ? "unknown" : remaining <= 5 ? "critical" : remaining <= 20 ? "low" : "normal";
+      node.dataset.account = accountIdentity;
+    }
   };
 
   const openAvatarOverlay = () => {
@@ -1276,7 +1334,6 @@
     const sidebar = document.querySelector("aside.app-shell-left-panel");
     if (!sidebar || typeof sidebar.getBoundingClientRect !== "function") return null;
     const sidebarBox = sidebar.getBoundingClientRect();
-    const profileActionPattern = /^(open profile menu|open account menu|打开个人资料菜单|打开账户菜单|開啟個人資料選單|開啟帳戶選單|プロフィールメニューを開く|프로필 메뉴 열기)$/i;
     const buttons = [...sidebar.querySelectorAll("button")];
     const isVisibleFooterButton = (button) => {
       if (typeof button.getBoundingClientRect !== "function") return false;

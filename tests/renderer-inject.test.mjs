@@ -265,8 +265,18 @@ assert.match(template, /toggleNativeTerminal[\s\S]{0,900}切换底部面板显�
   "The terminal shortcut must forward to Codex's native bottom-panel control.");
 assert.match(template, /findWeeklyRemaining[\s\S]{0,1800}100 - used \/ maximum \* 100/,
   "The weekly badge must derive remaining quota from Codex's real used-usage progress.");
+assert.match(template, /findReactWeeklyUsage[\s\S]{0,1600}rate_limit\?\.primary_window[\s\S]{0,700}100 - usedPercent/,
+  "The weekly badge must prefer Codex's live account-scoped weekly rate-limit state.");
+assert.match(template, /limit_window_seconds[\s\S]{0,500}6 \* 86400[\s\S]{0,200}8 \* 86400/,
+  "Only a seven-day rate-limit window may be presented as the weekly quota.");
 assert.match(template, /weeklyUsageStorageKey[\s\S]{0,2000}本周剩余 \$\{remaining\}%/,
   "The weekly badge must retain the most recently observed real percentage.");
+assert.match(template, /findCurrentAccountIdentity[\s\S]{0,1200}weeklyUsageCacheKey[\s\S]{0,700}accountCacheKey/,
+  "Weekly quota caches must be isolated by the current Codex account identity.");
+assert.match(template, /removeItem\(weeklyUsageStorageKey\)/,
+  "The unsafe pre-account global weekly quota cache must be discarded during migration.");
+assert.doesNotMatch(template, /getItem\(weeklyUsageStorageKey\)/,
+  "The renderer must never reuse another account's legacy weekly quota value.");
 assert.match(template, /cancelledUntil[\s\S]{0,6000}isStopButton/,
   "A user-cancelled task must suppress the completion cue.");
 assert.doesNotMatch(
