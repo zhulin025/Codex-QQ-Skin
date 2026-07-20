@@ -1,4 +1,4 @@
-param([string]$Image, [string]$Name, [int]$Port = 9341, [switch]$NoApply)
+﻿param([string]$Image, [string]$Name, [int]$Port = 9341, [switch]$NoApply)
 . (Join-Path $PSScriptRoot 'common-windows.ps1')
 
 Initialize-StateRoot
