@@ -8,15 +8,36 @@ if (-not $InPlace -and $script:ProjectRoot -ne $script:InstallRoot) {
   $parent = Split-Path -Parent $script:InstallRoot
   $stage = "$($script:InstallRoot).installing.$PID"
   $previous = "$($script:InstallRoot).previous.$PID"
+
+  # Upgrades can replace an engine that is currently hosting the injector.
+  # Stop only the PID recorded in our state file; Stop-RecordedInjector also
+  # validates its executable and command line before touching the process.
+  Stop-RecordedInjector
+
+  function Move-DirectoryWithRetry {
+    param([Parameter(Mandatory)][string]$Source, [Parameter(Mandatory)][string]$Destination)
+    $lastError = $null
+    for ($attempt = 1; $attempt -le 12; $attempt++) {
+      try {
+        Move-Item -LiteralPath $Source -Destination $Destination -ErrorAction Stop
+        return
+      } catch {
+        $lastError = $_
+        if ($attempt -lt 12) { Start-Sleep -Milliseconds 250 }
+      }
+    }
+    throw $lastError
+  }
+
   New-Item -ItemType Directory -Force -Path $parent | Out-Null
   if (Test-Path -LiteralPath $stage) { Remove-Item -LiteralPath $stage -Recurse -Force }
   New-Item -ItemType Directory -Path $stage | Out-Null
   $null = & robocopy.exe $script:ProjectRoot $stage /E /XD .git release website macos-app menubar /XF '*.command' '*.sh' '.DS_Store' /NFL /NDL /NJH /NJS
   if ($LASTEXITCODE -ge 8) { Stop-WithError "Could not stage the Windows engine (robocopy exit $LASTEXITCODE)." }
-  if (Test-Path -LiteralPath $script:InstallRoot) { Move-Item -LiteralPath $script:InstallRoot -Destination $previous }
-  try { Move-Item -LiteralPath $stage -Destination $script:InstallRoot }
+  if (Test-Path -LiteralPath $script:InstallRoot) { Move-DirectoryWithRetry -Source $script:InstallRoot -Destination $previous }
+  try { Move-DirectoryWithRetry -Source $stage -Destination $script:InstallRoot }
   catch {
-    if (Test-Path -LiteralPath $previous) { Move-Item -LiteralPath $previous -Destination $script:InstallRoot }
+    if (Test-Path -LiteralPath $previous) { Move-DirectoryWithRetry -Source $previous -Destination $script:InstallRoot }
     throw
   }
   if (Test-Path -LiteralPath $previous) { Remove-Item -LiteralPath $previous -Recurse -Force }
@@ -38,12 +59,14 @@ $env:CODEX_QQ_SKIN_PLATFORM = 'win32'
 if ($LASTEXITCODE -ne 0) { Stop-WithError 'Could not save the Codex appearance backup.' }
 
 $desktop = [Environment]::GetFolderPath('Desktop')
-$launcher = Join-Path $desktop 'Codex QQ Skin.cmd'
+$launcher = Join-Path $desktop 'ChatGPT QQ Skin.cmd'
 $startScript = '%LOCALAPPDATA%\CodexQQSkin\engine\scripts\windows\start-qq-skin-windows.ps1'
 @('@echo off', "powershell.exe -NoProfile -ExecutionPolicy Bypass -File `"$startScript`" -Port $Port -RestartExisting", 'if errorlevel 1 pause') |
   Set-Content -LiteralPath $launcher -Encoding ASCII
 
-Write-Host "Codex QQ Skin $($script:SkinVersion) installed at $($script:InstallRoot)."
+Write-Host "ChatGPT QQ Skin $($script:SkinVersion) installed at $($script:InstallRoot)."
 if (-not $NoLaunch) {
   & (Join-Path $script:ProjectRoot 'scripts\windows\start-qq-skin-windows.ps1') -Port $Port -RestartExisting
+  exit $LASTEXITCODE
 }
+exit 0

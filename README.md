@@ -4,7 +4,7 @@
 
 # Codex QQ Skin
 
-一套面向 Codex 桌面端的复古 QQ 风格外观。2.0 支持上传任意图片，在本机自动分析并生成完整皮肤方案；macOS 版为稳定版，Windows x64 版正在通过自动构建和实机验收进入预览阶段。
+一套面向 Codex/ChatGPT 桌面端的复古 QQ 风格外观。2.1 提供 macOS App 与原生 C# Windows 安装器，并支持选择任意图片，在本机生成铺满新建任务、任务详情和左侧栏的完整自定义皮肤。
 
 > 非 OpenAI、腾讯或 QQ 官方产品。本项目不会修改官方 `.app`、`app.asar`、代码签名、API Key 或 Base URL。
 
@@ -20,9 +20,18 @@
 
 ## 安装
 
-> Windows 用户请查看 [`README-WINDOWS.md`](./README-WINDOWS.md)。Windows 发布 ZIP 由 GitHub Actions 的 Windows Runner 构建，包含独立 Node.js 运行时。
+> Windows 用户请查看 [`README-WINDOWS.md`](./README-WINDOWS.md)，并从 [GitHub Releases](https://github.com/zhulin025/Codex-QQ-Skin/releases) 下载 `ChatGPT QQ Skin Setup 2.1.exe`。安装器已经内置运行引擎与 Node.js。
 
 安装前请确保官方 Codex/ChatGPT 桌面端至少成功启动过一次，并完全退出 Codex。项目不要求另行安装 Node.js。
+
+### Windows：原生安装器（推荐）
+
+1. 从 [GitHub Releases](https://github.com/zhulin025/Codex-QQ-Skin/releases) 下载 `ChatGPT QQ Skin Setup 2.1.exe`。
+2. 双击运行，点击“一键安装并启动”。
+3. 如需自定义背景，点击“上传图片生成皮肤”，选择 PNG、JPEG 或 WebP 图片。
+4. 右上角可随时切换 `原生 / QQ / 自定义` 三种模式。
+
+Windows 安装器不会修改 ChatGPT/Codex 官方安装目录或 `app.asar`。它仅通过监听 `127.0.0.1` 的 Chromium DevTools Protocol 注入样式。当前 EXE 未进行商业代码签名，首次运行可能出现 Windows SmartScreen 提示，请只从本仓库的正式 Release 下载并核对 SHA-256。
 
 ### 安装方式 1：通过终端安装
 

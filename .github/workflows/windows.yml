@@ -44,35 +44,23 @@ jobs:
         shell: powershell
         run: .\tests\windows\run-tests.ps1
 
-      - name: Build portable Windows package
+      - name: Build native Windows installer
         shell: powershell
-        run: .\scripts\windows\build-windows.ps1
+        run: .\scripts\windows\build-gui-installer.ps1 -UseInstalledNode -OutputFileName 'ChatGPT QQ Skin Setup 2.1.exe'
 
-      - name: Inspect package
+      - name: Inspect installer
         shell: powershell
         run: |
-          $zip = Get-ChildItem .\release\Codex-QQ-Skin-Windows-x64-v*.zip | Select-Object -First 1
-          if (-not $zip) { throw 'Windows ZIP was not created.' }
-          $check = Join-Path $env:RUNNER_TEMP 'qq-skin-package-check'
-          Expand-Archive $zip.FullName $check
-          $package = Join-Path $check 'Codex QQ Skin'
-          foreach ($required in @(
-            'runtime\node.exe',
-            'scripts\injector.mjs',
-            'scripts\windows\install-qq-skin-windows.ps1',
-            'Install Codex QQ Skin Windows.cmd',
-            'README-WINDOWS.md'
-          )) {
-            if (-not (Test-Path (Join-Path $package $required))) { throw "Missing packaged file: $required" }
-          }
-          & (Join-Path $package 'runtime\node.exe') (Join-Path $package 'scripts\injector.mjs') --check-payload --theme-dir (Join-Path $package 'presets\preset-classic-codex')
+          $installer = Get-Item '.\release\ChatGPT QQ Skin Setup 2.1.exe'
+          if ($installer.Length -lt 1MB) { throw 'Windows installer is unexpectedly small.' }
+          if (-not (Test-Path "$($installer.FullName).sha256")) { throw 'Installer checksum was not created.' }
 
       - name: Upload Windows package
         uses: actions/upload-artifact@v7
         with:
-          name: Codex-QQ-Skin-Windows-x64
+          name: ChatGPT-QQ-Skin-Setup-2.1
           path: |
-            release/Codex-QQ-Skin-Windows-x64-v*.zip
-            release/Codex-QQ-Skin-Windows-x64-v*.zip.sha256
+            release/ChatGPT QQ Skin Setup 2.1.exe
+            release/ChatGPT QQ Skin Setup 2.1.exe.sha256
           if-no-files-found: error
           retention-days: 30

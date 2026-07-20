@@ -374,15 +374,39 @@ html.codex-qq-skin body > #root > div:has(> div > .app-shell-left-panel) {
 }
 
 .dream-retro-native-controls {
-  position: absolute;
+  position: static;
   z-index: 4;
-  top: 9px;
-  right: 8px;
+  margin-left: auto;
   display: flex;
   align-items: center;
   gap: 6px;
   pointer-events: auto;
   color: rgb(255 255 255 / .88);
+}
+
+/* Windows keeps minimize/maximize/close on the right of the native title bar.
+   Skin controls belong at the far right of the toolbar instead. */
+html.codex-qq-skin[data-dream-platform="windows"] .dream-retro-title-penguin {
+  left: 10px;
+}
+
+html.codex-qq-skin[data-dream-platform="windows"] .dream-retro-titlebar strong {
+  left: 49px;
+  right: 16px;
+}
+
+html.codex-qq-skin[data-dream-platform="windows"] .dream-retro-toolbar {
+  padding-right: 10px;
+}
+
+html.codex-qq-skin[data-dream-platform="windows"]
+  .dream-retro-native-controls .dream-retro-cloned-control {
+  width: 24px !important;
+  height: 22px !important;
+  min-width: 24px !important;
+  border-color: rgb(82 139 195 / .42) !important;
+  background: rgb(255 255 255 / .28) !important;
+  color: #214d7b !important;
 }
 
 .dream-retro-native-controls .dream-retro-cloned-control {
@@ -2427,4 +2451,64 @@ html.codex-qq-skin[data-dream-shell="light"]
     animation-duration: .01ms !important;
     animation-iteration-count: 1 !important;
   }
+}
+
+/* Windows/settings corrections. The settings screen owns a separate navigation
+   panel, so task-sidebar profile decoration must not leak into it. */
+html.codex-qq-skin:is(
+  :has(input[placeholder*="设置"]),
+  :has(input[placeholder*="設定"]),
+  :has(input[placeholder*="settings" i])
+) #codex-qq-skin-retro-profile {
+  display: none !important;
+}
+
+html.codex-qq-skin:is(
+  :has(input[placeholder*="设置"]),
+  :has(input[placeholder*="設定"]),
+  :has(input[placeholder*="settings" i])
+) .dream-retro-profile-host {
+  height: auto !important;
+  min-height: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+html.codex-qq-skin:is(
+  :has(input[placeholder*="设置"]),
+  :has(input[placeholder*="設定"]),
+  :has(input[placeholder*="settings" i])
+) .app-shell-left-panel > nav {
+  min-height: 0 !important;
+  overflow-y: auto !important;
+}
+
+/* Remove the redundant native task header row on Windows. Its action buttons
+   are mirrored in the QQ toolbar above. */
+html.codex-qq-skin[data-dream-platform="windows"][data-dream-task-route="true"]
+  main.main-surface > header.app-header-tint {
+  height: 0 !important;
+  min-height: 0 !important;
+  max-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  overflow: visible !important;
+}
+
+/* Current Windows builds place their native 36px application header above the
+   aside/main row. Keep it mounted off-screen so cloned toolbar actions still
+   dispatch to the original buttons, but remove it from document flow. */
+html.codex-qq-skin[data-dream-platform="windows"]
+  body > #root > div > .app-header-tint {
+  position: fixed !important;
+  top: -100px !important;
+  left: 0 !important;
+  width: 100% !important;
+  height: 36px !important;
+  min-height: 36px !important;
+  margin: 0 !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
 }

@@ -11,6 +11,13 @@ Get-ChildItem -LiteralPath (Join-Path $root 'scripts\windows') -Filter '*.ps1' |
 }
 if ($errors.Count) { throw ($errors | ForEach-Object Message | Out-String) }
 
+# StrictMode turns a one-item pipeline result into a scalar. Keep process-count
+# checks explicitly array-wrapped so stopping exactly one Codex process works.
+$commonWindows = Get-Content -LiteralPath (Join-Path $root 'scripts\windows\common-windows.ps1')
+if ($commonWindows | Where-Object { $_ -match '\(Get-CodexProcesses\)\.Count' -and $_ -notmatch '@\(Get-CodexProcesses\)\.Count' }) {
+  throw 'Get-CodexProcesses count checks must use @(...) under StrictMode.'
+}
+
 & $node (Join-Path $root 'scripts\injector.mjs') --check-payload --theme-dir (Join-Path $root 'presets\preset-classic-codex') | Out-Null
 if ($LASTEXITCODE -ne 0) { throw 'Injector payload check failed.' }
 foreach ($test in @('image-metadata.test.mjs','injector-bootstrap.test.mjs','renderer-inject.test.mjs','theme-stage.test.mjs')) {

@@ -1087,3 +1087,66 @@ html.codex-dream-skin [data-message-author-role] { border-radius: 16px; }
     animation-iteration-count: 1 !important;
   }
 }
+
+/* Full-window custom wallpaper. Paint the uploaded image exactly once on the
+   window so home, task detail, and the left navigation share one continuous
+   cover image regardless of source aspect ratio. */
+html.codex-dream-skin body {
+  background-color: var(--ds-bg) !important;
+  background-image: var(--dream-skin-art) !important;
+  background-position: var(--ds-art-position) !important;
+  background-size: cover !important;
+  background-repeat: no-repeat !important;
+  background-attachment: fixed !important;
+}
+
+html.codex-dream-skin body > #root,
+html.codex-dream-skin body > #root > div,
+html.codex-dream-skin main.main-surface {
+  background-color: transparent !important;
+  background-image: none !important;
+}
+
+html.codex-dream-skin aside.app-shell-left-panel {
+  background: linear-gradient(90deg,
+    rgb(var(--ds-panel-rgb) / .62),
+    rgb(var(--ds-panel-rgb) / .42)) !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  backdrop-filter: blur(8px) saturate(104%) !important;
+}
+
+html.codex-dream-skin main.main-surface:not(.dream-skin-home-shell)::before {
+  content: none !important;
+  display: none !important;
+  background: none !important;
+}
+
+html.codex-dream-skin main.main-surface > header.app-header-tint,
+html.codex-dream-skin body > #root > div > .app-header-tint {
+  background: rgb(var(--ds-panel-rgb) / .36) !important;
+  border-color: rgb(var(--ds-muted-rgb) / .18) !important;
+  backdrop-filter: blur(8px) saturate(104%) !important;
+}
+
+html.codex-dream-skin main.main-surface.dream-skin-home-shell,
+html.codex-dream-skin main.main-surface.dream-skin-home-shell
+  .dream-skin-home > div:first-child > div:first-child > div:first-child {
+  background: transparent !important;
+  background-image: none !important;
+  border-color: rgb(var(--ds-muted-rgb) / .22) !important;
+  box-shadow: none !important;
+}
+
+html.codex-dream-skin main.main-surface.dream-skin-home-shell
+  .dream-skin-home > div:first-child > div:first-child > div:first-child::before {
+  content: none !important;
+  display: none !important;
+}
+
+html.codex-dream-skin main.main-surface:not(.dream-skin-home-shell)
+  [class~="bg-token-main-surface-primary"][class~="h-full"],
+html.codex-dream-skin main.main-surface:not(.dream-skin-home-shell)
+  .app-shell-main-content-frame {
+  background: transparent !important;
+}

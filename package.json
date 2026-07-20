@@ -1,6 +1,6 @@
 {
   "name": "codex-qq-skin",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -8,7 +8,8 @@
     "doctor": "./scripts/doctor-macos.sh",
     "build:app": "./scripts/build-macos-app.sh",
     "test:windows": "powershell -NoProfile -ExecutionPolicy Bypass -File tests/windows/run-tests.ps1",
-    "build:windows": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/windows/build-windows.ps1"
+    "build:windows": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/windows/build-windows.ps1",
+    "build:windows-gui": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/windows/build-gui-installer.ps1"
   },
   "engines": {
     "node": ">=20"

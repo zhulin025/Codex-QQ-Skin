@@ -17,26 +17,27 @@ if ($running.Count -gt 0 -and -not $debugReady) {
 try { Stop-RecordedInjector } catch { throw }
 if (-not $debugReady) {
   $Port = Get-AvailablePort -Preferred $Port
-  Write-Host "Launching Codex with loopback debug port $Port..."
+  Write-Host "Launching ChatGPT with loopback debug port $Port..."
   Start-CodexWithCdp -Port $Port
   if (-not (Wait-CodexCdpEndpoint -Port $Port)) {
-    Stop-WithError "Codex did not expose a verified loopback CDP endpoint within 45 seconds. See $($script:CodexErrorLog)."
+    Stop-WithError "ChatGPT did not expose a verified loopback CDP endpoint within 45 seconds. See $($script:CodexErrorLog)."
   }
 }
 
+# Apply and verify synchronously before starting the persistent watcher. This
+# avoids a startup race where verification begins before the packaged app has
+# finished constructing its renderer shell.
+Invoke-Injector -Arguments @(
+  '--once','--enable-skin','--port',$Port,'--theme-dir',$script:ThemeDir,'--timeout-ms','60000'
+) | Out-Null
 $injector = Start-Injector -Port $Port
-try {
-  Invoke-Injector -Arguments @('--verify','--port',$Port,'--theme-dir',$script:ThemeDir,'--timeout-ms','20000') | Out-Null
-} catch {
-  Stop-Process -Id $injector.Id -ErrorAction SilentlyContinue
-  throw
-}
 $codexProcess = @(Get-CodexProcesses) | Select-Object -First 1
 if (-not $codexProcess) {
   Stop-Process -Id $injector.Id -ErrorAction SilentlyContinue
-  Stop-WithError 'Codex exited before the running state could be recorded.'
+  Stop-WithError 'ChatGPT exited before the running state could be recorded.'
 }
 $codexPid = [int]$codexProcess.ProcessId
 $startedAt = $injector.StartTime.ToUniversalTime().ToString('o')
 Write-State -Port $Port -InjectorPid $injector.Id -InjectorStartedAt $startedAt -CodexPid $codexPid
-Write-Host "Codex QQ Skin $($script:SkinVersion) is active on loopback port $Port."
+Write-Host "ChatGPT QQ Skin $($script:SkinVersion) is active on loopback port $Port."
+exit 0

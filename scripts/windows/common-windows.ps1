@@ -1,7 +1,7 @@
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-$script:SkinVersion = '2.0.0'
+$script:SkinVersion = '2.1.0'
 $script:ScriptRoot = Split-Path -Parent $PSCommandPath
 $script:ProjectRoot = (Resolve-Path (Join-Path $script:ScriptRoot '..\..')).Path
 $script:InjectorPath = Join-Path $script:ProjectRoot 'scripts\injector.mjs'
@@ -19,6 +19,8 @@ $script:CodexErrorLog = Join-Path $script:StateRoot 'codex-launch-error.log'
 $script:NodePath = $null
 $script:CodexExe = $null
 $script:CodexVersion = $null
+$script:CodexAppUserModelId = $null
+$script:CodexAppIds = @{}
 
 function Stop-WithError {
   param([Parameter(Mandatory)][string]$Message)
@@ -53,6 +55,7 @@ function Resolve-NodeRuntime {
 
 function Get-CodexCandidates {
   $values = [System.Collections.Generic.List[string]]::new()
+  $script:CodexAppIds = @{}
   if ($env:CODEX_EXE) { $values.Add($env:CODEX_EXE) }
   $values.Add((Join-Path $env:LOCALAPPDATA 'Programs\Codex\Codex.exe'))
   $values.Add((Join-Path $env:LOCALAPPDATA 'Programs\ChatGPT\ChatGPT.exe'))
@@ -78,7 +81,9 @@ function Get-CodexCandidates {
       $manifest = Get-AppxPackageManifest $package
       foreach ($application in @($manifest.Package.Applications.Application)) {
         if ($application.Executable) {
-          $values.Add((Join-Path $package.InstallLocation ([string]$application.Executable)))
+          $packagedExe = Join-Path $package.InstallLocation ([string]$application.Executable)
+          $values.Add($packagedExe)
+          $script:CodexAppIds[$packagedExe.ToLowerInvariant()] = "$($package.PackageFamilyName)!$($application.Id)"
         }
       }
     }
@@ -94,9 +99,11 @@ function Resolve-CodexApp {
     if ($name -notin @('Codex.exe', 'ChatGPT.exe')) { continue }
     $script:CodexExe = $resolved
     $script:CodexVersion = [Diagnostics.FileVersionInfo]::GetVersionInfo($resolved).FileVersion
+    $key = $resolved.ToLowerInvariant()
+    if ($script:CodexAppIds.ContainsKey($key)) { $script:CodexAppUserModelId = $script:CodexAppIds[$key] }
     return $resolved
   }
-  Stop-WithError 'Could not find Codex.exe. Install and launch the official Codex app once, or set CODEX_EXE to its full path.'
+  Stop-WithError 'Could not find ChatGPT.exe. Install and launch the official ChatGPT app once, or set CODEX_EXE to its full path.'
 }
 
 function Get-CodexProcesses {
@@ -201,17 +208,49 @@ function Stop-CodexApp {
   $processes = @(Get-CodexProcesses)
   foreach ($process in $processes) { Stop-Process -Id $process.ProcessId -ErrorAction SilentlyContinue }
   $deadline = [DateTime]::UtcNow.AddSeconds(15)
-  while ((Get-CodexProcesses).Count -gt 0 -and [DateTime]::UtcNow -lt $deadline) { Start-Sleep -Milliseconds 250 }
-  if ((Get-CodexProcesses).Count -gt 0) { Stop-WithError 'Codex did not close within 15 seconds. Close it manually and retry.' }
+  while (@(Get-CodexProcesses).Count -gt 0 -and [DateTime]::UtcNow -lt $deadline) { Start-Sleep -Milliseconds 250 }
+  if (@(Get-CodexProcesses).Count -gt 0) { Stop-WithError 'Codex did not close within 15 seconds. Close it manually and retry.' }
 }
 
 function Start-CodexWithCdp {
   param([Parameter(Mandatory)][int]$Port)
   Set-Content -LiteralPath $script:CodexLog -Value '' -Encoding UTF8
   Set-Content -LiteralPath $script:CodexErrorLog -Value '' -Encoding UTF8
-  Start-Process -FilePath $script:CodexExe -ArgumentList @(
-    '--remote-debugging-address=127.0.0.1', "--remote-debugging-port=$Port"
-  ) -RedirectStandardOutput $script:CodexLog -RedirectStandardError $script:CodexErrorLog | Out-Null
+  $launchArguments = "--remote-debugging-address=127.0.0.1 --remote-debugging-port=$Port"
+  if ($script:CodexAppUserModelId) {
+    if (-not ('CodexQQSkin.ApplicationActivationManager' -as [type])) {
+      Add-Type -TypeDefinition @'
+using System;
+using System.Runtime.InteropServices;
+namespace CodexQQSkin {
+  [ComImport, Guid("2e941141-7f97-4756-ba1d-9decde894a3d"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+  interface IApplicationActivationManager {
+    [PreserveSig] int ActivateApplication([MarshalAs(UnmanagedType.LPWStr)] string appUserModelId,
+      [MarshalAs(UnmanagedType.LPWStr)] string arguments, uint options, out uint processId);
+    [PreserveSig] int ActivateForFile(string appUserModelId, IntPtr itemArray, string verb, out uint processId);
+    [PreserveSig] int ActivateForProtocol(string appUserModelId, IntPtr itemArray, out uint processId);
+  }
+  public static class ApplicationActivationManager {
+    public static uint Activate(string appUserModelId, string arguments) {
+      var manager = (IApplicationActivationManager)new Manager();
+      uint processId;
+      int result = manager.ActivateApplication(appUserModelId, arguments, 0, out processId);
+      if (result < 0) Marshal.ThrowExceptionForHR(result);
+      return processId;
+    }
+    [ComImport, Guid("45BA127D-10A8-46EA-8AB7-56EA9078943C")]
+    private class Manager { }
+  }
+}
+'@
+    }
+    Write-Host "Activating packaged ChatGPT app $($script:CodexAppUserModelId)..."
+    [CodexQQSkin.ApplicationActivationManager]::Activate($script:CodexAppUserModelId, $launchArguments) | Out-Null
+  } else {
+    Start-Process -FilePath $script:CodexExe -ArgumentList @(
+      '--remote-debugging-address=127.0.0.1', "--remote-debugging-port=$Port"
+    ) -RedirectStandardOutput $script:CodexLog -RedirectStandardError $script:CodexErrorLog | Out-Null
+  }
 }
 
 function Start-Injector {

@@ -1264,8 +1264,8 @@
           <button type="button" data-retro-action="sites">🌐 站点</button>
           <button type="button" data-retro-action="pull-requests">↗ 拉取请求</button>
           <button type="button" data-retro-action="chat">💬 聊天</button>
+          <span class="dream-retro-native-controls"></span>
         </div>
-        <div class="dream-retro-native-controls"></div>
         <div class="dream-retro-body-frame"></div>`;
       document.body.appendChild(retroShell);
       retroShellParts = null;
@@ -1440,6 +1440,7 @@
     ensureStyle(root);
     const shell = resolvedShell();
     setAttribute(root, SHELL_ATTR, shell);
+    setAttribute(root, "data-dream-platform", /Win/i.test(window.navigator?.platform || window.navigator?.userAgent || "") ? "windows" : "other");
     setStyleProperty(root, "--qq-skin-art", `url("${qqArtUrl}")`);
     setStyleProperty(root, "--dream-skin-art", `url("${artUrl}")`);
     setStyleProperty(root, "--dream-retro-frame", `url("${retroFrameUrl}")`);
@@ -1541,7 +1542,8 @@
     const shouldAutoOpenSummary = LAYOUT.rightPanel !== "remember";
     const wideEnough = window.innerWidth >= layoutMinWidth;
     const settingsRoute = [...document.querySelectorAll('input[placeholder]')].some((input) => {
-      const placeholder = input.getAttribute("placeholder") || "";
+      let placeholder = input.getAttribute("placeholder") || "";
+      if (/(设置|設定)/i.test(placeholder)) placeholder = "settings";
       if (!/(settings|设置|設定)/i.test(placeholder)) return false;
       if (typeof input.getBoundingClientRect !== "function") return false;
       const box = input.getBoundingClientRect();
@@ -1576,11 +1578,14 @@
     setAttribute(root, "data-dream-summary-state", summaryOpen ? "open" : (layoutEligible ? "closed" : "unavailable"));
     setStyleProperty(root, "--dream-three-pane-min-width", `${layoutMinWidth}px`);
     setStyleProperty(root, "--dream-right-panel-width", `${layoutRightWidth}px`);
-    const summaryPanel = summaryOpen
+    const summaryPanelCandidate = summaryOpen
       ? document.querySelector('[data-pip-obstacle="thread-summary-panel"]') : null;
+    const summaryPanelBox = summaryPanelCandidate?.getBoundingClientRect?.();
+    const summaryPanel = summaryPanelBox && summaryPanelBox.width > 8 && summaryPanelBox.height > 8
+      ? summaryPanelCandidate : null;
     const rightTray = ensureRightTray();
     if (summaryPanel && typeof summaryPanel.getBoundingClientRect === "function") {
-      const summaryBox = summaryPanel.getBoundingClientRect();
+      const summaryBox = summaryPanelBox;
       const summaryWidth = Math.round(summaryBox.width);
       if (summaryWidth >= 272 && summaryWidth <= 420) {
         setStyleProperty(root, "--dream-summary-panel-width", `${summaryWidth}px`);
@@ -1602,7 +1607,9 @@
       rightTray.classList.remove("is-visible");
       root.style.removeProperty("--dream-right-panel-right");
     }
-    companion.classList.toggle("is-visible", summaryOpen);
+    // The summary and generic sidebar controls can briefly report the same
+    // pressed state. Show the companion only while the summary is visible.
+    companion.classList.toggle("is-visible", Boolean(summaryPanel));
     let chrome = document.getElementById(CHROME_ID);
     let created = false;
     if (!chrome || chrome.parentElement !== document.body) {

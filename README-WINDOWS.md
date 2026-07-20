@@ -1,36 +1,79 @@
-# Codex QQ Skin for Windows（预览版）
+# ChatGPT QQ Skin for Windows 2.1
 
-这是 Codex QQ Skin 的 Windows x64 便携版本。它不会修改官方 Codex 安装目录、`app.asar`、API Key 或 Base URL，而是通过仅监听 `127.0.0.1` 的 Chromium DevTools Protocol 注入皮肤。
+Windows 10/11 x64 原生 C# GUI 版本。安装器提供“一键安装并启动”和“上传图片生成皮肤”两个入口，并内置运行引擎与 Node.js，无需用户另外安装依赖。
+
+项目不会修改官方 ChatGPT/Codex 安装目录、`app.asar`、API Key 或 Base URL。皮肤通过仅监听 `127.0.0.1` 的 Chromium DevTools Protocol 注入。
+
+## 下载
+
+从 [GitHub Releases](https://github.com/zhulin025/Codex-QQ-Skin/releases) 下载：
+
+```text
+ChatGPT QQ Skin Setup 2.1.exe
+ChatGPT QQ Skin Setup 2.1.exe.sha256
+```
+
+当前 EXE 尚未使用商业代码签名，Windows SmartScreen 可能在首次运行时显示提示。请只从本项目正式 Release 下载，并核对 SHA-256。
 
 ## 系统要求
 
 - Windows 10/11 x64。
-- 已安装官方 Codex 桌面端，并至少成功启动过一次。
-- 完全退出 Codex 后再安装。
-- 从完整发布 ZIP 解压运行；不要只复制单个 CMD 文件。
+- 已安装 Microsoft Store/MSIX 或普通安装版 ChatGPT/Codex 桌面客户端。
+- 官方客户端至少成功启动过一次。
+- 建议安装前保存正在进行的任务；安装器可能需要重新启动 ChatGPT。
 
 ## 安装与使用
 
-1. 解压 `Codex-QQ-Skin-Windows-x64-v*.zip`。
-2. 双击 `Install Codex QQ Skin Windows.cmd`。
-3. 安装后可以双击桌面生成的 `Codex QQ Skin.cmd` 启动。
-4. 双击 `Customize Codex QQ Skin Windows.cmd`，选择一张图片即可在本机自动生成并应用整套皮肤方案。
-5. `Verify Codex QQ Skin Windows.cmd` 会验证运行状态并在桌面保存截图。
-6. `Restore Codex QQ Skin Windows.cmd` 会停止注入器并恢复安装前保存的官方外观设置。
+1. 双击 `ChatGPT QQ Skin Setup 2.1.exe`。
+2. 点击“一键安装并启动”。安装器会安装或升级引擎、启动 ChatGPT、注入并验证皮肤。
+3. 点击“上传图片生成皮肤”，选择 PNG、JPEG 或 WebP 图片，即可在本机生成并应用自定义皮肤。
+4. ChatGPT 右上角可在 `原生 / QQ / 自定义` 三种模式间即时切换。
 
-2.0 的图片分析全程在本机完成，会自动计算主色、明暗、视觉焦点、安全留白、画面构图和任务页呈现方式，不会上传用户图片。支持 PNG、JPEG 和 WebP，文件上限为 16 MB，单边不超过 16384 像素且总像素不超过 5000 万。
+图片分析完全在本机完成，不会上传用户图片。支持最大 16 MB、单边不超过 16384 像素且总像素不超过 5000 万的 PNG、JPEG 和 WebP。
 
-右上角可在 `原生 / QQ / 自定义` 三种模式之间切换。QQ 皮肤始终使用固定内置素材；用户图片只生成基于 Codex 原生布局的自定义皮肤，不会覆盖 QQ 皮肤。
+## 2.1 功能
 
-运行引擎安装到 `%LOCALAPPDATA%\CodexQQSkin\engine`，主题、日志和运行状态保存在 `%APPDATA%\CodexQQSkin`。发布包已经包含独立 Node.js 运行时，用户不需要另行安装 Node.js。
+- 原生 WinForms 安装器与 macOS 版相同的应用图标。
+- 支持普通 EXE 和 Microsoft Store/MSIX 版 ChatGPT。
+- QQ 2007 风格标题栏、工具栏、项目导航、三栏任务布局和伙伴面板。
+- Windows 专属标题栏和设置页布局适配。
+- 自定义图片作为窗口级 `cover` 背景，连续覆盖新建任务、任务详情和左侧栏。
+- 安装成功状态直接反馈到 GUI，不等待常驻注入器退出。
+- 升级时安全校验并停止旧注入器，随后重试替换引擎目录。
 
-如果安装器找不到 Codex，可以先在 PowerShell 中设置官方程序的完整路径：
+## 数据位置
+
+- 引擎：`%LOCALAPPDATA%\CodexQQSkin\engine`
+- 主题、日志和状态：`%APPDATA%\CodexQQSkin`
+- 桌面启动入口：`ChatGPT QQ Skin.cmd`
+
+## 手动入口
+
+完整源码包仍提供以下脚本：
+
+- `Start Codex QQ Skin Windows.cmd`
+- `Customize Codex QQ Skin Windows.cmd`
+- `Verify Codex QQ Skin Windows.cmd`
+- `Restore Codex QQ Skin Windows.cmd`
+
+如果自动检测不到普通 EXE 安装版，可以在 PowerShell 中设置：
 
 ```powershell
-$env:CODEX_EXE = 'C:\完整路径\Codex.exe'
+$env:CODEX_EXE = 'C:\完整路径\ChatGPT.exe'
 .\scripts\windows\install-qq-skin-windows.ps1
 ```
 
-## 当前验证状态
+## 构建
 
-GitHub Actions 的 Windows Server Runner 会自动检查 PowerShell 语法、Node 注入 payload、主题备份的平台隔离、ZIP 内容和 SHA-256。真实 Codex Windows 客户端的安装路径、启动参数、界面注入、退出恢复以及 SmartScreen 表现仍需在一台真实 Windows 10/11 机器上验收。
+```powershell
+.\scripts\windows\build-gui-installer.ps1 -UseInstalledNode -OutputFileName 'ChatGPT QQ Skin Setup 2.1.exe'
+```
+
+不使用 `-UseInstalledNode` 时，构建脚本会下载官方 Node.js 运行时并校验 SHA-256。输出文件保存在 `release` 目录。
+
+## 安全说明
+
+- CDP 只绑定 `127.0.0.1`。
+- WebSocket 目标必须是本机指定端口下的 `app://` 页面。
+- 停止旧注入器前会核验 PID、可执行文件、脚本路径和端口。
+- 不修改或重新签名官方 ChatGPT/Codex 文件。
