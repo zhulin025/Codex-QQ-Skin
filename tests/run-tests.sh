@@ -45,6 +45,20 @@ if ! /usr/bin/grep -F -q 'sfimage=paintpalette.fill' \
   printf 'SwiftBar menu title must retain the QQ Skin palette icon.\n' >&2
   exit 1
 fi
+if ! /usr/bin/grep -F -q '上传图片，生成我的皮肤' "$ROOT/macos-app/main.swift" \
+  || ! /usr/bin/grep -F -q 'load-image-theme-macos.sh' "$ROOT/macos-app/main.swift" \
+  || [ ! -f "$ROOT/Customize Codex QQ Skin Windows.cmd" ] \
+  || [ ! -f "$ROOT/scripts/windows/customize-qq-skin-windows.ps1" ] \
+  || ! /usr/bin/grep -F -q 'Customize Codex QQ Skin Windows.cmd' "$ROOT/scripts/windows/build-windows.ps1"; then
+  printf 'The 2.0 custom-image entrypoints are incomplete.\n' >&2
+  exit 1
+fi
+if ! /usr/bin/grep -F -q 'localStorage?.setItem("codex-qq-skin-enabled", "true")' "$ROOT/scripts/injector.mjs" \
+  || ! /usr/bin/grep -F -q -- '--once --enable-skin' "$ROOT/scripts/start-qq-skin-macos.sh" \
+  || ! /usr/bin/grep -F -q -- '--once --enable-skin' "$ROOT/scripts/common-macos.sh"; then
+  printf 'Explicit skin apply must leave native toggle mode before verification.\n' >&2
+  exit 1
+fi
 if ! /usr/bin/grep -F -q 'flag: "wx"' "$ROOT/scripts/write-theme.mjs"; then
   printf 'Theme writes must create randomized temporary files exclusively.\n' >&2
   exit 1
@@ -409,10 +423,15 @@ PAYLOAD_JSON="$("$NODE" "$ROOT/scripts/injector.mjs" --check-payload --theme-dir
   const theme = JSON.parse(require("fs").readFileSync(process.argv[1], "utf8"));
   if (theme.appearance !== "auto") process.exit(1);
   if (theme.art?.safeArea !== "auto" || theme.art?.taskMode !== "auto") process.exit(1);
-  if (theme.layout?.mode !== "classic-three-pane" || theme.layout?.rightPanel !== "open") process.exit(1);
+  if (theme.kind !== "custom-native" || theme.layout?.mode !== "off" || theme.layout?.rightPanel !== "open") process.exit(1);
   if (theme.layout?.minWidth !== 1180 || theme.layout?.rightWidth !== 300) process.exit(1);
   if (Object.hasOwn(theme.art, "focusX") || Object.hasOwn(theme.art, "focusY")) process.exit(1);
 ' "$TMP/theme/theme.json"
+if ! /usr/bin/grep -F -q ':root.codex-dream-skin' "$ROOT/assets/custom-skin.css" \
+  || ! /usr/bin/grep -F -q '"kind": "qq-stable"' "$ROOT/assets/theme.json"; then
+  printf 'Custom-native CSS or stable QQ theme identity is missing.\n' >&2
+  exit 1
+fi
 "$NODE" -e '
   const value = JSON.parse(process.argv[1]);
   if (!value.pass || value.themeName !== "测试主题" || value.imageBytes < 1 ||
@@ -746,7 +765,7 @@ CRLF_BACKUP="$TMP/config-crlf-backup.json"
 "$NODE" "$ROOT/scripts/theme-config.mjs" restore "$CRLF_CONFIG" "$CRLF_BACKUP" >/dev/null
 /usr/bin/cmp -s "$CRLF_CONFIG" "$TMP/original-crlf.toml"
 
-/usr/bin/env -u HOME /bin/bash -c '. "$1/scripts/common-macos.sh"; [ -n "$HOME" ] && [ "$SKIN_VERSION" = "1.8.1" ]' _ "$ROOT"
+/usr/bin/env -u HOME /bin/bash -c '. "$1/scripts/common-macos.sh"; [ -n "$HOME" ] && [ "$SKIN_VERSION" = "2.0.0" ]' _ "$ROOT"
 DOCTOR_HOME="$TMP/doctor-home"
 /bin/mkdir -p "$DOCTOR_HOME/.codex" "$DOCTOR_HOME/Library/Application Support/CodexQQSkin/theme"
 /usr/bin/printf '%s\n' 'model = "gpt-5"' > "$DOCTOR_HOME/.codex/config.toml"

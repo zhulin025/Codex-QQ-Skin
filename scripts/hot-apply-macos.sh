@@ -48,7 +48,7 @@ if ! verified_cdp_endpoint "$PORT"; then
 fi
 
 printf 'Force-injecting skin payload…\n'
-"$NODE" "$INJECTOR" --once --reload --port "$PORT" --theme-dir "$THEME_DIR" >/dev/null
+"$NODE" "$INJECTOR" --once --enable-skin --reload --port "$PORT" --theme-dir "$THEME_DIR" >/dev/null
 
 INJECTOR_PID="$(launch_injector_daemon "$PORT")"
 /bin/sleep 0.15

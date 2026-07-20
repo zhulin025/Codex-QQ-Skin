@@ -8,7 +8,7 @@ import { readImageMetadata } from "./image-metadata.mjs";
 const scriptPath = fileURLToPath(import.meta.url);
 const here = path.dirname(scriptPath);
 const root = path.resolve(here, "..");
-const SKIN_VERSION = "1.8.1";
+const SKIN_VERSION = "2.0.0";
 const LOOPBACK_HOSTS = new Set(["127.0.0.1", "localhost", "[::1]"]);
 const CDP_ID_PATTERN = /^[A-Za-z0-9._-]{1,200}$/;
 const MAX_ART_BYTES = 16 * 1024 * 1024;
@@ -21,6 +21,8 @@ function parseArgs(argv) {
     timeoutMs: 30000,
     screenshot: null,
     reload: false,
+    enableSkin: false,
+    skinMode: null,
     themeDir: null,
   };
   for (let i = 0; i < argv.length; i += 1) {
@@ -35,6 +37,8 @@ function parseArgs(argv) {
     else if (arg === "--screenshot") options.screenshot = path.resolve(argv[++i]);
     else if (arg === "--theme-dir") options.themeDir = path.resolve(argv[++i]);
     else if (arg === "--reload") options.reload = true;
+    else if (arg === "--enable-skin") options.enableSkin = true;
+    else if (arg === "--skin-mode") options.skinMode = String(argv[++i] || "");
     else throw new Error(`Unknown argument: ${arg}`);
   }
   if (!Number.isInteger(options.port) || options.port < 1024 || options.port > 65535) {
@@ -42,6 +46,9 @@ function parseArgs(argv) {
   }
   if (!Number.isFinite(options.timeoutMs) || options.timeoutMs < 250 || options.timeoutMs > 120000) {
     throw new Error(`Invalid timeout: ${options.timeoutMs}`);
+  }
+  if (options.skinMode !== null && !["native", "qq", "custom"].includes(options.skinMode)) {
+    throw new Error(`Invalid skin mode: ${options.skinMode}`);
   }
   return options;
 }
@@ -354,6 +361,8 @@ async function loadTheme(themeDir) {
     "highlight", "text", "muted", "line",
   ];
   const appearance = choice(raw.appearance, "appearance", ["auto", "light", "dark"]);
+  const kind = choice(raw.kind, "kind", ["qq-stable", "custom-native"])
+    ?? (String(raw.id || "").startsWith("preset-classic-") ? "qq-stable" : "custom-native");
   if (raw.art !== undefined && (!raw.art || typeof raw.art !== "object" || Array.isArray(raw.art))) {
     throw new Error(`${configPath} has an invalid art field`);
   }
@@ -387,6 +396,7 @@ async function loadTheme(themeDir) {
   };
   const theme = {
     schemaVersion: 1,
+    kind,
     id: text(raw.id, "custom", 80, "id"),
     name: text(raw.name, "Codex QQ Skin", 80, "name"),
     brandSubtitle: text(raw.brandSubtitle, "CODEX QQ SKIN", 80, "brandSubtitle"),
@@ -465,7 +475,10 @@ async function loadStaticPayloadAssets() {
   if (!staticPayloadAssets) {
     staticPayloadAssets = Promise.all([
       fs.readFile(path.join(root, "assets", "qq-skin.css"), "utf8"),
+      fs.readFile(path.join(root, "assets", "custom-skin.css"), "utf8"),
       fs.readFile(path.join(root, "assets", "renderer-inject.js"), "utf8"),
+      fs.readFile(path.join(root, "assets", "portal-hero.png")),
+      fs.readFile(path.join(root, "assets", "theme.json"), "utf8"),
       fs.readFile(path.join(root, "assets", "codex-pet.png")),
       fs.readFile(path.join(root, "assets", "retro-window-frame.png")),
       fs.readFile(path.join(root, "assets", "qq-avatar.png")),
@@ -475,8 +488,9 @@ async function loadStaticPayloadAssets() {
       throw error;
     });
   }
-  const [css, template, pet, retroFrame, qqAvatar, coughAudio] = await staticPayloadAssets;
-  return { css, template, pet, retroFrame, qqAvatar, coughAudio, cacheHit };
+  const [css, customCss, template, qqArt, qqThemeJson, pet, retroFrame, qqAvatar, coughAudio] = await staticPayloadAssets;
+  const qqTheme = JSON.parse(qqThemeJson);
+  return { css, customCss, template, qqArt, qqTheme, pet, retroFrame, qqAvatar, coughAudio, cacheHit };
 }
 
 function invalidateStaticPayloadAssets() {
@@ -489,9 +503,9 @@ async function loadPayload(themeDir) {
     loadStaticPayloadAssets(),
     loadTheme(themeDir),
   ]);
-  const { css, template, pet, retroFrame, qqAvatar, coughAudio } = staticAssets;
+  const { css, customCss, template, qqArt, qqTheme, pet, retroFrame, qqAvatar, coughAudio } = staticAssets;
   const { art, extension, theme } = loaded;
-  const styleRevision = createHash("sha256").update(css).digest("hex").slice(0, 20);
+  const styleRevision = createHash("sha256").update(css).update(customCss).digest("hex").slice(0, 20);
   const artMetadata = readImageMetadata(art, extension);
   if (!artMetadata) {
     throw new Error("Theme image metadata is invalid or exceeds the 16384px / 50MP safety limit");
@@ -502,24 +516,31 @@ async function loadPayload(themeDir) {
   const mime = extension === ".jpg" || extension === ".jpeg" ? "image/jpeg"
     : extension === ".webp" ? "image/webp" : "image/png";
   const artDataUrl = `data:${mime};base64,${art.toString("base64")}`;
+  const qqArtDataUrl = `data:image/png;base64,${qqArt.toString("base64")}`;
   const petDataUrl = `data:image/png;base64,${pet.toString("base64")}`;
   const retroFrameDataUrl = `data:image/png;base64,${retroFrame.toString("base64")}`;
   const qqAvatarDataUrl = `data:image/png;base64,${qqAvatar.toString("base64")}`;
   const coughAudioDataUrl = `data:audio/mpeg;base64,${coughAudio.toString("base64")}`;
   const payload = template
     .replace("__QQ_SKIN_CSS_JSON__", JSON.stringify(css))
+    .replace("__CUSTOM_SKIN_CSS_JSON__", JSON.stringify(customCss))
     .replace("__QQ_SKIN_ART_JSON__", JSON.stringify(artDataUrl))
+    .replace("__QQ_STABLE_ART_JSON__", JSON.stringify(qqArtDataUrl))
     .replace("__QQ_SKIN_PET_JSON__", JSON.stringify(petDataUrl))
     .replace("__QQ_SKIN_RETRO_FRAME_JSON__", JSON.stringify(retroFrameDataUrl))
     .replace("__QQ_SKIN_QQ_AVATAR_JSON__", JSON.stringify(qqAvatarDataUrl))
     .replace("__QQ_SKIN_COUGH_AUDIO_JSON__", JSON.stringify(coughAudioDataUrl))
     .replace("__QQ_SKIN_THEME_JSON__", JSON.stringify(theme))
+    .replace("__QQ_STABLE_THEME_JSON__", JSON.stringify(qqTheme))
     .replace("__QQ_SKIN_VERSION_JSON__", JSON.stringify(SKIN_VERSION))
     .replace("__QQ_SKIN_STYLE_REVISION_JSON__", JSON.stringify(styleRevision));
   const revision = createHash("sha256")
     .update(SKIN_VERSION)
     .update(css)
+    .update(customCss)
     .update(template)
+    .update(qqArt)
+    .update(JSON.stringify(qqTheme))
     .update(pet)
     .update(retroFrame)
     .update(qqAvatar)
@@ -543,7 +564,15 @@ async function loadPayload(themeDir) {
   };
 }
 
-async function applyToSession(session, payload) {
+async function applyToSession(session, payload, { enableSkin = false, skinMode = null } = {}) {
+  if (enableSkin) {
+    await session.evaluate(`(() => {
+      try { window.localStorage?.setItem("codex-qq-skin-enabled", "true"); } catch {}
+      ${skinMode ? `try { window.localStorage?.setItem("codex-qq-skin-mode", ${JSON.stringify(skinMode)}); } catch {}` : ""}
+      window.__CODEX_QQ_SKIN_DISABLED__ = false;
+      return true;
+    })()`);
+  }
   return session.evaluate(payload);
 }
 
@@ -553,7 +582,9 @@ async function removeFromSession(session) {
     const state = window.__CODEX_QQ_SKIN_STATE__;
     if (state?.cleanup) return state.cleanup();
     document.documentElement?.classList.remove('codex-qq-skin');
+    document.documentElement?.classList.remove('codex-dream-skin');
     document.documentElement?.style.removeProperty('--qq-skin-art');
+    document.documentElement?.style.removeProperty('--dream-skin-art');
     document.documentElement?.style.removeProperty('--dream-retro-frame');
     document.documentElement?.style.removeProperty('--dream-summary-panel-width');
     document.getElementById('codex-qq-skin-style')?.remove();
@@ -577,6 +608,7 @@ async function removeFromSession(session) {
 async function verifyRemovedSession(session) {
   return session.evaluate(`(() =>
     !document.documentElement.classList.contains('codex-qq-skin') &&
+    !document.documentElement.classList.contains('codex-dream-skin') &&
     !document.getElementById('codex-qq-skin-style') &&
     !document.getElementById('codex-qq-skin-chrome') &&
     !document.getElementById('codex-qq-skin-companion') &&
@@ -603,7 +635,7 @@ async function verifySession(session) {
     const homeSignal = homeIndicator ?? document.querySelector('[data-feature="game-source"]') ??
       document.querySelector('.group\\\\/home-suggestions');
     const homeRoute = homeSignal?.closest('[role="main"]') ?? null;
-    const home = document.querySelector('[role="main"].qq-skin-home');
+    const home = document.querySelector('[role="main"].qq-skin-home, [role="main"].dream-skin-home');
     const suggestions = home?.querySelector('.group\\\\/home-suggestions') ?? null;
     const cardBoxes = suggestions ? [...suggestions.querySelectorAll('button')].map(box) : [];
     const visibleCards = cardBoxes.filter((item) => item?.visible);
@@ -614,7 +646,9 @@ async function verifySession(session) {
     const sidebar = box(document.querySelector('aside.app-shell-left-panel'));
     const chrome = document.getElementById('codex-qq-skin-chrome');
     const result = {
-      installed: document.documentElement.classList.contains('codex-qq-skin'),
+      installed: document.documentElement.classList.contains('codex-qq-skin') ||
+        document.documentElement.classList.contains('codex-dream-skin'),
+      skinMode: window.__CODEX_QQ_SKIN_STATE__?.skinMode ?? null,
       version: window.__CODEX_QQ_SKIN_STATE__?.version ?? null,
       stylePresent: Boolean(document.getElementById('codex-qq-skin-style')),
       chromePresent: Boolean(chrome),
@@ -634,8 +668,9 @@ async function verifySession(session) {
         y: document.documentElement.scrollHeight > document.documentElement.clientHeight,
       },
     };
+    const chromePass = result.skinMode === 'custom' || (result.chromePresent && result.chromePointerEvents === 'none');
     const basePass = result.installed && result.version === ${JSON.stringify(SKIN_VERSION)} &&
-      result.stylePresent && result.chromePresent && result.chromePointerEvents === 'none' &&
+      result.stylePresent && chromePass &&
       Boolean(result.shell?.visible) && Boolean(result.sidebar?.visible) && !result.documentOverflow.x;
     // Project selector markup varies across Codex builds — soft requirement.
     const homePass = !result.homeRoute || (
@@ -703,12 +738,16 @@ async function runOneShot(options) {
   for (const { target, session, probe } of connected) {
     try {
       if (options.mode === "remove") await removeFromSession(session);
-      else if (options.mode === "once") await applyToSession(session, payload);
+      else if (options.mode === "once") {
+        await applyToSession(session, payload, { enableSkin: options.enableSkin, skinMode: options.skinMode });
+      }
 
       if (options.reload) {
         await session.send("Page.reload", { ignoreCache: true });
         await new Promise((resolve) => setTimeout(resolve, 1600));
-        if (options.mode !== "remove") await applyToSession(session, payload);
+        if (options.mode !== "remove") {
+          await applyToSession(session, payload, { enableSkin: options.enableSkin, skinMode: options.skinMode });
+        }
       }
 
       const result = options.mode === "remove"
@@ -774,7 +813,8 @@ function watchPayloadSources(themeDir, onDirty) {
       watcher = watchFs(directory, { persistent: false }, (_event, filename) => {
         const name = filename ? String(filename) : "";
         const staticChanged = directory === assetsRoot &&
-          (!name || name === "qq-skin.css" || name === "renderer-inject.js" ||
+          (!name || name === "qq-skin.css" || name === "custom-skin.css" || name === "renderer-inject.js" ||
+            name === "portal-hero.png" || name === "theme.json" ||
             name === "codex-pet.png" || name === "retro-window-frame.png" ||
             name === "qq-avatar.png" || name === "audio");
         if (kind === "static" && !staticChanged) return;

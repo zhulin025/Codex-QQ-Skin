@@ -4,7 +4,7 @@
 
 # Codex QQ Skin
 
-一套面向 Codex 桌面端的复古 QQ 风格外观：macOS 版为稳定版，Windows x64 版正在通过自动构建和实机验收进入预览阶段。
+一套面向 Codex 桌面端的复古 QQ 风格外观。2.0 支持上传任意图片，在本机自动分析并生成完整皮肤方案；macOS 版为稳定版，Windows x64 版正在通过自动构建和实机验收进入预览阶段。
 
 > 非 OpenAI、腾讯或 QQ 官方产品。本项目不会修改官方 `.app`、`app.asar`、代码签名、API Key 或 Base URL。
 
@@ -75,6 +75,14 @@ chmod +x ./*.command scripts/*.sh
 
 ## 效果特点
 
+### 2.0 三模式皮肤
+
+- `原生`：完整恢复 Codex 官方界面与颜色。
+- `QQ`：使用固定的蓝银 QQ 2007 外框、左侧栏、三栏布局、右侧摘要托盘和 Codex 伙伴，不受用户图片配色影响。
+- `自定义`：保留 Codex 原生界面结构，根据用户图片自动生成配色、焦点和新建任务页构图。
+- 三种模式可在右上角即时切换。每次切换都会完整重建目标模式的布局、颜色和装饰，不会遗留上一套皮肤的侧栏颜色或面板状态。
+- 人物及普通照片会在新建任务顶部构建框中优先完整显示，避免为了铺满横幅而截断头部或身体；真正的超宽背景图仍保持铺满效果。
+
 - 38px 深蓝标题行与 29px 蓝银工具行组成一体化复古标题区。
 - 左上企鹅与动态任务标题避开 macOS 交通灯，不随窗口宽度拉伸。
 - 右上三颗控件直接复用 Codex 原生按钮的 SVG、尺寸与点击行为，不再绘制多余的关闭按钮。
@@ -116,8 +124,18 @@ chmod +x ./*.command scripts/*.sh
 
 ## 更换背景图
 
+最简单的方式是打开 `Codex QQ Skin.app`，点击“上传图片，生成我的皮肤…”。选择图片后，2.0 会在本机自动完成主色、明暗、视觉焦点、安全留白、背景构图与任务页模式分析，并立即切换到生成的“自定义”皮肤。图片不会上传到网络。
+
+右上角提供三个独立选项：
+
+- `原生`：完整恢复 Codex 官方界面。
+- `QQ`：固定的稳定版 QQ 复古皮肤，始终使用内置素材和布局。
+- `自定义`：在 Codex 原生界面结构上应用用户图片；人物与普通照片在新建任务页优先完整显示，超宽画面按照视觉焦点和安全区铺满；只有成功导入图片后才可选择。
+
+自定义图片不会覆盖 QQ 皮肤。三种模式可以随时切换，最近一次选择会保存在本机。
+
 ```bash
-./scripts/load-image-theme-macos.sh /绝对路径/你的图片.png \
+./scripts/load-image-theme-macos.sh --file /绝对路径/你的图片.png \
   --appearance light \
   --safe-area center \
   --task-mode off
@@ -160,7 +178,7 @@ npm test
 npm run build:app
 ```
 
-`npm run build:app` 会在 `release/` 生成同时支持 Apple Silicon 与 Intel 的 `Codex QQ Skin.app`。设置 `DEVELOPER_ID_APPLICATION` 环境变量后会使用对应证书签名；公开分发前还需使用 Apple 公证服务处理最终 ZIP/DMG。
+`npm run build:app` 会在 `release/` 生成同时支持 Apple Silicon 与 Intel 的 `Codex QQ Skin.app`。2.0 Release 同时提供 `Codex QQ Skin.app.zip` 和 Windows x64 便携 ZIP；请只从本仓库的 [GitHub Releases](https://github.com/zhulin025/Codex-QQ-Skin/releases) 下载。设置 `DEVELOPER_ID_APPLICATION` 环境变量后会使用对应证书签名；公开分发前还需使用 Apple 公证服务处理最终 ZIP/DMG。
 
 测试覆盖注入 payload、图片元数据、主题切换、UTF-8 配置往返、回环 CDP 限制、清理恢复和官方签名检查。
 

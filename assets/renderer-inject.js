@@ -1,4 +1,4 @@
-((cssText, artDataUrl, petDataUrl, retroFrameDataUrl, qqAvatarDataUrl, coughAudioDataUrl, themeConfig) => {
+((cssText, customCssText, artDataUrl, qqArtDataUrl, petDataUrl, retroFrameDataUrl, qqAvatarDataUrl, coughAudioDataUrl, themeConfig, qqThemeConfig) => {
   const STATE_KEY = "__CODEX_QQ_SKIN_STATE__";
   const DISABLED_KEY = "__CODEX_QQ_SKIN_DISABLED__";
   const STYLE_ID = "codex-qq-skin-style";
@@ -10,18 +10,30 @@
   const RETRO_PROFILE_ID = "codex-qq-skin-retro-profile";
   const TOGGLE_ID = "codex-qq-skin-toggle";
   const ENABLED_STORAGE_KEY = "codex-qq-skin-enabled";
+  const MODE_STORAGE_KEY = "codex-qq-skin-mode";
   const SHELL_ATTR = "data-dream-shell";
   const ART_ATTRS = [
     "data-dream-art-wide", "data-dream-art-safe", "data-dream-task-mode",
     "data-dream-art-safe-area", "data-dream-art-task-mode", "data-dream-art-aspect",
-    "data-dream-art-ready", "data-dream-three-pane", "data-dream-summary-state", "data-dream-left-sidebar",
+    "data-dream-art-ready", "data-dream-art-fit", "data-dream-three-pane", "data-dream-summary-state", "data-dream-left-sidebar",
   ];
   const VERSION = __QQ_SKIN_VERSION_JSON__;
   const STYLE_REVISION = __QQ_SKIN_STYLE_REVISION_JSON__;
-  const THEME = themeConfig && typeof themeConfig === "object" ? themeConfig : {};
-  const ART = THEME.art && typeof THEME.art === "object" ? THEME.art : {};
-  const LAYOUT = THEME.layout && typeof THEME.layout === "object" ? THEME.layout : {};
-  const SOUND = THEME.sound && typeof THEME.sound === "object" ? THEME.sound : {};
+  const CUSTOM_THEME = themeConfig && typeof themeConfig === "object" ? themeConfig : {};
+  const QQ_THEME = qqThemeConfig && typeof qqThemeConfig === "object" ? qqThemeConfig : {};
+  let skinMode = "qq";
+  try {
+    const savedMode = window.localStorage?.getItem(MODE_STORAGE_KEY);
+    const legacyEnabled = window.localStorage?.getItem(ENABLED_STORAGE_KEY);
+    if (["native", "qq", "custom"].includes(savedMode)) skinMode = savedMode;
+    else if (legacyEnabled === "false") skinMode = "native";
+    else if (CUSTOM_THEME.kind === "custom-native") skinMode = "custom";
+  } catch {}
+  if (skinMode === "custom" && CUSTOM_THEME.kind !== "custom-native") skinMode = "qq";
+  let THEME = skinMode === "qq" ? QQ_THEME : CUSTOM_THEME;
+  let ART = THEME.art && typeof THEME.art === "object" ? THEME.art : {};
+  let LAYOUT = THEME.layout && typeof THEME.layout === "object" ? THEME.layout : {};
+  let SOUND = THEME.sound && typeof THEME.sound === "object" ? THEME.sound : {};
   const ART_METADATA = THEME.artMetadata && typeof THEME.artMetadata === "object"
     ? THEME.artMetadata : null;
   const ANALYSIS_CACHE_KEY = "__CODEX_QQ_SKIN_ANALYSIS_CACHE__";
@@ -66,8 +78,7 @@
     firstEnsureMs: null,
     analysisMs: null,
   };
-  let skinEnabled = true;
-  try { skinEnabled = window.localStorage?.getItem(ENABLED_STORAGE_KEY) !== "false"; } catch {}
+  let skinEnabled = skinMode !== "native";
   window[DISABLED_KEY] = !skinEnabled;
 
   const previous = window[STATE_KEY];
@@ -80,6 +91,7 @@
     return URL.createObjectURL(new Blob([bytes], { type: mime }));
   };
   const artUrl = dataUrlToObjectUrl(artDataUrl, "image/png");
+  const qqArtUrl = dataUrlToObjectUrl(qqArtDataUrl, "image/png");
   const petUrl = dataUrlToObjectUrl(petDataUrl, "image/png");
   const retroFrameUrl = dataUrlToObjectUrl(retroFrameDataUrl, "image/png");
   const qqAvatarUrl = dataUrlToObjectUrl(qqAvatarDataUrl, "image/png");
@@ -233,16 +245,19 @@
     // synchronously. Mutation records created by this probe are drained below
     // so the root observer does not schedule a redundant ensure pass.
     try {
-      const hadSkin = root.classList.contains("codex-qq-skin");
+      const hadQQSkin = root.classList.contains("codex-qq-skin");
+      const hadCustomSkin = root.classList.contains("codex-dream-skin");
       const savedShell = root.getAttribute(SHELL_ATTR);
       samplingNativeShell = true;
-      if (hadSkin) root.classList.remove("codex-qq-skin");
+      if (hadQQSkin) root.classList.remove("codex-qq-skin");
+      if (hadCustomSkin) root.classList.remove("codex-dream-skin");
       if (savedShell !== null) root.removeAttribute(SHELL_ATTR);
       let colorScheme = "";
       try {
         colorScheme = getComputedStyle(root).colorScheme || "";
       } finally {
-        if (hadSkin) root.classList.add("codex-qq-skin");
+        if (hadQQSkin) root.classList.add("codex-qq-skin");
+        if (hadCustomSkin) root.classList.add("codex-dream-skin");
         if (savedShell !== null) root.setAttribute(SHELL_ATTR, savedShell);
         rootObserver?.takeRecords?.();
         samplingNativeShell = false;
@@ -259,7 +274,7 @@
 
     // Only use surface luminance before the skin owns those surfaces. Sampling
     // our own translucent layers would create route-dependent light/dark flips.
-    if (!root.classList.contains("codex-qq-skin")) {
+    if (!root.classList.contains("codex-qq-skin") && !root.classList.contains("codex-dream-skin")) {
       const samples = [
         body,
         document.querySelector("main.main-surface"),
@@ -327,9 +342,14 @@
 
   const applyTheme = (root, shell) => {
     const colors = THEME.colors || {};
-    const explicit = new Set(Array.isArray(THEME.explicitColorKeys) ? THEME.explicitColorKeys : []);
+    // The bundled QQ preset is a fixed product palette, not an uploaded-image
+    // palette. Never let the previous custom image analysis tint its icons,
+    // sidebars, or panels after switching back to QQ mode.
+    const explicit = new Set(skinMode === "qq"
+      ? Object.keys(colors)
+      : (Array.isArray(THEME.explicitColorKeys) ? THEME.explicitColorKeys : []));
     const adaptive = makeAdaptivePalette(artAnalysis?.accentRgb, shell);
-    const legacyLight = !THEME.appearance && shell === "light";
+    const legacyLight = skinMode !== "qq" && !THEME.appearance && shell === "light";
     const structural = new Set(["background", "panel", "panelAlt", "text", "muted"]);
     const pick = (name) => {
       const allowExplicit = explicit.has(name) && !(legacyLight && structural.has(name));
@@ -376,7 +396,10 @@
   };
 
   const applyArtMetadata = (root) => {
-    const profile = artAnalysis || ART_METADATA;
+    const profile = skinMode === "qq" && !QQ_THEME.art ? {
+      wide: false, aspect: "landscape", safeArea: "center",
+      focusX: 0.5, focusY: 0.5, taskMode: "off",
+    } : artAnalysis || ART_METADATA;
     const inferredSafe = profile?.safeArea || "center";
     const safeArea = ART.safeArea && ART.safeArea !== "auto" ? ART.safeArea : inferredSafe;
     const canonicalSafe = ["left", "right", "center", "none"].includes(safeArea)
@@ -388,6 +411,11 @@
       ? ART.taskMode : profile?.taskMode || "ambient";
     const wide = profile?.wide || false;
     const aspect = profile?.aspect || "unknown";
+    // A conventional photo is much taller than the panoramic home hero. Using
+    // cover there can remove most of a portrait (including the head or body).
+    // Reserve cropping for genuinely wide artwork; fit ordinary photo and
+    // portrait compositions completely inside the new-task build panel.
+    const artFit = ["portrait", "square", "landscape"].includes(aspect) ? "contain" : "cover";
     const focusXValue = `${(clamp(focusX, 0, 1) * 100).toFixed(2)}%`;
     const focusYValue = `${(clamp(focusY, 0, 1) * 100).toFixed(2)}%`;
 
@@ -397,6 +425,7 @@
     setAttribute(root, "data-dream-art-safe-area", safeArea);
     setAttribute(root, "data-dream-art-task-mode", taskMode);
     setAttribute(root, "data-dream-art-aspect", aspect);
+    setAttribute(root, "data-dream-art-fit", artFit);
     setAttribute(root, "data-dream-art-ready", artAnalysis ? "true" : "false");
     setStyleProperty(root, "--dream-art-focus-x", focusXValue);
     setStyleProperty(root, "--dream-art-focus-y", focusYValue);
@@ -558,12 +587,6 @@
   let observedShellMain = null;
   let resizeObserver = null;
 
-  const layoutMode = LAYOUT.mode === "off" ? "off" : "classic-three-pane";
-  const layoutMinWidth = typeof LAYOUT.minWidth === "number"
-    ? clamp(Math.round(LAYOUT.minWidth), 1080, 2400) : 1180;
-  const layoutRightWidth = typeof LAYOUT.rightWidth === "number"
-    ? clamp(Math.round(LAYOUT.rightWidth), 272, 360) : 300;
-  const shouldAutoOpenSummary = LAYOUT.rightPanel !== "remember";
   const pinnedSummaryLabel = /(toggle pinned summary|pinned summary|置顶摘要|固定摘要|釘選概要|釘選摘要|概要.*釘選|摘要.*固定)/i;
   const showSidebarLabel = /^(show sidebar|显示边栏|显示侧边栏|顯示邊欄|顯示側邊欄|サイドバーを表示|사이드바 표시)$/i;
   const hideSidebarLabel = /^(hide sidebar|隐藏边栏|隐藏侧边栏|隱藏邊欄|隱藏側邊欄|サイドバーを非表示|사이드바 숨기기)$/i;
@@ -900,7 +923,19 @@
     for (const button of document.querySelectorAll('button[aria-label]')) {
       if (pinnedSummaryLabel.test(button.getAttribute("aria-label") || "")) return button;
     }
-    return null;
+    // Newer Codex builds renamed the pinned-summary control to the generic
+    // “显示/隐藏侧边栏”. Distinguish it from the left navigation toggle by its
+    // real top-right viewport position and ignore our cloned retro control.
+    const genericSummaryLabel = /^(show\/hide sidebar|toggle sidebar visibility|显示\/隐藏侧边栏|顯示\/隱藏側邊欄)$/i;
+    const candidates = [...document.querySelectorAll('button[aria-label]')].filter((button) => {
+      if (!genericSummaryLabel.test(button.getAttribute("aria-label") || "")) return false;
+      if (button.closest?.(`#${RETRO_SHELL_ID}`)) return false;
+      const box = button.getBoundingClientRect?.();
+      return box && box.width >= 20 && box.height >= 20 &&
+        box.left > window.innerWidth * .65 && box.top >= 0 && box.top < 48;
+    });
+    return candidates.sort((left, right) =>
+      right.getBoundingClientRect().left - left.getBoundingClientRect().left)[0] || null;
   };
 
   const findLeftSidebarToggle = () => {
@@ -1389,11 +1424,11 @@
     if (!style) {
       style = document.createElement("style");
       style.id = STYLE_ID;
-      style.textContent = cssText;
+      style.textContent = `${cssText}\n${customCssText}`;
       style.dataset.dreamSkinVersion = VERSION;
       (document.head || root).appendChild(style);
     } else if (style.dataset.dreamSkinStyleRevision !== STYLE_REVISION) {
-      style.textContent = cssText;
+      style.textContent = `${cssText}\n${customCssText}`;
     }
     style.dataset.dreamSkinVersion = VERSION;
     style.dataset.dreamSkinStyleRevision = STYLE_REVISION;
@@ -1405,12 +1440,32 @@
     ensureStyle(root);
     const shell = resolvedShell();
     setAttribute(root, SHELL_ATTR, shell);
-    setStyleProperty(root, "--qq-skin-art", `url("${artUrl}")`);
+    setStyleProperty(root, "--qq-skin-art", `url("${qqArtUrl}")`);
+    setStyleProperty(root, "--dream-skin-art", `url("${artUrl}")`);
     setStyleProperty(root, "--dream-retro-frame", `url("${retroFrameUrl}")`);
     applyTheme(root, shell);
     applyArtMetadata(root);
-    root.classList.add("codex-qq-skin");
+    root.classList.toggle("codex-qq-skin", skinMode === "qq");
+    root.classList.toggle("codex-dream-skin", skinMode === "custom");
     return shell;
+  };
+
+  const removeQQDecorations = () => {
+    document.getElementById(CHROME_ID)?.remove();
+    document.getElementById(COMPANION_ID)?.remove();
+    document.getElementById(HOME_PET_ID)?.remove();
+    document.getElementById(RIGHT_TRAY_ID)?.remove();
+    document.getElementById(RETRO_SHELL_ID)?.remove();
+    document.getElementById(RETRO_PROFILE_ID)?.remove();
+    document.querySelectorAll(".qq-skin-section-bar").forEach((node) => node.classList.remove("qq-skin-section-bar"));
+    document.querySelectorAll(".dream-retro-profile-host").forEach((node) => node.classList.remove("dream-retro-profile-host"));
+    document.querySelectorAll(".dream-retro-window-control").forEach((button) => button.classList.remove(
+      "dream-retro-window-control", "dream-retro-control-summary",
+      "dream-retro-control-bottom", "dream-retro-control-sidebar",
+    ));
+    companionParts = null;
+    chromeParts = null;
+    retroProfileParts = null;
   };
 
   const syncRouteState = (shell, { layout = false } = {}) => {
@@ -1427,16 +1482,36 @@
     for (const candidate of document.querySelectorAll('[role="main"].qq-skin-home')) {
       if (candidate !== home) candidate.classList.remove("qq-skin-home");
     }
-    if (home) home.classList.add("qq-skin-home");
+    for (const candidate of document.querySelectorAll('[role="main"].dream-skin-home')) {
+      if (candidate !== home) candidate.classList.remove("dream-skin-home");
+    }
+    if (home) {
+      home.classList.toggle("qq-skin-home", skinMode === "qq");
+      home.classList.toggle("dream-skin-home", skinMode === "custom");
+    }
     const homeUtilityBars = new Set(home
       ? home.querySelectorAll('[class*="_homeUtilityBar_"]')
       : []);
     for (const candidate of document.querySelectorAll(".qq-skin-home-utility")) {
       if (!homeUtilityBars.has(candidate)) candidate.classList.remove("qq-skin-home-utility");
     }
-    for (const candidate of homeUtilityBars) candidate.classList.add("qq-skin-home-utility");
+    for (const candidate of document.querySelectorAll(".dream-skin-home-utility")) {
+      if (!homeUtilityBars.has(candidate)) candidate.classList.remove("dream-skin-home-utility");
+    }
+    for (const candidate of homeUtilityBars) {
+      candidate.classList.toggle("qq-skin-home-utility", skinMode === "qq");
+      candidate.classList.toggle("dream-skin-home-utility", skinMode === "custom");
+    }
 
     if (!shellMain || !document.body) return;
+    shellMain.classList.toggle("qq-skin-home-shell", Boolean(home) && skinMode === "qq");
+    shellMain.classList.toggle("dream-skin-home-shell", Boolean(home) && skinMode === "custom");
+    if (skinMode === "custom") {
+      removeQQDecorations();
+      setAttribute(root, "data-dream-three-pane", "false");
+      setAttribute(root, "data-dream-summary-state", "unavailable");
+      return;
+    }
     ensureRetroShell();
     syncRetroToolbarActions();
     syncRetroWindowControls();
@@ -1447,7 +1522,6 @@
       observedShellMain = shellMain;
       layout = true;
     }
-    shellMain.classList.toggle("qq-skin-home-shell", Boolean(home));
     ensureHomePet(home);
     ensureSidebarSectionBars();
     const companion = ensureCompanion();
@@ -1456,6 +1530,15 @@
     let leftSidebarOpen = hideSidebarLabel.test(leftSidebarLabel) ||
       (!leftSidebarToggle && Boolean(document.querySelector("aside.app-shell-left-panel")));
     const summaryToggle = findPinnedSummaryToggle();
+    // LAYOUT changes when the segmented control switches modes. Derive these
+    // values on every route pass instead of freezing the startup theme's
+    // custom `off` layout for the lifetime of the renderer.
+    const layoutMode = LAYOUT.mode === "off" ? "off" : "classic-three-pane";
+    const layoutMinWidth = typeof LAYOUT.minWidth === "number"
+      ? clamp(Math.round(LAYOUT.minWidth), 1080, 2400) : 1180;
+    const layoutRightWidth = typeof LAYOUT.rightWidth === "number"
+      ? clamp(Math.round(LAYOUT.rightWidth), 272, 360) : 300;
+    const shouldAutoOpenSummary = LAYOUT.rightPanel !== "remember";
     const wideEnough = window.innerWidth >= layoutMinWidth;
     const settingsRoute = [...document.querySelectorAll('input[placeholder]')].some((input) => {
       const placeholder = input.getAttribute("placeholder") || "";
@@ -1580,14 +1663,18 @@
 
   const removeSkinVisuals = () => {
     const root = document.documentElement;
-    root?.classList.remove("codex-qq-skin");
+    root?.classList.remove("codex-qq-skin", "codex-dream-skin");
     root?.removeAttribute(SHELL_ATTR);
     for (const name of ART_ATTRS) root?.removeAttribute(name);
     root?.style.removeProperty("--qq-skin-art");
+    root?.style.removeProperty("--dream-skin-art");
     for (const name of THEME_VARIABLES) root?.style.removeProperty(name);
     document.querySelectorAll(".qq-skin-home").forEach((node) => node.classList.remove("qq-skin-home"));
     document.querySelectorAll(".qq-skin-home-shell").forEach((node) => node.classList.remove("qq-skin-home-shell"));
     document.querySelectorAll(".qq-skin-home-utility").forEach((node) => node.classList.remove("qq-skin-home-utility"));
+    document.querySelectorAll(".dream-skin-home").forEach((node) => node.classList.remove("dream-skin-home"));
+    document.querySelectorAll(".dream-skin-home-shell").forEach((node) => node.classList.remove("dream-skin-home-shell"));
+    document.querySelectorAll(".dream-skin-home-utility").forEach((node) => node.classList.remove("dream-skin-home-utility"));
     document.querySelectorAll(".qq-skin-section-bar").forEach((node) => node.classList.remove("qq-skin-section-bar"));
     document.getElementById(STYLE_ID)?.remove();
     document.getElementById(CHROME_ID)?.remove();
@@ -1608,62 +1695,84 @@
     retroProfileParts = null;
   };
 
-  const syncToggleButton = (button) => {
-    const enabled = !window[DISABLED_KEY];
-    button.textContent = enabled ? "切换原生皮肤" : "切换 QQ 皮肤";
-    button.setAttribute("aria-label", enabled ? "切回 Codex 原生 UI" : "切换到 QQ 皮肤 UI");
-    button.setAttribute("aria-pressed", enabled ? "true" : "false");
-    button.dataset.skinEnabled = enabled ? "true" : "false";
-    button.style.top = enabled ? "7px" : "9px";
-    button.style.right = enabled ? "148px" : "176px";
-    button.style.height = enabled ? "26px" : "28px";
-    button.style.padding = enabled ? "0 12px" : "0 13px";
-    button.style.border = enabled ? "1px solid rgba(203,231,255,.92)" : "1px solid rgba(82,88,98,.18)";
-    button.style.borderRadius = enabled ? "8px" : "9px";
-    button.style.background = enabled
-      ? "linear-gradient(180deg, rgba(91,181,250,.96) 0%, rgba(19,112,210,.96) 52%, rgba(10,83,176,.98) 100%)"
-      : "rgba(248,248,249,.94)";
-    button.style.color = enabled ? "#ffffff" : "#3b3f45";
-    button.style.boxShadow = enabled
-      ? "inset 0 1px rgba(255,255,255,.58), inset 0 -1px rgba(0,45,122,.38), 0 1px 3px rgba(0,38,96,.28)"
-      : "0 1px 2px rgba(0,0,0,.08), 0 5px 14px rgba(0,0,0,.08)";
-    button.style.backdropFilter = enabled ? "blur(8px) saturate(125%)" : "blur(14px) saturate(110%)";
+  const syncToggleButton = (control) => {
+    for (const button of control.querySelectorAll("button[data-skin-mode]")) {
+      const selected = button.dataset.skinMode === skinMode;
+      const unavailable = button.dataset.skinMode === "custom" && CUSTOM_THEME.kind !== "custom-native";
+      button.disabled = unavailable;
+      button.setAttribute("aria-pressed", selected ? "true" : "false");
+      button.style.opacity = unavailable ? ".45" : "1";
+      button.style.color = selected ? "#fff" : "#3b3f45";
+      button.style.background = selected
+        ? "linear-gradient(180deg,#4ba9f0 0%,#166fc8 100%)"
+        : "transparent";
+      button.style.boxShadow = selected ? "inset 0 1px rgba(255,255,255,.42),0 1px 2px rgba(0,54,112,.22)" : "none";
+    }
+  };
+
+  const selectSkinMode = (mode) => {
+    if (!["native", "qq", "custom"].includes(mode)) return;
+    if (mode === "custom" && CUSTOM_THEME.kind !== "custom-native") return;
+    skinMode = mode;
+    THEME = skinMode === "qq" ? QQ_THEME : CUSTOM_THEME;
+    ART = THEME.art && typeof THEME.art === "object" ? THEME.art : {};
+    LAYOUT = THEME.layout && typeof THEME.layout === "object" ? THEME.layout : {};
+    SOUND = THEME.sound && typeof THEME.sound === "object" ? THEME.sound : {};
+    window[DISABLED_KEY] = skinMode === "native";
+    try {
+      window.localStorage?.setItem(MODE_STORAGE_KEY, skinMode);
+      window.localStorage?.setItem(ENABLED_STORAGE_KEY, skinMode === "native" ? "false" : "true");
+    } catch {}
+    const state = window[STATE_KEY];
+    if (state?.installToken === installToken) {
+      state.skinMode = skinMode;
+      state.themeId = THEME.id || (skinMode === "qq" ? "qq-stable" : "custom");
+    }
+    removeSkinVisuals();
+    if (skinMode !== "native") ensure({ root: true, route: true, layout: true });
+    const control = document.getElementById(TOGGLE_ID);
+    if (control) syncToggleButton(control);
+    if (typeof window.dispatchEvent === "function" && typeof window.Event === "function") {
+      window.dispatchEvent(new window.Event("resize"));
+    }
   };
 
   const ensureToggleButton = () => {
-    let button = document.getElementById(TOGGLE_ID);
-    if (!button || button.parentElement !== document.body) {
-      button?.remove();
-      button = document.createElement("button");
-      button.id = TOGGLE_ID;
-      button.type = "button";
-      button.style.cssText = [
-        "position:fixed", "z-index:2147483000", "white-space:nowrap",
-        "font:650 12px/24px -apple-system,BlinkMacSystemFont,\"PingFang SC\",sans-serif",
-        "cursor:pointer", "user-select:none", "-webkit-app-region:no-drag",
-        "transition:filter .14s ease,transform .14s ease,background .18s ease,box-shadow .18s ease",
+    let control = document.getElementById(TOGGLE_ID);
+    if (!control || control.parentElement !== document.body || control.tagName === "BUTTON") {
+      control?.remove();
+      control = document.createElement("div");
+      control.id = TOGGLE_ID;
+      control.setAttribute("role", "group");
+      control.setAttribute("aria-label", "切换皮肤");
+      control.style.cssText = [
+        "position:fixed", "z-index:2147483000", "top:7px", "right:148px", "height:28px",
+        "display:flex", "align-items:center", "gap:2px", "padding:2px",
+        "border:1px solid rgba(82,88,98,.18)", "border-radius:10px",
+        "background:rgba(248,248,249,.91)", "box-shadow:0 1px 2px rgba(0,0,0,.08),0 5px 14px rgba(0,0,0,.08)",
+        "backdrop-filter:blur(14px) saturate(110%)", "-webkit-app-region:no-drag",
       ].join(";");
-      button.addEventListener?.("mouseenter", () => { button.style.filter = "brightness(1.08)"; });
-      button.addEventListener?.("mouseleave", () => { button.style.filter = "none"; });
-      button.addEventListener?.("mousedown", () => { button.style.transform = "translateY(1px)"; });
-      button.addEventListener?.("mouseup", () => { button.style.transform = "none"; });
-      button.addEventListener?.("click", (event) => {
-        event.preventDefault();
-        event.stopPropagation();
-        const enable = Boolean(window[DISABLED_KEY]);
-        window[DISABLED_KEY] = !enable;
-        try { window.localStorage?.setItem(ENABLED_STORAGE_KEY, enable ? "true" : "false"); } catch {}
-        if (enable) ensure({ root: true, route: true, layout: true });
-        else removeSkinVisuals();
-        syncToggleButton(button);
-        if (typeof window.dispatchEvent === "function" && typeof window.Event === "function") {
-          window.dispatchEvent(new window.Event("resize"));
-        }
-      });
-      document.body.appendChild(button);
+      for (const [mode, label] of [["native", "原生"], ["qq", "QQ"], ["custom", "自定义"]]) {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.dataset.skinMode = mode;
+        button.textContent = label;
+        button.style.cssText = [
+          "height:22px", "padding:0 9px", "border:0", "border-radius:7px", "white-space:nowrap",
+          "font:650 11px/22px -apple-system,BlinkMacSystemFont,\"PingFang SC\",sans-serif",
+          "cursor:pointer", "user-select:none", "transition:background .16s ease,color .16s ease",
+        ].join(";");
+        button.addEventListener?.("click", (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          selectSkinMode(mode);
+        });
+        control.appendChild(button);
+      }
+      document.body.appendChild(control);
     }
-    syncToggleButton(button);
-    return button;
+    syncToggleButton(control);
+    return control;
   };
 
   const cleanup = () => {
@@ -1692,6 +1801,7 @@
       try { state.mediaQuery.removeEventListener("change", state.mediaHandler); } catch {}
     }
     if (state?.artUrl) URL.revokeObjectURL(state.artUrl);
+    if (state?.qqArtUrl) URL.revokeObjectURL(state.qqArtUrl);
     if (state?.petUrl) URL.revokeObjectURL(state.petUrl);
     if (state?.retroFrameUrl) URL.revokeObjectURL(state.retroFrameUrl);
     if (state?.qqAvatarUrl) URL.revokeObjectURL(state.qqAvatarUrl);
@@ -1766,6 +1876,7 @@
     mediaQuery,
     mediaHandler,
     artUrl,
+    qqArtUrl,
     petUrl,
     retroFrameUrl,
     qqAvatarUrl,
@@ -1776,6 +1887,10 @@
     metrics,
     version: VERSION,
     themeId: THEME.id || "custom",
+    skinMode,
+    customThemeKind: CUSTOM_THEME.kind || null,
+    customThemeId: CUSTOM_THEME.id || null,
+    qqThemeId: QQ_THEME.id || null,
     detectShellMode,
   };
   ensureToggleButton();
@@ -1783,6 +1898,7 @@
   ensure({ layout: !previous || !document.getElementById(CHROME_ID) });
   metrics.firstEnsureMs = Number((now() - firstEnsureStartedAt).toFixed(3));
   if (previous?.artUrl && previous.artUrl !== artUrl) URL.revokeObjectURL(previous.artUrl);
+  if (previous?.qqArtUrl && previous.qqArtUrl !== qqArtUrl) URL.revokeObjectURL(previous.qqArtUrl);
   if (previous?.petUrl && previous.petUrl !== petUrl) URL.revokeObjectURL(previous.petUrl);
   if (previous?.retroFrameUrl && previous.retroFrameUrl !== retroFrameUrl) {
     URL.revokeObjectURL(previous.retroFrameUrl);
@@ -1867,10 +1983,13 @@
   };
 })(
   __QQ_SKIN_CSS_JSON__,
+  __CUSTOM_SKIN_CSS_JSON__,
   __QQ_SKIN_ART_JSON__,
+  __QQ_STABLE_ART_JSON__,
   __QQ_SKIN_PET_JSON__,
   __QQ_SKIN_RETRO_FRAME_JSON__,
   __QQ_SKIN_QQ_AVATAR_JSON__,
   __QQ_SKIN_COUGH_AUDIO_JSON__,
-  __QQ_SKIN_THEME_JSON__
+  __QQ_SKIN_THEME_JSON__,
+  __QQ_STABLE_THEME_JSON__
 )

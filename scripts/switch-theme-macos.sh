@@ -72,6 +72,9 @@ trap - EXIT
 
 THEME_NAME="$("$NODE" -e 'try{const t=JSON.parse(require("fs").readFileSync(process.argv[1],"utf8"));process.stdout.write(t.name||"")}catch{}' "$THEME_DIR/theme.json" 2>/dev/null || true)"
 [ -n "$THEME_NAME" ] || THEME_NAME="$THEME_ID"
+THEME_KIND="$("$NODE" -e 'try{const t=JSON.parse(require("fs").readFileSync(process.argv[1],"utf8"));process.stdout.write(t.kind||"")}catch{}' "$THEME_DIR/theme.json" 2>/dev/null || true)"
+SKIN_MODE="custom"
+[ "$THEME_KIND" = "qq-stable" ] && SKIN_MODE="qq"
 
 if [ "$APPLY_NOW" != "true" ]; then
   progress "Ready: ${THEME_NAME} (not applied)"
@@ -85,14 +88,14 @@ if [ -f "$STATE_PATH" ]; then
 fi
 
 # Hot path: CDP already open → seconds, not tens of seconds
-if hot_reapply_theme "$PORT" 8000; then
+if hot_reapply_theme "$PORT" 8000 "$SKIN_MODE"; then
   progress "Done: ${THEME_NAME}"
   exit 0
 fi
 
 # Cold path only when debug port is missing
 progress "CDP not ready, full start..."
-if "$SCRIPT_DIR/start-qq-skin-macos.sh" --port "$PORT" --restart-existing; then
+if "$SCRIPT_DIR/start-qq-skin-macos.sh" --port "$PORT" --restart-existing --skin-mode "$SKIN_MODE"; then
   progress "Done: ${THEME_NAME}"
   exit 0
 fi

@@ -8,11 +8,22 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const macosRoot = path.resolve(here, "..");
 const template = await fs.readFile(path.join(macosRoot, "assets", "renderer-inject.js"), "utf8");
 const css = await fs.readFile(path.join(macosRoot, "assets", "qq-skin.css"), "utf8");
+const customCss = await fs.readFile(path.join(macosRoot, "assets", "custom-skin.css"), "utf8");
 
 assert.doesNotMatch(
   css,
   /main\.main-surface\s*>\s*header\.app-header-tint\s*\{[^}]*\b(?:position|z-index)\s*:/,
   "The skin must preserve Codex's native fixed header so the side-panel toggle remains reachable.",
+);
+assert.match(
+  css,
+  /data-dream-art-fit="contain"[\s\S]{0,180}\.qq-skin-home[\s\S]{0,180}background-size:\s*contain !important;/,
+  "A conventional photo must remain fully visible in the QQ new-task build panel.",
+);
+assert.match(
+  customCss,
+  /data-dream-art-fit="contain"[\s\S]{0,180}\.dream-skin-home[\s\S]{0,180}background-size:\s*contain !important;/,
+  "A conventional photo must remain fully visible in the custom-skin new-task build panel.",
 );
 assert.doesNotMatch(
   css,
@@ -197,8 +208,13 @@ assert.match(
 );
 assert.match(
   template,
-  /findPinnedSummaryToggle[\s\S]{0,1800}summaryToggle\.click\(\)/,
+  /findPinnedSummaryToggle[\s\S]{0,2600}summaryToggle\.click\(\)/,
   "The renderer should open Codex's native pinned summary instead of cloning Outputs and Sources.",
+);
+assert.match(
+  template,
+  /genericSummaryLabel[\s\S]{0,650}box\.left > window\.innerWidth \* \.65/,
+  "The renderer must recognize the newer top-right show/hide sidebar control as pinned summary.",
 );
 assert.match(
   css,
@@ -259,16 +275,20 @@ assert.match(template, /statusLabels[\s\S]{0,500}approval:\s*"需要你的确认
   "The companion must reflect live running, approval, completion, and connectivity states.");
 assert.match(template, /data-companion-action="pet"[\s\S]{0,300}data-companion-action="terminal"[\s\S]{0,300}data-companion-action="sound"/,
   "The companion must expose exactly the requested pet, terminal, and sound shortcuts.");
-assert.match(template, /const TOGGLE_ID = "codex-qq-skin-toggle"[\s\S]{0,300}codex-qq-skin-enabled/,
-  "The renderer must ship a persistent, skin-independent UI toggle.");
-assert.match(template, /切换原生皮肤[\s\S]{0,80}切换 QQ 皮肤/,
-  "The title-bar toggle must clearly describe both available UI modes.");
-assert.match(template, /button\.style\.right = enabled \? "148px" : "176px"/,
-  "Native mode must reserve extra space for Codex's folder and title-bar controls.");
-assert.match(template, /linear-gradient\(180deg, rgba\(91,181,250,.96\)[\s\S]{0,500}rgba\(248,248,249,.94\)/,
-  "QQ and native modes must use distinct title-bar-matched button treatments.");
-assert.match(template, /const enable = Boolean\(window\[DISABLED_KEY\]\)[\s\S]{0,500}removeSkinVisuals\(\)/,
-  "One click must apply the QQ skin or fully restore Codex's native visuals.");
+assert.match(template, /const TOGGLE_ID = "codex-qq-skin-toggle"[\s\S]{0,400}codex-qq-skin-mode/,
+  "The renderer must ship a persistent three-mode UI selector.");
+assert.match(template, /\["native", "原生"\][\s\S]{0,80}\["qq", "QQ"\][\s\S]{0,80}\["custom", "自定义"\]/,
+  "The title-bar selector must expose native, stable QQ, and custom skins.");
+assert.match(template, /"right:148px"[\s\S]{0,500}"display:flex"/,
+  "The three-mode selector must reserve title-bar control space and use a segmented layout.");
+assert.match(template, /const selectSkinMode[\s\S]{0,1800}removeSkinVisuals\(\)[\s\S]{0,200}skinMode !== "native"/,
+  "Mode selection must fully restore native visuals or apply exactly one injected skin.");
+assert.match(template, /state\.skinMode = skinMode[\s\S]{0,160}state\.themeId = THEME\.id/,
+  "Mode selection must keep the public injector state synchronized with the selected skin.");
+assert.match(template, /const explicit = new Set\(skinMode === "qq"[\s\S]{0,180}Object\.keys\(colors\)/,
+  "QQ mode must restore its fixed palette instead of retaining custom-image colors.");
+assert.match(template, /const layoutMode = LAYOUT\.mode[\s\S]{0,500}const layoutRightWidth =/,
+  "A skin-mode switch must re-read layout dimensions instead of freezing the startup mode.");
 assert.match(template, /ensureToggleButton\(\);[\s\S]{0,120}const firstEnsureStartedAt/,
   "The toggle must remain available even when startup preference selects native UI.");
 assert.match(template, /-webkit-app-region:no-drag/,
@@ -465,10 +485,16 @@ function createFixture(theme, {
       parentElement: null,
       textContent: "",
       innerHTML: "",
+      children: [],
+      appendChild(child) { child.parentElement = element; element.children.push(child); },
       setAttribute() {},
       querySelector(selector) {
         if (!childNodes.has(selector)) childNodes.set(selector, { textContent: "" });
         return childNodes.get(selector);
+      },
+      querySelectorAll(selector) {
+        if (selector === "button[data-skin-mode]") return element.children.filter((child) => child.dataset?.skinMode);
+        return [];
       },
       remove() { if (element.id) nodes.delete(element.id); },
     };
@@ -626,12 +652,15 @@ function createFixture(theme, {
   };
   const payloadFor = (nextTheme, cssText = ".fixture { color: blue; }") => template
     .replace("__QQ_SKIN_CSS_JSON__", JSON.stringify(cssText))
+    .replace("__CUSTOM_SKIN_CSS_JSON__", JSON.stringify(".custom-fixture { color: pink; }"))
     .replace("__QQ_SKIN_ART_JSON__", JSON.stringify("data:image/png;base64,AA=="))
+    .replace("__QQ_STABLE_ART_JSON__", JSON.stringify("data:image/png;base64,AA=="))
     .replace("__QQ_SKIN_PET_JSON__", JSON.stringify("data:image/png;base64,AA=="))
     .replace("__QQ_SKIN_RETRO_FRAME_JSON__", JSON.stringify("data:image/png;base64,AA=="))
     .replace("__QQ_SKIN_QQ_AVATAR_JSON__", JSON.stringify("data:image/png;base64,AA=="))
     .replace("__QQ_SKIN_COUGH_AUDIO_JSON__", JSON.stringify("data:audio/mpeg;base64,SUQz"))
     .replace("__QQ_SKIN_THEME_JSON__", JSON.stringify(nextTheme))
+    .replace("__QQ_STABLE_THEME_JSON__", JSON.stringify({ ...nextTheme, kind: "qq-stable" }))
     .replace("__QQ_SKIN_VERSION_JSON__", JSON.stringify("test"))
     .replace("__QQ_SKIN_STYLE_REVISION_JSON__", JSON.stringify(cssText));
   const flushTimers = (maximumDelay = Infinity) => {
@@ -677,6 +706,7 @@ assert.equal(defaultResult.installed, true);
 assert.equal(defaults.attributes.get("data-dream-shell"), "light");
 assert.equal(defaults.attributes.get("data-dream-art-safe-area"), "center");
 assert.equal(defaults.attributes.get("data-dream-art-task-mode"), "ambient");
+assert.equal(defaults.attributes.get("data-dream-art-fit"), "cover");
 assert.equal(defaults.attributes.get("data-dream-art-ready"), "false");
 assert.equal(defaults.attributes.get("data-dream-three-pane"), "false");
 assert.ok(defaults.nodes.has("codex-qq-skin-companion"));
@@ -684,7 +714,7 @@ assert.ok(defaults.nodes.has("codex-qq-skin-right-tray"));
 assert.ok(defaults.nodes.has("codex-qq-skin-retro-shell"));
 assert.equal(typeof defaults.window.__CODEX_QQ_SKIN_STATE__.soundMonitor.preview, "function");
 assert.equal(defaults.window.__CODEX_QQ_SKIN_STATE__.soundMonitor.enabled, true);
-assert.equal(defaults.rootStyle.values.get("--dream-retro-frame"), 'url("blob:fixture-3")');
+assert.equal(defaults.rootStyle.values.get("--dream-retro-frame"), 'url("blob:fixture-4")');
 assert.equal(defaults.rootStyle.values.get("--dream-art-position"), "50.00% 50.00%");
 const defaultMetrics = defaults.window.__CODEX_QQ_SKIN_STATE__.metrics;
 assert.equal(defaultMetrics.rootPasses, 1);
@@ -812,7 +842,24 @@ vm.runInNewContext(synchronousWide.payload, synchronousWide.context);
 assert.equal(synchronousWide.attributes.get("data-dream-art-wide"), "true");
 assert.equal(synchronousWide.attributes.get("data-dream-art-aspect"), "wide");
 assert.equal(synchronousWide.attributes.get("data-dream-art-task-mode"), "ambient");
+assert.equal(synchronousWide.attributes.get("data-dream-art-fit"), "cover");
 assert.equal(synchronousWide.attributes.get("data-dream-art-ready"), "false");
+
+const conventionalPortraitPhoto = createFixture({
+  id: "conventional-portrait-photo",
+  appearance: "auto",
+  art: { safeArea: "auto", taskMode: "auto" },
+  artMetadata: {
+    width: 1456,
+    height: 1082,
+    ratio: 1456 / 1082,
+    wide: false,
+    aspect: "landscape",
+    taskMode: "ambient",
+  },
+});
+vm.runInNewContext(conventionalPortraitPhoto.payload, conventionalPortraitPhoto.context);
+assert.equal(conventionalPortraitPhoto.attributes.get("data-dream-art-fit"), "contain");
 
 const cachedAnalysis = {
   width: 2400,
@@ -856,11 +903,11 @@ vm.runInNewContext(synchronousWide.payloadFor({
   },
 }, ".fixture { color: red; }"), synchronousWide.context);
 assert.equal(synchronousWide.nodes.get("codex-qq-skin-style"), stableStyle);
-assert.equal(stableStyle.textContent, ".fixture { color: red; }");
+assert.equal(stableStyle.textContent, ".fixture { color: red; }\n.custom-fixture { color: pink; }");
 assert.equal(stableStyle.dataset.dreamSkinVersion, "test");
-assert.equal(synchronousWide.rootStyle.values.get("--qq-skin-art"), 'url("blob:fixture-6")');
+assert.equal(synchronousWide.rootStyle.values.get("--qq-skin-art"), 'url("blob:fixture-8")');
 assert.deepEqual(synchronousWide.revokedUrls, [
-  "blob:fixture-1", "blob:fixture-2", "blob:fixture-3", "blob:fixture-4", "blob:fixture-5",
+  "blob:fixture-1", "blob:fixture-2", "blob:fixture-3", "blob:fixture-4", "blob:fixture-5", "blob:fixture-6",
 ]);
 assert.equal(previousWideState.cleanup(), false, "An old async cleanup must not remove the new theme.");
 
@@ -936,7 +983,7 @@ assert.equal(explicit.nodes.has("codex-qq-skin-home-pet"), false);
 assert.equal(explicit.nodes.has("codex-qq-skin-right-tray"), false);
 assert.equal(explicit.nodes.has("codex-qq-skin-retro-shell"), false);
 assert.deepEqual(explicit.revokedUrls, [
-  "blob:fixture-1", "blob:fixture-2", "blob:fixture-3", "blob:fixture-4", "blob:fixture-5",
+  "blob:fixture-1", "blob:fixture-2", "blob:fixture-3", "blob:fixture-4", "blob:fixture-5", "blob:fixture-6",
 ]);
 await Promise.resolve();
 await Promise.resolve();

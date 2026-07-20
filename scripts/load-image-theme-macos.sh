@@ -143,13 +143,13 @@ if [ -f "$STATE_PATH" ]; then
 fi
 
 progress "Hot reapply..."
-if hot_reapply_theme "$PORT" 8000; then
+if hot_reapply_theme "$PORT" 8000 custom; then
   progress "Done: ${THEME_NAME}"
   exit 0
 fi
 
 progress "CDP not ready, full start..."
-if "$SCRIPT_DIR/start-qq-skin-macos.sh" --port "$PORT" --restart-existing; then
+if "$SCRIPT_DIR/start-qq-skin-macos.sh" --port "$PORT" --restart-existing --skin-mode custom; then
   progress "Done: ${THEME_NAME}"
   exit 0
 fi

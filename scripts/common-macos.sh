@@ -26,7 +26,7 @@ START_ERROR_LOG="$STATE_ROOT/start-error.log"
 CODEX_APP_JOB_LABEL="com.openai.codex-qq-skin-studio.app"
 INJECTOR_JOB_LABEL="com.openai.codex-qq-skin-studio.injector"
 EXPECTED_CODEX_TEAM_ID="${CODEX_EXPECTED_TEAM_ID:-2DC432GLL2}"
-SKIN_VERSION="1.8.1"
+SKIN_VERSION="2.0.0"
 
 fail() {
   local message="$*"
@@ -611,6 +611,7 @@ ensure_node_runtime() {
 hot_reapply_theme() {
   local port="${1:-9341}"
   local timeout_ms="${2:-8000}"
+  local skin_mode="${3:-}"
   local inj_pid=""
   local injector_protocol=""
   local started_at=""
@@ -627,7 +628,9 @@ hot_reapply_theme() {
       index($0, inj) && index($0, "--watch") && index($0, "--port " port " --theme-dir ") { print $1; exit }
     ')"
   fi
-  if ! "$NODE" "$INJECTOR" --once --port "$port" --theme-dir "$THEME_DIR" \
+  local mode_args=()
+  [ -n "$skin_mode" ] && mode_args=(--skin-mode "$skin_mode")
+  if ! "$NODE" "$INJECTOR" --once --enable-skin "${mode_args[@]}" --port "$port" --theme-dir "$THEME_DIR" \
     --timeout-ms "$timeout_ms" >/dev/null 2>&1; then
     return 1
   fi

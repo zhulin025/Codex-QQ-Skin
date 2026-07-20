@@ -19,7 +19,7 @@ try {
     $null = & robocopy.exe $source $destination /E /XD macos-app menubar /XF '*.sh' '*.command' '.DS_Store' /NFL /NDL /NJH /NJS
     if ($LASTEXITCODE -ge 8) { throw "robocopy failed for $directory with exit code $LASTEXITCODE" }
   }
-  foreach ($file in @('package.json','LICENSE','NOTICE.md','README-WINDOWS.md','Install Codex QQ Skin Windows.cmd','Start Codex QQ Skin Windows.cmd','Verify Codex QQ Skin Windows.cmd','Restore Codex QQ Skin Windows.cmd')) {
+  foreach ($file in @('package.json','LICENSE','NOTICE.md','README-WINDOWS.md','Install Codex QQ Skin Windows.cmd','Start Codex QQ Skin Windows.cmd','Customize Codex QQ Skin Windows.cmd','Verify Codex QQ Skin Windows.cmd','Restore Codex QQ Skin Windows.cmd')) {
     Copy-Item -LiteralPath (Join-Path $root $file) -Destination (Join-Path $stage $file)
   }
 

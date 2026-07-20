@@ -17,16 +17,20 @@ PORT_EXPLICIT="false"
 RESTART_EXISTING="false"
 PROMPT_RESTART="false"
 FOREGROUND_INJECTOR="false"
+SKIN_MODE=""
 while [ "$#" -gt 0 ]; do
   case "$1" in
     --port) PORT="${2:-}"; PORT_EXPLICIT="true"; shift 2 ;;
     --restart-existing) RESTART_EXISTING="true"; shift ;;
     --prompt-restart) PROMPT_RESTART="true"; shift ;;
     --foreground-injector) FOREGROUND_INJECTOR="true"; shift ;;
+    --skin-mode) SKIN_MODE="${2:-}"; shift 2 ;;
     *) fail "Unknown start argument: $1" ;;
   esac
 done
 case "$PORT" in ''|*[!0-9]*) fail "Invalid port: $PORT" ;; esac
+[ -z "$SKIN_MODE" ] || [ "$SKIN_MODE" = "qq" ] || [ "$SKIN_MODE" = "custom" ] \
+  || fail "Invalid skin mode: $SKIN_MODE"
 [ "$PORT" -ge 1024 ] && [ "$PORT" -le 65535 ] || fail "Port must be between 1024 and 65535."
 
 discover_codex_app
@@ -94,6 +98,13 @@ INJECTOR_STARTED_AT="$(process_started_at "$INJECTOR_PID")"
 CODEX_PID="$(codex_main_pids | /usr/bin/head -n 1)"
 write_state "$PORT" "$INJECTOR_PID" "$INJECTOR_STARTED_AT" "$CODEX_PID"
 
+# Starting or applying QQ Skin is an explicit request to leave native mode.
+# Background watcher refreshes still preserve the user's later toggle choice.
+MODE_ARGS=()
+[ -n "$SKIN_MODE" ] && MODE_ARGS=(--skin-mode "$SKIN_MODE")
+"$NODE" "$INJECTOR" --once --enable-skin "${MODE_ARGS[@]}" --port "$PORT" --theme-dir "$THEME_DIR" \
+  --timeout-ms 15000 >/dev/null 2>&1 || true
+
 # Soft verify: keep the injector even if secondary selectors differ by Codex version.
 VERIFY_OUTPUT="$(/usr/bin/mktemp "${TMPDIR:-/tmp}/qq-skin-verify.XXXXXX")"
 /bin/chmod 600 "$VERIFY_OUTPUT"
@@ -106,7 +117,7 @@ else
 fi
 if [ "$verify_code" -ne 0 ]; then
   # One more force inject before giving up
-  "$NODE" "$INJECTOR" --once --port "$PORT" --theme-dir "$THEME_DIR" --timeout-ms 15000 >/dev/null 2>&1 || true
+  "$NODE" "$INJECTOR" --once --enable-skin "${MODE_ARGS[@]}" --port "$PORT" --theme-dir "$THEME_DIR" --timeout-ms 15000 >/dev/null 2>&1 || true
   if "$NODE" "$INJECTOR" --verify --port "$PORT" --theme-dir "$THEME_DIR" --timeout-ms 12000 >"$VERIFY_OUTPUT" 2>/dev/null; then
     verify_code=0
   else

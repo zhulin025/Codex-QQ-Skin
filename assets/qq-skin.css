@@ -1605,6 +1605,15 @@ html.codex-qq-skin .qq-skin-home {
   box-shadow: 0 16px 38px rgb(var(--ds-bg-rgb) / .30) !important;
 }
 
+/* People and other conventional photo compositions are taller than the
+   panoramic build panel. Keep the complete source frame visible instead of
+   cropping a head or body to force the image edge-to-edge. The panel color
+   fills the remaining side space, while true wide artwork still uses cover. */
+html.codex-qq-skin[data-dream-art-fit="contain"]
+  .qq-skin-home > div:first-child > div:first-child > div:first-child {
+  background-size: contain !important;
+}
+
 .qq-skin-home > div:first-child > div:first-child > div:first-child::before {
   content: "";
   position: absolute;

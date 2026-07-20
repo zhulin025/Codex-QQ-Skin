@@ -7,9 +7,9 @@ IMAGE=""
 THEME_NAME=""
 TAGLINE=""
 QUOTE=""
-ACCENT="#7cff46"
-SECONDARY="#36d7e8"
-HIGHLIGHT="#642a8c"
+ACCENT=""
+SECONDARY=""
+HIGHLIGHT=""
 APPLY_NOW="true"
 RESET_DEMO="false"
 
@@ -65,16 +65,19 @@ else
   /bin/mv -f "$temporary" "$prepared"
   /bin/chmod 600 "$prepared"
 
-  "$NODE" "$SCRIPT_DIR/write-theme.mjs" custom \
+  theme_args=(custom \
     --output-dir "$THEME_DIR" --image "$image_name" \
-    --name "$THEME_NAME" --tagline "$TAGLINE" --quote "$QUOTE" \
-    --accent "$ACCENT" --secondary "$SECONDARY" --highlight "$HIGHLIGHT"
+    --name "$THEME_NAME" --tagline "$TAGLINE" --quote "$QUOTE")
+  [ -n "$ACCENT" ] && theme_args+=(--accent "$ACCENT")
+  [ -n "$SECONDARY" ] && theme_args+=(--secondary "$SECONDARY")
+  [ -n "$HIGHLIGHT" ] && theme_args+=(--highlight "$HIGHLIGHT")
+  "$NODE" "$SCRIPT_DIR/write-theme.mjs" "${theme_args[@]}"
   /usr/bin/find "$THEME_DIR" -maxdepth 1 -type f -name 'background-*' ! -name "$image_name" -delete
   trap - EXIT
 fi
 
 if [ "$APPLY_NOW" = "true" ]; then
-  "$SCRIPT_DIR/start-qq-skin-macos.sh" --port 9341 --prompt-restart
+  "$SCRIPT_DIR/start-qq-skin-macos.sh" --port 9341 --prompt-restart --skin-mode custom
 fi
 
 printf 'Codex QQ Skin theme is ready.\n'
