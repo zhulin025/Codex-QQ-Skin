@@ -12,6 +12,14 @@ while IFS= read -r file; do /bin/bash -n "$file"; done < <(
 while IFS= read -r file; do "$NODE" --check "$file" >/dev/null; done < <(
   /usr/bin/find "$ROOT/scripts" "$ROOT/assets" "$ROOT/presets" -type f \( -name '*.mjs' -o -name '*.js' \) -print
 )
+"$NODE" --check "$ROOT/website/site.js" >/dev/null
+
+if ! /usr/bin/grep -F -q '支持 macOS 与 Windows Codex 桌面端' "$ROOT/website/index.html" \
+  || ! /usr/bin/grep -F -q 'src="./qq-system-cough.mp3"' "$ROOT/website/index.html" \
+  || ! /usr/bin/cmp -s "$ROOT/assets/audio/qq-system-cough.mp3" "$ROOT/website/qq-system-cough.mp3"; then
+  printf 'Website platform copy or cough audio wiring is incomplete.\n' >&2
+  exit 1
+fi
 
 if /usr/bin/grep -R -n -E 'qq-skin-skin|QQ_SKIN_SKIN|1\.0\.0-rc2' \
   "$ROOT/scripts" "$ROOT/assets" >/dev/null; then
@@ -738,7 +746,7 @@ CRLF_BACKUP="$TMP/config-crlf-backup.json"
 "$NODE" "$ROOT/scripts/theme-config.mjs" restore "$CRLF_CONFIG" "$CRLF_BACKUP" >/dev/null
 /usr/bin/cmp -s "$CRLF_CONFIG" "$TMP/original-crlf.toml"
 
-/usr/bin/env -u HOME /bin/bash -c '. "$1/scripts/common-macos.sh"; [ -n "$HOME" ] && [ "$SKIN_VERSION" = "1.8.0" ]' _ "$ROOT"
+/usr/bin/env -u HOME /bin/bash -c '. "$1/scripts/common-macos.sh"; [ -n "$HOME" ] && [ "$SKIN_VERSION" = "1.8.1" ]' _ "$ROOT"
 DOCTOR_HOME="$TMP/doctor-home"
 /bin/mkdir -p "$DOCTOR_HOME/.codex" "$DOCTOR_HOME/Library/Application Support/CodexQQSkin/theme"
 /usr/bin/printf '%s\n' 'model = "gpt-5"' > "$DOCTOR_HOME/.codex/config.toml"
