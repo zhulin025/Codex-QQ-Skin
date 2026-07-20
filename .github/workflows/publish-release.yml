@@ -1,0 +1,43 @@
+name: Publish release assets
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing draft release tag
+        required: true
+        default: v2.0.0
+
+permissions:
+  contents: write
+
+jobs:
+  windows-release:
+    runs-on: windows-2022
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+
+      - name: Test Windows package
+        shell: powershell
+        run: .\tests\windows\run-tests.ps1
+
+      - name: Build Windows package
+        shell: powershell
+        run: .\scripts\windows\build-windows.ps1
+
+      - name: Upload Windows assets and publish release
+        shell: powershell
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: |
+          $zip = Get-ChildItem .\release\Codex-QQ-Skin-Windows-x64-v*.zip | Select-Object -First 1
+          if (-not $zip) { throw 'Windows release ZIP was not created.' }
+          $checksum = "$($zip.FullName).sha256"
+          gh release upload $env:RELEASE_TAG $zip.FullName $checksum --clobber
+          gh release edit $env:RELEASE_TAG --draft=false --latest
