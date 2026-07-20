@@ -14,4 +14,4 @@ The MIT License applies to this repository's software source code. It does not g
 
 The QQ-style penguin avatar and retro frame are AI-generated, unofficial visual assets. They are not official Tencent or QQ artwork and do not imply endorsement. Downstream commercial distribution requires an independent rights review.
 
-This project does not redistribute the official Codex application or Node.js. At runtime it validates and uses the Node.js executable already signed and bundled inside the user's official desktop application.
+This project does not redistribute the official Codex application. The macOS build validates and uses the Node.js executable already signed and bundled inside the official desktop application. The Windows portable ZIP includes an unmodified Node.js executable downloaded from nodejs.org, verified against the official SHA-256 manifest, and accompanied by the Node.js license and provenance record.

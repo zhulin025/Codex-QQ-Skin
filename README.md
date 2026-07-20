@@ -4,7 +4,7 @@
 
 # Codex QQ Skin
 
-一套面向 macOS Codex 桌面端的复古 QQ 风格外观：双层蓝银标题栏、三栏工作区、QQ 在线资料卡，以及独立的 Codex 伙伴面板。
+一套面向 Codex 桌面端的复古 QQ 风格外观：macOS 版为稳定版，Windows x64 版正在通过自动构建和实机验收进入预览阶段。
 
 > 非 OpenAI、腾讯或 QQ 官方产品。本项目不会修改官方 `.app`、`app.asar`、代码签名、API Key 或 Base URL。
 
@@ -19,6 +19,8 @@
 ![Codex QQ Skin 新建任务界面](./assets/新建任务截图.png)
 
 ## 安装
+
+> Windows 用户请查看 [`README-WINDOWS.md`](./README-WINDOWS.md)。Windows 发布 ZIP 由 GitHub Actions 的 Windows Runner 构建，包含独立 Node.js 运行时。
 
 安装前请确保官方 Codex/ChatGPT 桌面端至少成功启动过一次，并完全退出 Codex。项目不要求另行安装 Node.js。
 
@@ -84,7 +86,7 @@ chmod +x ./*.command scripts/*.sh
 - 设置页保持原生双栏结构，进入设置时自动收起任务伙伴卡。
 - 一键验证、一键暂停和一键恢复官方外观。
 
-## 系统要求
+## macOS 系统要求
 
 - macOS（Apple Silicon 或 Intel）。
 - 已安装官方 Codex/ChatGPT 桌面端，并至少正常启动过一次。
@@ -172,7 +174,7 @@ menubar/     可选 SwiftBar 菜单插件
 tests/       macOS 自动化回归测试
 ```
 
-仓库只保留当前 macOS QQ 皮肤实际使用的代码和素材，不包含 Windows 版本、旧人物预设、概念图库、历史事故记录或废弃标题栏图片。
+仓库保留 macOS 稳定版和 Windows x64 预览版共享的皮肤代码；两套系统分别使用 Shell/Swift 和 PowerShell 运行层。
 
 ## 工作原理与安全边界
 

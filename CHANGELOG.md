@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.8.0 — 2026-07-20
+
+- 新增 Windows 10/11 x64 预览版运行层，包含安装、启动、验证、暂停和安全恢复 PowerShell 脚本。
+- Windows 发布 ZIP 内置经过官方 SHA-256 校验的 Node.js 便携运行时，普通用户不需要另行安装 Node.js。
+- 新增 GitHub Actions Windows Server Runner：自动检查 PowerShell 语法、共享注入测试、Windows 配置备份隔离、发布包内容与 SHA-256。
+- Windows 版沿用 loopback CDP、Codex 进程后代核验和记录进程身份核验，不修改官方安装目录或 `app.asar`。
+- 新增 Windows 使用说明和真实 Windows 10/11 验收边界；macOS 稳定版运行流程保持不变。
+
 ## 1.7.0 — 2026-07-20
 
 - 标题栏右侧新增常驻“一键切换”按钮，可在 QQ 皮肤与 Codex 原生 UI 之间即时往返；原生模式仍保留入口，并记住用户上次选择。

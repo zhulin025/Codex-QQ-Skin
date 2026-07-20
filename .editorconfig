@@ -15,3 +15,6 @@ end_of_line = lf
 
 [*.command]
 end_of_line = lf
+
+[*.{ps1,cmd}]
+end_of_line = crlf

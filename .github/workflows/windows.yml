@@ -1,0 +1,78 @@
+name: Windows build
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/windows.yml'
+      - 'assets/**'
+      - 'presets/**'
+      - 'scripts/**'
+      - 'tests/**'
+      - '*.cmd'
+      - 'package.json'
+      - 'README-WINDOWS.md'
+  pull_request:
+    paths:
+      - '.github/workflows/windows.yml'
+      - 'assets/**'
+      - 'presets/**'
+      - 'scripts/**'
+      - 'tests/**'
+      - '*.cmd'
+      - 'package.json'
+      - 'README-WINDOWS.md'
+
+permissions:
+  contents: read
+
+jobs:
+  test-and-build:
+    runs-on: windows-2022
+    timeout-minutes: 20
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Run Windows tests
+        shell: powershell
+        run: .\tests\windows\run-tests.ps1
+
+      - name: Build portable Windows package
+        shell: powershell
+        run: .\scripts\windows\build-windows.ps1
+
+      - name: Inspect package
+        shell: powershell
+        run: |
+          $zip = Get-ChildItem .\release\Codex-QQ-Skin-Windows-x64-v*.zip | Select-Object -First 1
+          if (-not $zip) { throw 'Windows ZIP was not created.' }
+          $check = Join-Path $env:RUNNER_TEMP 'qq-skin-package-check'
+          Expand-Archive $zip.FullName $check
+          $package = Join-Path $check 'Codex QQ Skin'
+          foreach ($required in @(
+            'runtime\node.exe',
+            'scripts\injector.mjs',
+            'scripts\windows\install-qq-skin-windows.ps1',
+            'Install Codex QQ Skin Windows.cmd',
+            'README-WINDOWS.md'
+          )) {
+            if (-not (Test-Path (Join-Path $package $required))) { throw "Missing packaged file: $required" }
+          }
+          & (Join-Path $package 'runtime\node.exe') (Join-Path $package 'scripts\injector.mjs') --check-payload --theme-dir (Join-Path $package 'presets\preset-classic-codex')
+
+      - name: Upload Windows package
+        uses: actions/upload-artifact@v4
+        with:
+          name: Codex-QQ-Skin-Windows-x64
+          path: |
+            release/Codex-QQ-Skin-Windows-x64-v*.zip
+            release/Codex-QQ-Skin-Windows-x64-v*.zip.sha256
+          if-no-files-found: error
+          retention-days: 30

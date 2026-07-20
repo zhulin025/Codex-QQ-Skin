@@ -3,6 +3,7 @@ import path from "node:path";
 import { randomUUID } from "node:crypto";
 
 const [mode, configPath, backupPath] = process.argv.slice(2);
+const backupPlatform = process.env.CODEX_QQ_SKIN_PLATFORM || process.platform;
 // Backup these keys so Restore can put them back. Do NOT force dark —
 // QQ Skin CSS auto-adapts to light/dark via data-dream-shell.
 const settings = new Map([
@@ -82,7 +83,7 @@ function settingLines(body, key) {
 function validateBackup(backup) {
   if (
     backup?.schemaVersion !== 1
-    || backup.platform !== "darwin"
+    || backup.platform !== backupPlatform
     || backup.configPath !== configPath
     || !backup.values
     || typeof backup.values !== "object"
@@ -250,7 +251,7 @@ async function main() {
       }
       const backup = {
         schemaVersion: 1,
-        platform: "darwin",
+        platform: backupPlatform,
         createdAt: new Date().toISOString(),
         configPath,
         values,

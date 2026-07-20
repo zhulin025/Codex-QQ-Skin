@@ -5,6 +5,8 @@
 # macOS launchers must stay executable after a Windows checkout or package build.
 *.sh text eol=lf
 *.command text eol=lf
+*.ps1 text eol=crlf
+*.cmd text eol=crlf
 
 # Keep artwork out of text normalization and text diffs.
 *.png binary
