@@ -8,6 +8,8 @@
   const RIGHT_TRAY_ID = "codex-qq-skin-right-tray";
   const RETRO_SHELL_ID = "codex-qq-skin-retro-shell";
   const RETRO_PROFILE_ID = "codex-qq-skin-retro-profile";
+  const TOGGLE_ID = "codex-qq-skin-toggle";
+  const ENABLED_STORAGE_KEY = "codex-qq-skin-enabled";
   const SHELL_ATTR = "data-dream-shell";
   const ART_ATTRS = [
     "data-dream-art-wide", "data-dream-art-safe", "data-dream-task-mode",
@@ -64,7 +66,9 @@
     firstEnsureMs: null,
     analysisMs: null,
   };
-  window[DISABLED_KEY] = false;
+  let skinEnabled = true;
+  try { skinEnabled = window.localStorage?.getItem(ENABLED_STORAGE_KEY) !== "false"; } catch {}
+  window[DISABLED_KEY] = !skinEnabled;
 
   const previous = window[STATE_KEY];
   const dataUrlToObjectUrl = (dataUrl, fallbackMime) => {
@@ -96,6 +100,7 @@
     document.removeEventListener("click", previous.routeInteractionHandler, true);
   }
   previous?.soundMonitor?.cleanup?.();
+  document.getElementById(TOGGLE_ID)?.remove();
   if (previous?.mediaHandler && previous?.mediaQuery) {
     try { previous.mediaQuery.removeEventListener("change", previous.mediaHandler); } catch {}
   }
@@ -1573,15 +1578,13 @@
     if (route) syncRouteState(shell, { layout });
   };
 
-  const cleanup = () => {
-    const state = window[STATE_KEY];
-    if (state?.installToken !== installToken) return false;
-    window[DISABLED_KEY] = true;
-    document.documentElement?.classList.remove("codex-qq-skin");
-    document.documentElement?.removeAttribute(SHELL_ATTR);
-    for (const name of ART_ATTRS) document.documentElement?.removeAttribute(name);
-    document.documentElement?.style.removeProperty("--qq-skin-art");
-    for (const name of THEME_VARIABLES) document.documentElement?.style.removeProperty(name);
+  const removeSkinVisuals = () => {
+    const root = document.documentElement;
+    root?.classList.remove("codex-qq-skin");
+    root?.removeAttribute(SHELL_ATTR);
+    for (const name of ART_ATTRS) root?.removeAttribute(name);
+    root?.style.removeProperty("--qq-skin-art");
+    for (const name of THEME_VARIABLES) root?.style.removeProperty(name);
     document.querySelectorAll(".qq-skin-home").forEach((node) => node.classList.remove("qq-skin-home"));
     document.querySelectorAll(".qq-skin-home-shell").forEach((node) => node.classList.remove("qq-skin-home-shell"));
     document.querySelectorAll(".qq-skin-home-utility").forEach((node) => node.classList.remove("qq-skin-home-utility"));
@@ -1600,6 +1603,75 @@
         "dream-retro-window-control", "dream-retro-control-summary",
         "dream-retro-control-bottom", "dream-retro-control-sidebar",
       ));
+    companionParts = null;
+    chromeParts = null;
+    retroProfileParts = null;
+  };
+
+  const syncToggleButton = (button) => {
+    const enabled = !window[DISABLED_KEY];
+    button.textContent = enabled ? "切换原生皮肤" : "切换 QQ 皮肤";
+    button.setAttribute("aria-label", enabled ? "切回 Codex 原生 UI" : "切换到 QQ 皮肤 UI");
+    button.setAttribute("aria-pressed", enabled ? "true" : "false");
+    button.dataset.skinEnabled = enabled ? "true" : "false";
+    button.style.top = enabled ? "7px" : "9px";
+    button.style.right = enabled ? "148px" : "176px";
+    button.style.height = enabled ? "26px" : "28px";
+    button.style.padding = enabled ? "0 12px" : "0 13px";
+    button.style.border = enabled ? "1px solid rgba(203,231,255,.92)" : "1px solid rgba(82,88,98,.18)";
+    button.style.borderRadius = enabled ? "8px" : "9px";
+    button.style.background = enabled
+      ? "linear-gradient(180deg, rgba(91,181,250,.96) 0%, rgba(19,112,210,.96) 52%, rgba(10,83,176,.98) 100%)"
+      : "rgba(248,248,249,.94)";
+    button.style.color = enabled ? "#ffffff" : "#3b3f45";
+    button.style.boxShadow = enabled
+      ? "inset 0 1px rgba(255,255,255,.58), inset 0 -1px rgba(0,45,122,.38), 0 1px 3px rgba(0,38,96,.28)"
+      : "0 1px 2px rgba(0,0,0,.08), 0 5px 14px rgba(0,0,0,.08)";
+    button.style.backdropFilter = enabled ? "blur(8px) saturate(125%)" : "blur(14px) saturate(110%)";
+  };
+
+  const ensureToggleButton = () => {
+    let button = document.getElementById(TOGGLE_ID);
+    if (!button || button.parentElement !== document.body) {
+      button?.remove();
+      button = document.createElement("button");
+      button.id = TOGGLE_ID;
+      button.type = "button";
+      button.style.cssText = [
+        "position:fixed", "z-index:2147483000", "white-space:nowrap",
+        "font:650 12px/24px -apple-system,BlinkMacSystemFont,\"PingFang SC\",sans-serif",
+        "cursor:pointer", "user-select:none", "-webkit-app-region:no-drag",
+        "transition:filter .14s ease,transform .14s ease,background .18s ease,box-shadow .18s ease",
+      ].join(";");
+      button.addEventListener?.("mouseenter", () => { button.style.filter = "brightness(1.08)"; });
+      button.addEventListener?.("mouseleave", () => { button.style.filter = "none"; });
+      button.addEventListener?.("mousedown", () => { button.style.transform = "translateY(1px)"; });
+      button.addEventListener?.("mouseup", () => { button.style.transform = "none"; });
+      button.addEventListener?.("click", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        const enable = Boolean(window[DISABLED_KEY]);
+        window[DISABLED_KEY] = !enable;
+        try { window.localStorage?.setItem(ENABLED_STORAGE_KEY, enable ? "true" : "false"); } catch {}
+        if (enable) ensure({ root: true, route: true, layout: true });
+        else removeSkinVisuals();
+        syncToggleButton(button);
+        if (typeof window.dispatchEvent === "function" && typeof window.Event === "function") {
+          window.dispatchEvent(new window.Event("resize"));
+        }
+      });
+      document.body.appendChild(button);
+    }
+    syncToggleButton(button);
+    return button;
+  };
+
+  const cleanup = () => {
+    const state = window[STATE_KEY];
+    if (state?.installToken !== installToken) return false;
+    window[DISABLED_KEY] = true;
+    removeSkinVisuals();
+    document.getElementById(TOGGLE_ID)?.remove();
     state?.observer?.disconnect();
     state?.rootObserver?.disconnect();
     state?.resizeObserver?.disconnect();
@@ -1681,6 +1753,7 @@
   window[STATE_KEY] = {
     ensure,
     cleanup,
+    ensureToggleButton,
     observer,
     rootObserver,
     resizeObserver,
@@ -1705,6 +1778,7 @@
     themeId: THEME.id || "custom",
     detectShellMode,
   };
+  ensureToggleButton();
   const firstEnsureStartedAt = now();
   ensure({ layout: !previous || !document.getElementById(CHROME_ID) });
   metrics.firstEnsureMs = Number((now() - firstEnsureStartedAt).toFixed(3));

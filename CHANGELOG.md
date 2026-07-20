@@ -1,7 +1,9 @@
 # Changelog
 
-## Unreleased
+## 1.7.0 — 2026-07-20
 
+- 标题栏右侧新增常驻“一键切换”按钮，可在 QQ 皮肤与 Codex 原生 UI 之间即时往返；原生模式仍保留入口，并记住用户上次选择。
+- 切换按钮在 QQ 模式采用蓝银玻璃渐变，在原生模式采用浅色系统胶囊并向左避让文件夹入口。
 - 新增原生 macOS `Codex QQ Skin.app`，提供无需终端的一键安装、启动、更新和恢复入口。
 - 新增 Intel 与 Apple Silicon 通用 APP 构建脚本，以及可选 Developer ID 签名流程。
 - README 增加 APP 安装方式和未公证版本的 Gatekeeper 图形界面放行步骤。

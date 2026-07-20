@@ -259,6 +259,20 @@ assert.match(template, /statusLabels[\s\S]{0,500}approval:\s*"需要你的确认
   "The companion must reflect live running, approval, completion, and connectivity states.");
 assert.match(template, /data-companion-action="pet"[\s\S]{0,300}data-companion-action="terminal"[\s\S]{0,300}data-companion-action="sound"/,
   "The companion must expose exactly the requested pet, terminal, and sound shortcuts.");
+assert.match(template, /const TOGGLE_ID = "codex-qq-skin-toggle"[\s\S]{0,300}codex-qq-skin-enabled/,
+  "The renderer must ship a persistent, skin-independent UI toggle.");
+assert.match(template, /切换原生皮肤[\s\S]{0,80}切换 QQ 皮肤/,
+  "The title-bar toggle must clearly describe both available UI modes.");
+assert.match(template, /button\.style\.right = enabled \? "148px" : "176px"/,
+  "Native mode must reserve extra space for Codex's folder and title-bar controls.");
+assert.match(template, /linear-gradient\(180deg, rgba\(91,181,250,.96\)[\s\S]{0,500}rgba\(248,248,249,.94\)/,
+  "QQ and native modes must use distinct title-bar-matched button treatments.");
+assert.match(template, /const enable = Boolean\(window\[DISABLED_KEY\]\)[\s\S]{0,500}removeSkinVisuals\(\)/,
+  "One click must apply the QQ skin or fully restore Codex's native visuals.");
+assert.match(template, /ensureToggleButton\(\);[\s\S]{0,120}const firstEnsureStartedAt/,
+  "The toggle must remain available even when startup preference selects native UI.");
+assert.match(template, /-webkit-app-region:no-drag/,
+  "The fixed title-bar control must remain clickable inside Electron's draggable chrome.");
 assert.match(template, /sendMessageFromView\?\.\(\{ type: "avatar-overlay-open" \}\)/,
   "The pet shortcut must open Codex's native avatar overlay.");
 assert.match(template, /toggleNativeTerminal[\s\S]{0,900}切换底部面板显示[\s\S]{0,900}target\?\.click\?\.\(\)/,
