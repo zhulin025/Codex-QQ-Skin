@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import fs from "node:fs/promises";
 import path from "node:path";
+import os from "node:os";
 import { fileURLToPath } from "node:url";
 import { spawn } from "node:child_process";
 
@@ -8,7 +9,7 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const macosRoot = path.resolve(here, "..");
 const stageScript = path.join(macosRoot, "scripts", "stage-theme.mjs");
 const fixtureAsset = path.join(macosRoot, "assets", "portal-hero.png");
-const tempRoot = await fs.mkdtemp(path.join("/tmp", "codex-qq-skin-stage-"));
+const tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), "codex-qq-skin-stage-"));
 
 function runStage(source, stage) {
   return new Promise((resolve, reject) => {
