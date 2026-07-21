@@ -219,7 +219,7 @@ function Get-CodexLangArgument {
       $text = Get-Content -LiteralPath $script:ConfigPath -Raw -ErrorAction Stop
       if ($text -match '(?ms)^\[desktop\].*?(?=^\[|\z)') {
         $desktop = $Matches[0]
-        if ($desktop -match 'localeOverride\s*=\s*"([^"]+)"' -or $desktop -match "localeOverride\s*=\s*'([^']+)'") {
+        if ($desktop -match 'localeOverride\s*=\s*["'']([^"'']+)["'']') {
           $locale = $Matches[1].Trim()
         }
       }
