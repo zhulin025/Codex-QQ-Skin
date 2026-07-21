@@ -1088,21 +1088,59 @@ html.codex-dream-skin [data-message-author-role] { border-radius: 16px; }
   }
 }
 
-/* Full-window custom wallpaper. Paint the uploaded image exactly once on the
-   window so home, task detail, and the left navigation share one continuous
-   cover image regardless of source aspect ratio. */
+/* Full-window custom wallpaper. Paint the uploaded image once behind the UI,
+   then soften it so chat text stays readable (same idea as the frosted sidebar). */
 html.codex-dream-skin body {
+  background-color: var(--ds-bg) !important;
+  background-image: none !important;
+  isolation: isolate;
+}
+
+/* Beat older wide/ambient rules that painted a sharp cover on body. */
+html.codex-dream-skin[data-dream-art-wide="true"] body,
+html.codex-dream-skin:is(
+  [data-dream-task-mode="ambient"],
+  [data-dream-art-task-mode="ambient"],
+  [data-dream-task-mode="banner"],
+  [data-dream-art-task-mode="banner"]
+)[data-dream-art-wide="true"] body {
+  background-image: none !important;
+  background-attachment: scroll !important;
+}
+
+html.codex-dream-skin body::before {
+  content: "" !important;
+  position: fixed !important;
+  inset: -28px !important;
+  z-index: 0 !important;
+  pointer-events: none !important;
   background-color: var(--ds-bg) !important;
   background-image: var(--dream-skin-art) !important;
   background-position: var(--ds-art-position) !important;
   background-size: cover !important;
   background-repeat: no-repeat !important;
-  background-attachment: fixed !important;
+  filter: blur(16px) saturate(112%) !important;
+  -webkit-filter: blur(16px) saturate(112%) !important;
+  opacity: .92;
+}
+
+html.codex-dream-skin body::after {
+  content: "" !important;
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 0 !important;
+  pointer-events: none !important;
+  background: linear-gradient(180deg,
+    rgb(var(--ds-bg-rgb) / .34) 0%,
+    rgb(var(--ds-bg-rgb) / .22) 48%,
+    rgb(var(--ds-bg-rgb) / .38) 100%) !important;
 }
 
 html.codex-dream-skin body > #root,
 html.codex-dream-skin body > #root > div,
 html.codex-dream-skin main.main-surface {
+  position: relative;
+  z-index: 1;
   background-color: transparent !important;
   background-image: none !important;
 }
@@ -1113,7 +1151,8 @@ html.codex-dream-skin aside.app-shell-left-panel {
     rgb(var(--ds-panel-rgb) / .42)) !important;
   border-radius: 0 !important;
   box-shadow: none !important;
-  backdrop-filter: blur(8px) saturate(104%) !important;
+  backdrop-filter: blur(10px) saturate(108%) !important;
+  -webkit-backdrop-filter: blur(10px) saturate(108%) !important;
 }
 
 html.codex-dream-skin main.main-surface:not(.dream-skin-home-shell)::before {
@@ -1124,9 +1163,10 @@ html.codex-dream-skin main.main-surface:not(.dream-skin-home-shell)::before {
 
 html.codex-dream-skin main.main-surface > header.app-header-tint,
 html.codex-dream-skin body > #root > div > .app-header-tint {
-  background: rgb(var(--ds-panel-rgb) / .36) !important;
+  background: rgb(var(--ds-panel-rgb) / .42) !important;
   border-color: rgb(var(--ds-muted-rgb) / .18) !important;
-  backdrop-filter: blur(8px) saturate(104%) !important;
+  backdrop-filter: blur(10px) saturate(108%) !important;
+  -webkit-backdrop-filter: blur(10px) saturate(108%) !important;
 }
 
 html.codex-dream-skin main.main-surface.dream-skin-home-shell,

@@ -275,6 +275,10 @@ assert.match(template, /statusLabels[\s\S]{0,500}approval:\s*"需要你的确认
   "The companion must reflect live running, approval, completion, and connectivity states.");
 assert.match(template, /data-companion-action="pet"[\s\S]{0,300}data-companion-action="terminal"[\s\S]{0,300}data-companion-action="sound"/,
   "The companion must expose exactly the requested pet, terminal, and sound shortcuts.");
+assert.match(customCss, /html\.codex-dream-skin body::before[\s\S]{0,500}filter:\s*blur\(16px\)/,
+  "Custom wallpapers must be blurred so chat text stays readable.");
+assert.match(customCss, /html\.codex-dream-skin body::before[\s\S]{0,300}background-image:\s*var\(--dream-skin-art\)/,
+  "Blurred custom wallpaper must still use the uploaded art once behind the UI.");
 assert.match(template, /const TOGGLE_ID = "codex-qq-skin-toggle"[\s\S]{0,400}codex-qq-skin-mode/,
   "The renderer must ship a persistent three-mode UI selector.");
 assert.match(template, /\["native", "原生"\][\s\S]{0,80}\["qq", "QQ"\][\s\S]{0,80}\["custom", "自定义"\]/,

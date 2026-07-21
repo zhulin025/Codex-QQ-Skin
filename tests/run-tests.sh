@@ -206,6 +206,17 @@ fi
 /usr/bin/env HOME="$SWITCH_HOME" NODE="$NODE" \
   "$ROOT/scripts/remove-theme-macos.sh" --id img-removable >/dev/null
 [ ! -d "$SWITCH_STATE/themes/img-removable" ]
+/bin/mkdir -p "$SWITCH_STATE/themes/img-renamable"
+/bin/cp "$ROOT/assets/portal-hero.png" "$SWITCH_STATE/themes/img-renamable/background.png"
+/usr/bin/printf '%s\n' \
+  '{"schemaVersion":1,"id":"img-renamable","kind":"custom-native","name":"旧名","image":"background.png"}' \
+  > "$SWITCH_STATE/themes/img-renamable/theme.json"
+/usr/bin/env HOME="$SWITCH_HOME" NODE="$NODE" \
+  "$ROOT/scripts/rename-theme-macos.sh" --id img-renamable --name '新名字' >/dev/null
+"$NODE" -e '
+  const theme = JSON.parse(require("fs").readFileSync(process.argv[1], "utf8"));
+  if (theme.name !== "新名字") process.exit(1);
+' "$SWITCH_STATE/themes/img-renamable/theme.json"
 if ! /usr/bin/grep -F -q '__QQ_SKIN_LIBRARY_JSON__' "$ROOT/assets/renderer-inject.js" \
   || ! /usr/bin/grep -F -q 'codex-qq-skin-library-switch' "$ROOT/scripts/injector.mjs" \
   || ! /usr/bin/grep -F -q 'pollLibrarySwitchRequests' "$ROOT/scripts/injector.mjs"; then
@@ -213,8 +224,15 @@ if ! /usr/bin/grep -F -q '__QQ_SKIN_LIBRARY_JSON__' "$ROOT/assets/renderer-injec
   exit 1
 fi
 if ! /usr/bin/grep -F -q '我的皮肤库' "$ROOT/macos-app/main.swift" \
-  || ! /usr/bin/grep -F -q 'list-themes-macos.sh' "$ROOT/macos-app/main.swift"; then
+  || ! /usr/bin/grep -F -q 'list-themes-macos.sh' "$ROOT/macos-app/main.swift" \
+  || ! /usr/bin/grep -F -q 'rename-theme-macos.sh' "$ROOT/macos-app/main.swift" \
+  || ! /usr/bin/grep -F -q '皮肤库' "$ROOT/macos-app/main.swift"; then
   printf 'macOS App skin library UI is missing.\n' >&2
+  exit 1
+fi
+if /usr/bin/grep -F -q '重新安装 / 更新' "$ROOT/macos-app/main.swift" \
+  || /usr/bin/grep -F -q '打开文件夹' "$ROOT/macos-app/main.swift"; then
+  printf 'macOS App still exposes obsolete library/update chrome.\n' >&2
   exit 1
 fi
 
@@ -809,7 +827,7 @@ CRLF_BACKUP="$TMP/config-crlf-backup.json"
 "$NODE" "$ROOT/scripts/theme-config.mjs" restore "$CRLF_CONFIG" "$CRLF_BACKUP" >/dev/null
 /usr/bin/cmp -s "$CRLF_CONFIG" "$TMP/original-crlf.toml"
 
-/usr/bin/env -u HOME /bin/bash -c '. "$1/scripts/common-macos.sh"; [ -n "$HOME" ] && [ "$SKIN_VERSION" = "2.2.0" ]' _ "$ROOT"
+/usr/bin/env -u HOME /bin/bash -c '. "$1/scripts/common-macos.sh"; [ -n "$HOME" ] && [ "$SKIN_VERSION" = "2.2.1" ]' _ "$ROOT"
 DOCTOR_HOME="$TMP/doctor-home"
 /bin/mkdir -p "$DOCTOR_HOME/.codex" "$DOCTOR_HOME/Library/Application Support/CodexQQSkin/theme"
 /usr/bin/printf '%s\n' 'model = "gpt-5"' > "$DOCTOR_HOME/.codex/config.toml"

@@ -10,15 +10,16 @@
 
 > 非 OpenAI、腾讯或 QQ 官方产品。本项目不会修改官方 `.app`、`app.asar`、代码签名、API Key 或 Base URL。
 
-## 最新版本 2.2.0
+## 最新版本 2.2.1
 
-- **皮肤管理器（第二阶段）**：macOS App 成为皮肤库主入口（列表 / 应用 / 删除 / 打开文件夹）；Codex 右上角「自定义」旁提供轻量 ▾ 最近自定义皮肤选择。
-- QQ 仍是封闭产品皮肤，不会与用户图片混用；完整管理请用 App。
-- 继续包含 2.1.3：引擎自动刷新、QQ/自定义硬隔离、标题栏拖动修复、切换条避让。
+- **macOS App 皮肤库改版：** 顶部「启动 / 皮肤库」分 Tab；每行自带应用、重命名、删除；列表约五行高，多出滚动。
+- 启动成功不再弹「确定」框，只在状态栏提示。
+- **自定义背景统一模糊**，避免原图过锐导致文字看不清。
+- 继续包含 2.2.0：皮肤管理器 + Codex ▾ 轻量切换；QQ 与自定义互不混用。
 
-> 若你仍看到 `MODE_ARGS[@]: unbound variable`：说明 `~/.codex/codex-qq-skin-studio` 还是旧引擎。请用 **2.2.0** App 再点一次主按钮，或点「重新安装 / 更新」。
+> 若你仍看到 `MODE_ARGS[@]: unbound variable`：说明 `~/.codex/codex-qq-skin-studio` 还是旧引擎。请用 **2.2.1** App 再点一次主按钮（会自动更新引擎）。
 
-Windows 用户请从 [GitHub Releases](https://github.com/zhulin025/Codex-QQ-Skin/releases) 下载 `ChatGPT QQ Skin Setup 2.2.0.exe`。Windows 安装器需在 Windows CI / Windows 电脑上构建，**无法在 macOS 本机直接生成 `.exe`**。
+Windows 用户请从 [GitHub Releases](https://github.com/zhulin025/Codex-QQ-Skin/releases) 下载 `ChatGPT QQ Skin Setup 2.2.1.exe`。Windows 安装器需在 Windows CI / Windows 电脑上构建，**无法在 macOS 本机直接生成 `.exe`**。
 
 ## 效果预览
 
@@ -104,8 +105,8 @@ chmod +x ./*.command scripts/*.sh
 - `QQ`：使用固定的蓝银 QQ 2007 外框、左侧栏、三栏布局、右侧摘要托盘和 Codex 伙伴，不受用户图片配色影响。
 - `自定义`：保留 Codex 原生界面结构，根据用户图片自动生成配色、焦点和新建任务页构图。
 - 三种模式可在右上角即时切换。每次切换都会完整重建目标模式的布局、颜色和装饰，不会遗留上一套皮肤的侧栏颜色或面板状态。
-- 上传过多套自定义皮肤后：在 **macOS App** 的「我的皮肤库」里管理（应用 / 删除 / 打开文件夹）；Codex 里点「自定义」旁的 ▾ 可快速切换最近几套自定义皮肤。
-- 人物及普通照片会在新建任务顶部构建框中优先完整显示，避免为了铺满横幅而截断头部或身体；真正的超宽背景图仍保持铺满效果。
+- 上传过多套自定义皮肤后：在 **macOS App → 皮肤库** 里按行管理（应用 / 重命名 / 删除）；Codex 里点「自定义」旁的 ▾ 可快速切换最近几套自定义皮肤。
+- 自定义图片背景会统一做模糊与淡遮罩，保证对话文字可读；人物及普通照片仍可在新建任务构图中完整显示。
 
 - 38px 深蓝标题行与 29px 蓝银工具行组成一体化复古标题区。
 - 左上企鹅与动态任务标题避开 macOS 交通灯，不随窗口宽度拉伸。
