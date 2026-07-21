@@ -6,9 +6,11 @@ const [mode, configPath, backupPath] = process.argv.slice(2);
 const backupPlatform = process.env.CODEX_QQ_SKIN_PLATFORM || process.platform;
 // Backup these keys so Restore can put them back. Do NOT force dark —
 // QQ Skin CSS auto-adapts to light/dark via data-dream-shell.
+// localeOverride is backup-only so install never strips the user's language.
 const settings = new Map([
   ["appearanceTheme", null],
   ["appearanceDarkCodeThemeId", null],
+  ["localeOverride", null],
 ]);
 
 if (!["install", "restore"].includes(mode) || !configPath || !backupPath) {
@@ -93,12 +95,12 @@ function validateBackup(backup) {
   }
   const expectedKeys = [...settings.keys()];
   const actualKeys = Object.keys(backup.values);
-  if (
-    actualKeys.length !== expectedKeys.length
-    || actualKeys.some((key) => !settings.has(key))
-    || expectedKeys.some((key) => !Object.hasOwn(backup.values, key))
-  ) {
-    throw new Error("Theme backup contains unexpected or missing settings; nothing was restored.");
+  if (actualKeys.some((key) => !settings.has(key))) {
+    throw new Error("Theme backup contains unexpected settings; nothing was restored.");
+  }
+  // Older backups may predate newly tracked keys (e.g. localeOverride).
+  for (const key of expectedKeys) {
+    if (!Object.hasOwn(backup.values, key)) backup.values[key] = null;
   }
   for (const key of expectedKeys) {
     const line = backup.values[key];

@@ -26,7 +26,7 @@ START_ERROR_LOG="$STATE_ROOT/start-error.log"
 CODEX_APP_JOB_LABEL="com.openai.codex-qq-skin-studio.app"
 INJECTOR_JOB_LABEL="com.openai.codex-qq-skin-studio.injector"
 EXPECTED_CODEX_TEAM_ID="${CODEX_EXPECTED_TEAM_ID:-2DC432GLL2}"
-SKIN_VERSION="2.1.0"
+SKIN_VERSION="2.1.1"
 
 fail() {
   local message="$*"
@@ -307,7 +307,7 @@ select_available_port() {
     fi
     candidate=$((candidate + 1))
   done
-  fail "No free loopback port was found between $preferred and $last."
+  fail "在 $preferred–$last 之间找不到空闲的本机调试端口，请关闭占用端口的程序后重试。"
 }
 
 wait_for_cdp() {
@@ -628,11 +628,17 @@ hot_reapply_theme() {
       index($0, inj) && index($0, "--watch") && index($0, "--port " port " --theme-dir ") { print $1; exit }
     ')"
   fi
-  local mode_args=()
-  [ -n "$skin_mode" ] && mode_args=(--skin-mode "$skin_mode")
-  if ! "$NODE" "$INJECTOR" --once --enable-skin "${mode_args[@]}" --port "$port" --theme-dir "$THEME_DIR" \
-    --timeout-ms "$timeout_ms" >/dev/null 2>&1; then
-    return 1
+  # Avoid "${empty_array[@]}" under `set -u` on bash 3.2.
+  if [ -n "$skin_mode" ]; then
+    if ! "$NODE" "$INJECTOR" --once --enable-skin --skin-mode "$skin_mode" --port "$port" --theme-dir "$THEME_DIR" \
+      --timeout-ms "$timeout_ms" >/dev/null 2>&1; then
+      return 1
+    fi
+  else
+    if ! "$NODE" "$INJECTOR" --once --enable-skin --port "$port" --theme-dir "$THEME_DIR" \
+      --timeout-ms "$timeout_ms" >/dev/null 2>&1; then
+      return 1
+    fi
   fi
 
   # A current watcher reloads theme files itself. Start one only when absent.
@@ -657,23 +663,69 @@ release_codex_launchd_job() {
   /bin/launchctl remove "$CODEX_APP_JOB_LABEL" >/dev/null 2>&1 || true
 }
 
+# Prefer Codex [desktop] localeOverride, then the macOS UI language, so launching
+# via scripts/`open` does not drop users into an English UI.
+resolve_codex_lang_arg() {
+  local locale=""
+  if [ -f "$CONFIG_PATH" ] && [ -n "${NODE:-}" ] && [ -x "${NODE:-}" ]; then
+    locale="$("$NODE" -e '
+      const fs = require("fs");
+      try {
+        const text = fs.readFileSync(process.argv[1], "utf8");
+        const block = text.match(/^\[desktop\][^\[]*/m);
+        if (!block) process.exit(0);
+        const match = block[0].match(/^\s*localeOverride\s*=\s*["\x27]([^"\x27]+)["\x27]/m);
+        if (match) process.stdout.write(String(match[1]).trim());
+      } catch {}
+    ' "$CONFIG_PATH" 2>/dev/null || true)"
+  fi
+  if [ -z "$locale" ]; then
+    locale="$(/usr/bin/defaults read -g AppleLocale 2>/dev/null || true)"
+  fi
+  locale="$(printf '%s' "$locale" | /usr/bin/sed -E 's/@.*//; s/_/-/g; s/\..*//; s/[[:space:]]//g')"
+  case "$locale" in
+    zh*|en*|ja*|ko*|es*|fr*|de*|pt*|ru*|it*|nl*|sv*|da*|fi*|nb*|pl*|tr*|th*|vi*|id*|ms*|ar*|he*|hi*|uk*|cs*|ro*|hu*)
+      printf '%s\n' "$locale"
+      ;;
+  esac
+}
+
 launch_codex_with_cdp() {
   local port="$1"
+  local lang=""
   : > "$APP_LOG"
   : > "$APP_ERROR_LOG"
   release_codex_launchd_job
+  lang="$(resolve_codex_lang_arg || true)"
   # Start as a normal user process (NOT launchctl submit). submit keeps a job
   # that will restart Codex when the window is closed.
-  /usr/bin/open -na "$CODEX_BUNDLE" --args \
-    --remote-debugging-address=127.0.0.1 \
-    --remote-debugging-port="$port" \
-    >>"$APP_LOG" 2>>"$APP_ERROR_LOG" || true
-  # Fallback if open failed to pass args on some builds
-  if ! codex_is_running; then
-    /usr/bin/nohup "$CODEX_EXE" \
+  # Duplicate open/nohup branches avoid empty-array expansion under bash 3.2 `set -u`.
+  if [ -n "$lang" ]; then
+    /usr/bin/open -na "$CODEX_BUNDLE" --args \
       --remote-debugging-address=127.0.0.1 \
       --remote-debugging-port="$port" \
-      >>"$APP_LOG" 2>>"$APP_ERROR_LOG" &
+      --lang="$lang" \
+      >>"$APP_LOG" 2>>"$APP_ERROR_LOG" || true
+  else
+    /usr/bin/open -na "$CODEX_BUNDLE" --args \
+      --remote-debugging-address=127.0.0.1 \
+      --remote-debugging-port="$port" \
+      >>"$APP_LOG" 2>>"$APP_ERROR_LOG" || true
+  fi
+  # Fallback if open failed to pass args on some builds
+  if ! codex_is_running; then
+    if [ -n "$lang" ]; then
+      /usr/bin/nohup "$CODEX_EXE" \
+        --remote-debugging-address=127.0.0.1 \
+        --remote-debugging-port="$port" \
+        --lang="$lang" \
+        >>"$APP_LOG" 2>>"$APP_ERROR_LOG" &
+    else
+      /usr/bin/nohup "$CODEX_EXE" \
+        --remote-debugging-address=127.0.0.1 \
+        --remote-debugging-port="$port" \
+        >>"$APP_LOG" 2>>"$APP_ERROR_LOG" &
+    fi
   fi
 }
 

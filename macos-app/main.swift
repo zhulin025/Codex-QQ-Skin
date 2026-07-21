@@ -54,7 +54,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let title = NSTextField(labelWithString: "Codex QQ Skin")
         title.font = .boldSystemFont(ofSize: 24)
 
-        let subtitle = NSTextField(wrappingLabelWithString: "2.0 支持上传任意图片，自动分析主色、明暗、视觉焦点和安全留白，生成专属 QQ 皮肤。全程仅在本机处理。")
+        let subtitle = NSTextField(wrappingLabelWithString: "2.1 支持上传任意图片，自动分析主色、明暗、视觉焦点和安全留白，生成专属 QQ 皮肤。全程仅在本机处理。")
         subtitle.alignment = .center
         subtitle.textColor = .secondaryLabelColor
         subtitle.maximumNumberOfLines = 2

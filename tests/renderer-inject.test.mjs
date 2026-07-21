@@ -243,12 +243,12 @@ assert.match(
 );
 assert.match(
   css,
-  /\.dream-retro-titlebar[\s\S]{0,520}linear-gradient\(180deg, #1979df/,
-  "The compact retro titlebar must use a crisp code-native gradient instead of stretching raster buttons.",
+  /\.dream-retro-titlebar[\s\S]{0,700}-webkit-app-region:\s*drag/,
+  "Retro titlebar must re-enable Electron window dragging under the skin chrome.",
 );
 assert.match(css, /\.dream-retro-toolbar[\s\S]{0,700}height:\s*29px;/,
   "The compact titlebar must be joined to a separate retro toolbar filler row.");
-assert.match(css, /\.dream-retro-toolbar button[\s\S]{0,260}cursor:\s*pointer;/,
+assert.match(css, /\.dream-retro-toolbar button[\s\S]{0,420}cursor:\s*pointer;/,
   "Retro toolbar entries must expose real button interaction styling.");
 assert.match(template, /data-retro-action="new-task"[\s\S]{0,500}data-retro-action="chat"/,
   "Retro toolbar must render actionable navigation buttons instead of decorative labels.");

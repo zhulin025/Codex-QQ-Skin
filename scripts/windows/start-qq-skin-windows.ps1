@@ -20,7 +20,7 @@ if (-not $debugReady) {
   Write-Host "Launching ChatGPT with loopback debug port $Port..."
   Start-CodexWithCdp -Port $Port
   if (-not (Wait-CodexCdpEndpoint -Port $Port)) {
-    Stop-WithError "ChatGPT did not expose a verified loopback CDP endpoint within 45 seconds. See $($script:CodexErrorLog)."
+    Stop-WithError "ChatGPT 未能在 45 秒内于本机端口 $Port 打开可用的调试接口（CDP）。请查看 $($script:CodexErrorLog)。"
   }
 }
 

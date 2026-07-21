@@ -219,9 +219,13 @@ html.codex-qq-skin body > #root > div:has(> div > .app-shell-left-panel) {
   max-height: 100% !important;
 }
 
-/* The native macOS traffic-light bar remains untouched. This renderer layer
-   recreates the requested 2007-era titlebar and uses the generated frame as a
-   scalable nine-slice border, so resizing never stretches the corner chrome. */
+/* Keep skin-mode toggle and other floating chrome clickable, not window-draggable. */
+#codex-qq-skin-toggle,
+#codex-qq-skin-toggle * {
+  -webkit-app-region: no-drag !important;
+  app-region: no-drag !important;
+  pointer-events: auto !important;
+}
 #codex-qq-skin-retro-shell {
   position: fixed;
   inset: 0;
@@ -262,6 +266,10 @@ html.codex-qq-skin body > #root > div:has(> div > .app-shell-left-panel) {
     inset 0 1px rgb(255 255 255 / .48),
     inset 0 -1px #064ca7,
     0 1px 2px rgb(13 53 112 / .35);
+  /* Retro chrome covers the native Electron drag strip; re-enable window move. */
+  pointer-events: auto;
+  -webkit-app-region: drag;
+  app-region: drag;
 }
 
 .dream-retro-title-penguin {
@@ -316,6 +324,8 @@ html.codex-qq-skin body > #root > div:has(> div > .app-shell-left-panel) {
   text-shadow: 0 1px white;
   white-space: nowrap;
   pointer-events: auto;
+  -webkit-app-region: drag;
+  app-region: drag;
 }
 
 .dream-retro-toolbar button {
@@ -323,6 +333,8 @@ html.codex-qq-skin body > #root > div:has(> div > .app-shell-left-panel) {
   min-width: 0;
   margin: 0;
   padding: 2px 5px;
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
   border: 1px solid transparent;
   border-radius: 3px;
   background: transparent;
@@ -381,6 +393,8 @@ html.codex-qq-skin body > #root > div:has(> div > .app-shell-left-panel) {
   align-items: center;
   gap: 6px;
   pointer-events: auto;
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
   color: rgb(255 255 255 / .88);
 }
 

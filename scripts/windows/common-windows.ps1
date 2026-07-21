@@ -1,7 +1,7 @@
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-$script:SkinVersion = '2.1.0'
+$script:SkinVersion = '2.1.1'
 $script:ScriptRoot = Split-Path -Parent $PSCommandPath
 $script:ProjectRoot = (Resolve-Path (Join-Path $script:ScriptRoot '..\..')).Path
 $script:InjectorPath = Join-Path $script:ProjectRoot 'scripts\injector.mjs'
@@ -212,11 +212,42 @@ function Stop-CodexApp {
   if (@(Get-CodexProcesses).Count -gt 0) { Stop-WithError 'Codex did not close within 15 seconds. Close it manually and retry.' }
 }
 
+function Get-CodexLangArgument {
+  $locale = $null
+  if (Test-Path -LiteralPath $script:ConfigPath) {
+    try {
+      $text = Get-Content -LiteralPath $script:ConfigPath -Raw -ErrorAction Stop
+      if ($text -match '(?ms)^\[desktop\].*?(?=^\[|\z)') {
+        $desktop = $Matches[0]
+        if ($desktop -match 'localeOverride\s*=\s*"([^"]+)"' -or $desktop -match "localeOverride\s*=\s*'([^']+)'") {
+          $locale = $Matches[1].Trim()
+        }
+      }
+    } catch {}
+  }
+  if (-not $locale) {
+    try {
+      $locale = [System.Globalization.CultureInfo]::CurrentUICulture.Name
+    } catch {}
+  }
+  if (-not $locale) { return $null }
+  $locale = ($locale -replace '@.*$', '' -replace '_', '-' -replace '\..*$', '').Trim()
+  if ($locale -match '^(zh|en|ja|ko|es|fr|de|pt|ru|it|nl|sv|da|fi|nb|pl|tr|th|vi|id|ms|ar|he|hi|uk|cs|ro|hu)') {
+    return $locale
+  }
+  return $null
+}
+
 function Start-CodexWithCdp {
   param([Parameter(Mandatory)][int]$Port)
   Set-Content -LiteralPath $script:CodexLog -Value '' -Encoding UTF8
   Set-Content -LiteralPath $script:CodexErrorLog -Value '' -Encoding UTF8
-  $launchArguments = "--remote-debugging-address=127.0.0.1 --remote-debugging-port=$Port"
+  $lang = Get-CodexLangArgument
+  $argList = [System.Collections.Generic.List[string]]::new()
+  [void]$argList.Add('--remote-debugging-address=127.0.0.1')
+  [void]$argList.Add("--remote-debugging-port=$Port")
+  if ($lang) { [void]$argList.Add("--lang=$lang") }
+  $launchArguments = ($argList -join ' ')
   if ($script:CodexAppUserModelId) {
     if (-not ('CodexQQSkin.ApplicationActivationManager' -as [type])) {
       Add-Type -TypeDefinition @'
@@ -247,9 +278,8 @@ namespace CodexQQSkin {
     Write-Host "Activating packaged ChatGPT app $($script:CodexAppUserModelId)..."
     [CodexQQSkin.ApplicationActivationManager]::Activate($script:CodexAppUserModelId, $launchArguments) | Out-Null
   } else {
-    Start-Process -FilePath $script:CodexExe -ArgumentList @(
-      '--remote-debugging-address=127.0.0.1', "--remote-debugging-port=$Port"
-    ) -RedirectStandardOutput $script:CodexLog -RedirectStandardError $script:CodexErrorLog | Out-Null
+    Start-Process -FilePath $script:CodexExe -ArgumentList $argList.ToArray() `
+      -RedirectStandardOutput $script:CodexLog -RedirectStandardError $script:CodexErrorLog | Out-Null
   }
 }
 

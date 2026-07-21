@@ -394,6 +394,14 @@ if /usr/bin/grep -F -q 'index($0, "--port " port)' "$ROOT/scripts/common-macos.s
   printf 'injector discovery still accepts a near-prefix port.\n' >&2
   exit 1
 fi
+# macOS /bin/bash 3.2 + set -u treats empty "${arr[@]}" as unbound.
+if /usr/bin/grep -nE '\$\{(MODE_ARGS|mode_args)\[@\]\}' \
+  "$ROOT/scripts/start-qq-skin-macos.sh" "$ROOT/scripts/common-macos.sh"; then
+  printf 'scripts still expand empty skin-mode arrays under set -u.\n' >&2
+  exit 1
+fi
+/usr/bin/grep -F -q 'resolve_codex_lang_arg' "$ROOT/scripts/common-macos.sh"
+/usr/bin/grep -F -q -- '--lang=' "$ROOT/scripts/common-macos.sh"
 if /usr/bin/sed -n '/^stop_known_skin_injectors()/,/^}/p' "$ROOT/scripts/common-macos.sh" \
   | /usr/bin/grep -F -q 'while IFS= read -r pid command_line'; then
   printf 'known injector cleanup still disables PID/command field splitting.\n' >&2
@@ -647,6 +655,7 @@ BACKUP="$TMP/theme-backup.json"
   const backup = JSON.parse(require("fs").readFileSync(process.argv[1], "utf8"));
   if (backup.values.appearanceTheme !== `appearanceTheme = "system"`) process.exit(1);
   if (backup.values.appearanceDarkCodeThemeId !== `appearanceDarkCodeThemeId = "vscode-dark"`) process.exit(1);
+  if (backup.values.localeOverride !== null) process.exit(1);
 ' "$BACKUP"
 "$NODE" "$ROOT/scripts/theme-config.mjs" restore "$CONFIG" "$BACKUP" >/dev/null
 /usr/bin/cmp -s "$CONFIG" "$TMP/original.toml"
@@ -765,7 +774,7 @@ CRLF_BACKUP="$TMP/config-crlf-backup.json"
 "$NODE" "$ROOT/scripts/theme-config.mjs" restore "$CRLF_CONFIG" "$CRLF_BACKUP" >/dev/null
 /usr/bin/cmp -s "$CRLF_CONFIG" "$TMP/original-crlf.toml"
 
-/usr/bin/env -u HOME /bin/bash -c '. "$1/scripts/common-macos.sh"; [ -n "$HOME" ] && [ "$SKIN_VERSION" = "2.1.0" ]' _ "$ROOT"
+/usr/bin/env -u HOME /bin/bash -c '. "$1/scripts/common-macos.sh"; [ -n "$HOME" ] && [ "$SKIN_VERSION" = "2.1.1" ]' _ "$ROOT"
 DOCTOR_HOME="$TMP/doctor-home"
 /bin/mkdir -p "$DOCTOR_HOME/.codex" "$DOCTOR_HOME/Library/Application Support/CodexQQSkin/theme"
 /usr/bin/printf '%s\n' 'model = "gpt-5"' > "$DOCTOR_HOME/.codex/config.toml"

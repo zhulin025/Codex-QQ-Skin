@@ -28,10 +28,10 @@ while [ "$#" -gt 0 ]; do
     *) fail "Unknown start argument: $1" ;;
   esac
 done
-case "$PORT" in ''|*[!0-9]*) fail "Invalid port: $PORT" ;; esac
+case "$PORT" in ''|*[!0-9]*) fail "调试端口无效：$PORT（需要 1024–65535 的数字）" ;; esac
 [ -z "$SKIN_MODE" ] || [ "$SKIN_MODE" = "qq" ] || [ "$SKIN_MODE" = "custom" ] \
   || fail "Invalid skin mode: $SKIN_MODE"
-[ "$PORT" -ge 1024 ] && [ "$PORT" -le 65535 ] || fail "Port must be between 1024 and 65535."
+[ "$PORT" -ge 1024 ] && [ "$PORT" -le 65535 ] || fail "调试端口必须在 1024–65535 之间，当前为：$PORT"
 
 discover_codex_app
 require_macos_runtime
@@ -51,7 +51,7 @@ if codex_is_running && [ "$DEBUG_READY" = "false" ]; then
       || fail "Theme launch was cancelled."
     RESTART_EXISTING="true"
   fi
-  [ "$RESTART_EXISTING" = "true" ] || fail "Codex is already running without the verified skin CDP endpoint. Close it first or pass --restart-existing."
+  [ "$RESTART_EXISTING" = "true" ] || fail "Codex 正在运行，但未开启皮肤所需的调试端口。请先完全退出 Codex，或加上 --restart-existing 后重试。"
   stop_codex true
 fi
 
@@ -80,7 +80,7 @@ if [ "$DEBUG_READY" = "false" ]; then
   /usr/bin/open -na "$CODEX_BUNDLE" --args --remote-debugging-address=127.0.0.1 --remote-debugging-port="$PORT" >/dev/null 2>&1 || true
   if ! wait_for_cdp "$PORT"; then
     [ -z "$INJECTOR_PID" ] || /bin/kill -TERM "$INJECTOR_PID" 2>/dev/null || true
-    fail "Codex did not expose a verified loopback CDP endpoint on port $PORT within 45 seconds. See $APP_LOG and $APP_ERROR_LOG"
+    fail "Codex 未能在 45 秒内于本机端口 $PORT 打开可用的调试接口（CDP）。请确认已安装官方 ChatGPT/Codex，并查看 $APP_LOG 与 $APP_ERROR_LOG。"
   fi
 fi
 
@@ -98,14 +98,18 @@ INJECTOR_STARTED_AT="$(process_started_at "$INJECTOR_PID")"
 CODEX_PID="$(codex_main_pids | /usr/bin/head -n 1)"
 write_state "$PORT" "$INJECTOR_PID" "$INJECTOR_STARTED_AT" "$CODEX_PID"
 
-# Starting or applying QQ Skin is an explicit request to leave native mode.
-# Background watcher refreshes still preserve the user's later toggle choice.
-MODE_ARGS=()
-[ -n "$SKIN_MODE" ] && MODE_ARGS=(--skin-mode "$SKIN_MODE")
-"$NODE" "$INJECTOR" --once --enable-skin "${MODE_ARGS[@]}" --port "$PORT" --theme-dir "$THEME_DIR" \
-  --timeout-ms 15000 >/dev/null 2>&1 || true
-
 # Soft verify: keep the injector even if secondary selectors differ by Codex version.
+# NOTE: Never expand an empty bash array as "${arr[@]}" under `set -u` on macOS
+# /bin/bash 3.2 — it raises "unbound variable" and the GUI shows a false failure
+# even after the skin has already started successfully.
+if [ -n "$SKIN_MODE" ]; then
+  "$NODE" "$INJECTOR" --once --enable-skin --skin-mode "$SKIN_MODE" --port "$PORT" --theme-dir "$THEME_DIR" \
+    --timeout-ms 15000 >/dev/null 2>&1 || true
+else
+  "$NODE" "$INJECTOR" --once --enable-skin --port "$PORT" --theme-dir "$THEME_DIR" \
+    --timeout-ms 15000 >/dev/null 2>&1 || true
+fi
+
 VERIFY_OUTPUT="$(/usr/bin/mktemp "${TMPDIR:-/tmp}/qq-skin-verify.XXXXXX")"
 /bin/chmod 600 "$VERIFY_OUTPUT"
 cleanup_verify_output() { /bin/rm -f "$VERIFY_OUTPUT"; }
@@ -117,7 +121,11 @@ else
 fi
 if [ "$verify_code" -ne 0 ]; then
   # One more force inject before giving up
-  "$NODE" "$INJECTOR" --once --enable-skin "${MODE_ARGS[@]}" --port "$PORT" --theme-dir "$THEME_DIR" --timeout-ms 15000 >/dev/null 2>&1 || true
+  if [ -n "$SKIN_MODE" ]; then
+    "$NODE" "$INJECTOR" --once --enable-skin --skin-mode "$SKIN_MODE" --port "$PORT" --theme-dir "$THEME_DIR" --timeout-ms 15000 >/dev/null 2>&1 || true
+  else
+    "$NODE" "$INJECTOR" --once --enable-skin --port "$PORT" --theme-dir "$THEME_DIR" --timeout-ms 15000 >/dev/null 2>&1 || true
+  fi
   if "$NODE" "$INJECTOR" --verify --port "$PORT" --theme-dir "$THEME_DIR" --timeout-ms 12000 >"$VERIFY_OUTPUT" 2>/dev/null; then
     verify_code=0
   else
