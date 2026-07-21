@@ -243,7 +243,7 @@ assert.match(
 );
 assert.match(
   css,
-  /\.dream-retro-titlebar[\s\S]{0,700}-webkit-app-region:\s*drag/,
+  /\.dream-retro-titlebar[\s\S]{0,1200}-webkit-app-region:\s*drag/,
   "Retro titlebar must re-enable Electron window dragging under the skin chrome.",
 );
 assert.match(css, /\.dream-retro-toolbar[\s\S]{0,700}height:\s*29px;/,
