@@ -17,7 +17,7 @@
 - 复古标题栏恢复窗口拖动。
 - 调试端口相关失败提示改为中文。
 
-Windows 用户请从 [GitHub Releases](https://github.com/zhulin025/Codex-QQ-Skin/releases) 下载 `ChatGPT QQ Skin Setup 2.1.1.exe`。Windows 安装器需在 Windows CI / Windows 电脑上构建，**无法在 macOS 本机直接生成 `.exe`**。
+Windows 用户请从 [GitHub Releases](https://github.com/zhulin025/Codex-QQ-Skin/releases) 下载 `ChatGPT QQ Skin Setup 2.1.1.exe`。
 
 ## 效果预览
 
