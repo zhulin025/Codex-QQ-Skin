@@ -1,12 +1,11 @@
-<p align="center">
-  <img src="./website/project-logo.png" width="180" alt="Codex QQ Skin 项目 Logo">
-</p>
+
 
 # Codex QQ Skin
 
 一套面向 Codex/ChatGPT 桌面端的内置复古 QQ 风格外观的皮肤生成器。  
 1、支持 Mac & Windows 系统：提供 macOS App 与原生 C# Windows 安装器。  
-2、支持自定义皮肤：选择任意图片，在本机生成铺满新建任务、任务详情和左侧栏的完整自定义皮肤。  
+2、支持自定义皮肤：选择任意图片，在本机生成铺满新建任务、任务详情和左侧栏的完整自定义皮肤。    
+3、皮肤库管理器
 
 > 非 OpenAI、腾讯或 QQ 官方产品。本项目不会修改官方 `.app`、`app.asar`、代码签名、API Key 或 Base URL。
 
@@ -17,23 +16,23 @@
 - **自定义背景统一模糊**，避免原图过锐导致文字看不清。
 - 继续包含 2.2.0：皮肤管理器 + Codex ▾ 轻量切换；QQ 与自定义互不混用。
 
-> 若你仍看到 `MODE_ARGS[@]: unbound variable`：说明 `~/.codex/codex-qq-skin-studio` 还是旧引擎。请用 **2.2.1** App 再点一次主按钮（会自动更新引擎）。
-
-Windows 用户请从 [GitHub Releases](https://github.com/zhulin025/Codex-QQ-Skin/releases) 下载 `ChatGPT QQ Skin Setup 2.2.1.exe`。Windows 安装器需在 Windows CI / Windows 电脑上构建，**无法在 macOS 本机直接生成 `.exe`**。
+Windows 用户请从 [GitHub Releases](https://github.com/zhulin025/Codex-QQ-Skin/releases) 下载 `ChatGPT QQ Skin Setup 2.2.1.exe`。
 
 ## 效果预览
 
+
+
 ### 任务详情
 
-![Codex QQ Skin 任务详情界面](./assets/任务详情截图.png)
+Codex QQ Skin 任务详情界面
 
 ### 新建任务
 
-![Codex QQ Skin 新建任务界面](./assets/新建任务截图.png)
+Codex QQ Skin 新建任务界面
 
 ## 安装
 
-> Windows 用户请查看 [`README-WINDOWS.md`](./README-WINDOWS.md)，并从 [GitHub Releases](https://github.com/zhulin025/Codex-QQ-Skin/releases) 下载 `ChatGPT QQ Skin Setup 2.2.0.exe`。安装器已经内置运行引擎与 Node.js。
+> Windows 用户请查看 `[README-WINDOWS.md](./README-WINDOWS.md)`，并从 [GitHub Releases](https://github.com/zhulin025/Codex-QQ-Skin/releases) 下载 `ChatGPT QQ Skin Setup 2.2.0.exe`。安装器已经内置运行引擎与 Node.js。
 
 安装前请确保官方 Codex/ChatGPT 桌面端至少成功启动过一次，并完全退出 Codex。项目不要求另行安装 Node.js。
 
@@ -46,7 +45,9 @@ Windows 用户请从 [GitHub Releases](https://github.com/zhulin025/Codex-QQ-Ski
 
 Windows 安装器不会修改 ChatGPT/Codex 官方安装目录或 `app.asar`。它仅通过监听 `127.0.0.1` 的 Chromium DevTools Protocol 注入样式。当前 EXE 未进行商业代码签名，首次运行可能出现 Windows SmartScreen 提示，请只从本仓库的正式 Release 下载并核对 SHA-256。
 
-> **构建说明：** Windows `.exe` 由 GitHub Actions（`windows-2022`）或 Windows 本机 PowerShell 构建。在 Mac 上只能改源码并推送，不能本地直接编译出安装器。
+> **构建说明：** Windows `.exe` 由 GitHub Actions（`windows-2022`）或 Windows 本机 PowerShell 构建。
+
+
 
 ### 安装方式 1：通过终端安装
 
@@ -60,7 +61,7 @@ chmod +x ./*.command scripts/*.sh
 ./scripts/install-qq-skin-macos.sh
 ```
 
-如果项目不在 `~/Downloads/Codex-QQ-Skin`，请输入 `cd `（末尾保留空格），将解压后的项目文件夹拖进终端窗口，然后按回车，再执行后面三条命令。
+如果项目不在 `~/Downloads/Codex-QQ-Skin`，请输入 `cd` （末尾保留空格），将解压后的项目文件夹拖进终端窗口，然后按回车，再执行后面三条命令。
 
 `xattr` 命令用于移除 GitHub 下载文件的 macOS 隔离标记。请只对确认来自本项目官方仓库的文件执行该命令，不需要使用 `sudo`。
 
@@ -99,6 +100,8 @@ chmod +x ./*.command scripts/*.sh
 
 ## 效果特点
 
+
+
 ### 2.0 三模式皮肤
 
 - `原生`：完整恢复 Codex 官方界面与颜色。
@@ -107,7 +110,6 @@ chmod +x ./*.command scripts/*.sh
 - 三种模式可在右上角即时切换。每次切换都会完整重建目标模式的布局、颜色和装饰，不会遗留上一套皮肤的侧栏颜色或面板状态。
 - 上传过多套自定义皮肤后：在 **macOS App → 皮肤库** 里按行管理（应用 / 重命名 / 删除）；Codex 里点「自定义」旁的 ▾ 可快速切换最近几套自定义皮肤。
 - 自定义图片背景会统一做模糊与淡遮罩，保证对话文字可读；人物及普通照片仍可在新建任务构图中完整显示。
-
 - 38px 深蓝标题行与 29px 蓝银工具行组成一体化复古标题区。
 - 左上企鹅与动态任务标题避开 macOS 交通灯，不随窗口宽度拉伸。
 - 右上三颗控件直接复用 Codex 原生按钮的 SVG、尺寸与点击行为，不再绘制多余的关闭按钮。
@@ -118,6 +120,8 @@ chmod +x ./*.command scripts/*.sh
 - 项目、任务、每轮对话、代码块与输入框使用蓝银旧式面板样式。
 - 设置页保持原生双栏结构，进入设置时自动收起任务伙伴卡。
 - 一键验证、一键暂停和一键恢复官方外观。
+
+
 
 ## macOS 系统要求
 
@@ -146,6 +150,8 @@ chmod +x ./*.command scripts/*.sh
 ./scripts/pause-qq-skin-macos.sh
 ./scripts/restore-qq-skin-macos.sh --restore-base-theme --restart-codex
 ```
+
+
 
 ## 更换背景图
 
@@ -193,7 +199,7 @@ chmod +x ./*.command scripts/*.sh
 
 `completed` 还可设为 `didi`，`approval` 和 `online` 也可设为 `didi`，`volume` 范围为 `0..1`。首次使用时需要先在 Codex 窗口内点击或按键一次，以满足 Chromium 的音频播放规则。
 
-咳嗽声的来源、页面许可声明和文件校验值见 [`assets/audio/qq-system-cough.LICENSE.md`](assets/audio/qq-system-cough.LICENSE.md)。
+咳嗽声的来源、页面许可声明和文件校验值见 `[assets/audio/qq-system-cough.LICENSE.md](assets/audio/qq-system-cough.LICENSE.md)`。
 
 ## 验证与开发
 
@@ -234,6 +240,8 @@ Codex QQ Skin 通过仅监听 `127.0.0.1` 的 Chromium DevTools Protocol，把 C
 - 调试端口开启期间，不要运行来源不明的本机程序。
 - 恢复脚本会停止 watcher、移除注入并恢复保存的外观配置。
 
+
+
 ## 来源说明
 
 本项目使用并改造了 [Codex Dream Skin](https://github.com/Fei-Away/Codex-Dream-Skin) macOS 源码，包括回环 CDP 启动器、renderer 注入器、主题配置保护、签名验证和恢复流程。
@@ -247,6 +255,8 @@ Codex QQ Skin 通过仅监听 `127.0.0.1` 的 Chromium DevTools Protocol，把 C
 - 本仓库企鹅为 AI 生成的非官方复古风格素材，不代表腾讯或 QQ 官方图标授权。
 - `codex-pet.png` 与复古外框仅作为本项目的界面装饰素材。
 - 商业分发前请自行完成商标、素材和当地法律审查。
+
+
 
 ## License
 
