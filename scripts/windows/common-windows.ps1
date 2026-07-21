@@ -217,12 +217,20 @@ function Get-CodexLangArgument {
   if (Test-Path -LiteralPath $script:ConfigPath) {
     try {
       $text = Get-Content -LiteralPath $script:ConfigPath -Raw -ErrorAction Stop
-      if ($text -match '(?ms)^\[desktop\].*?(?=^\[|\z)') {
-        $desktop = $Matches[0]
-        $quoteClass = '[' + [char]34 + [char]39 + ']'
-        $localePattern = 'localeOverride\s*=\s*' + $quoteClass + '([^' + [char]34 + [char]39 + ']+)' + $quoteClass
-        if ($desktop -match $localePattern) {
-          $locale = $Matches[1].Trim()
+      $marker = 'localeOverride'
+      $idx = $text.IndexOf($marker, [StringComparison]::Ordinal)
+      if ($idx -ge 0) {
+        $slice = $text.Substring($idx, [Math]::Min(120, $text.Length - $idx))
+        $eq = $slice.IndexOf('=')
+        if ($eq -ge 0) {
+          $value = $slice.Substring($eq + 1).Trim()
+          if ($value.Length -ge 2) {
+            $quote = $value[0]
+            if ($quote -eq [char]34 -or $quote -eq [char]39) {
+              $end = $value.IndexOf($quote, 1)
+              if ($end -gt 1) { $locale = $value.Substring(1, $end - 1).Trim() }
+            }
+          }
         }
       }
     } catch {}
@@ -233,7 +241,7 @@ function Get-CodexLangArgument {
     } catch {}
   }
   if (-not $locale) { return $null }
-  $locale = ($locale -replace '@.*$', '' -replace '_', '-' -replace '\..*$', '').Trim()
+  $locale = $locale.Split('@')[0].Replace('_', '-').Split('.')[0].Trim()
   if ($locale -match '^(zh|en|ja|ko|es|fr|de|pt|ru|it|nl|sv|da|fi|nb|pl|tr|th|vi|id|ms|ar|he|hi|uk|cs|ro|hu)') {
     return $locale
   }

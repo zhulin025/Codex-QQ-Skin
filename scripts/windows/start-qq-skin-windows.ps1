@@ -1,4 +1,4 @@
-param([int]$Port = 9341, [switch]$RestartExisting)
+﻿param([int]$Port = 9341, [switch]$RestartExisting)
 . (Join-Path $PSScriptRoot 'common-windows.ps1')
 
 if ($Port -lt 1024 -or $Port -gt 65535) { Stop-WithError 'Port must be between 1024 and 65535.' }
@@ -20,7 +20,7 @@ if (-not $debugReady) {
   Write-Host "Launching ChatGPT with loopback debug port $Port..."
   Start-CodexWithCdp -Port $Port
   if (-not (Wait-CodexCdpEndpoint -Port $Port)) {
-    Stop-WithError "ChatGPT 未能在 45 秒内于本机端口 $Port 打开可用的调试接口（CDP）。请查看 $($script:CodexErrorLog)。"
+    Stop-WithError ("ChatGPT 未能在 45 秒内于本机端口 {0} 打开可用的调试接口（CDP）。请查看 {1}。" -f $Port, $script:CodexErrorLog)
   }
 }
 

@@ -7,9 +7,13 @@ Get-ChildItem -LiteralPath (Join-Path $root 'scripts\windows') -Filter '*.ps1' |
   $tokens = $null
   $parseErrors = $null
   [Management.Automation.Language.Parser]::ParseFile($_.FullName, [ref]$tokens, [ref]$parseErrors) | Out-Null
-  if ($parseErrors) { $script:errors += $parseErrors }
+  if ($parseErrors) {
+    foreach ($parseError in $parseErrors) {
+      $script:errors += ('{0}:{1}: {2}' -f $_.Name, $parseError.Extent.StartLineNumber, $parseError.Message)
+    }
+  }
 }
-if ($errors.Count) { throw ($errors | ForEach-Object Message | Out-String) }
+if ($errors.Count) { throw ($errors -join [Environment]::NewLine) }
 
 # StrictMode turns a one-item pipeline result into a scalar. Keep process-count
 # checks explicitly array-wrapped so stopping exactly one Codex process works.
