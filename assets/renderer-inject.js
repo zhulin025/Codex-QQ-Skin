@@ -13,6 +13,7 @@
   const ENABLED_STORAGE_KEY = "codex-qq-skin-enabled";
   const MODE_STORAGE_KEY = "codex-qq-skin-mode";
   const LIBRARY_SWITCH_KEY = "codex-qq-skin-library-switch";
+  const NATIVE_APPEARANCE_STATE_KEY = "__CODEX_QQ_SKIN_NATIVE_APPEARANCE__";
   const LIBRARY_THEMES = Array.isArray(libraryThemes)
     ? libraryThemes.filter((item) => item && typeof item.id === "string" && /^[A-Za-z0-9_-]{1,80}$/.test(item.id))
     : [];
@@ -147,6 +148,51 @@
       node.textContent = value;
       metrics.textWrites += 1;
     }
+  };
+
+  /**
+   * QQ is a deliberately light, classic skin. Codex writes its active native
+   * palette as inline --color-* variables, so merely declaring color-scheme
+   * cannot prevent dark popovers and portals. Snapshot those native values,
+   * let Codex's own electron-light stylesheet take over while QQ is active,
+   * then restore the exact previous palette on exit.
+   */
+  const forceNativeLightForQQ = () => {
+    const root = document.documentElement;
+    let snapshot = window[NATIVE_APPEARANCE_STATE_KEY];
+    if (!snapshot) {
+      snapshot = {
+        variant: root.classList.contains("electron-dark") ? "dark" : "light",
+        properties: Array.from(root.style || [])
+          .filter((name) => name.startsWith("--color-") || name.startsWith("--codex-base-"))
+          .map((name) => [name, root.style.getPropertyValue(name), root.style.getPropertyPriority(name)]),
+      };
+      window[NATIVE_APPEARANCE_STATE_KEY] = snapshot;
+    }
+    for (const name of Array.from(root.style || [])) {
+      if (name.startsWith("--color-") || name.startsWith("--codex-base-")) {
+        root.style.removeProperty(name);
+      }
+    }
+    root.classList.remove("electron-dark");
+    root.classList.add("electron-light");
+  };
+
+  const restoreNativeAppearance = () => {
+    const root = document.documentElement;
+    const snapshot = window[NATIVE_APPEARANCE_STATE_KEY];
+    if (!snapshot) return;
+    for (const name of Array.from(root.style || [])) {
+      if (name.startsWith("--color-") || name.startsWith("--codex-base-")) {
+        root.style.removeProperty(name);
+      }
+    }
+    for (const [name, value, priority] of snapshot.properties || []) {
+      root.style.setProperty(name, value, priority || "");
+    }
+    root.classList.remove("electron-dark", "electron-light");
+    root.classList.add(snapshot.variant === "dark" ? "electron-dark" : "electron-light");
+    delete window[NATIVE_APPEARANCE_STATE_KEY];
   };
 
   const parseRgb = (value) => {
@@ -1469,6 +1515,8 @@
 
   const applyRootState = (root) => {
     metrics.rootPasses += 1;
+    if (skinMode === "qq") forceNativeLightForQQ();
+    else restoreNativeAppearance();
     ensureStyle(root);
     const shell = resolvedShell();
     setAttribute(root, SHELL_ATTR, shell);
@@ -1852,6 +1900,8 @@
     if (!["native", "qq", "custom"].includes(mode)) return;
     if (mode === "custom" && CUSTOM_THEME.kind !== "custom-native") return;
     skinMode = mode;
+    if (skinMode === "qq") forceNativeLightForQQ();
+    else restoreNativeAppearance();
     THEME = skinMode === "qq" ? QQ_THEME : CUSTOM_THEME;
     ART = THEME.art && typeof THEME.art === "object" ? THEME.art : {};
     LAYOUT = THEME.layout && typeof THEME.layout === "object" ? THEME.layout : {};
@@ -1949,6 +1999,7 @@
     const state = window[STATE_KEY];
     if (state?.installToken !== installToken) return false;
     window[DISABLED_KEY] = true;
+    restoreNativeAppearance();
     removeSkinVisuals();
     document.getElementById(TOGGLE_ID)?.remove();
     document.getElementById(LIBRARY_MENU_ID)?.remove();

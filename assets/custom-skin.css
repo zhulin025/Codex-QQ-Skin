@@ -547,6 +547,7 @@ html.codex-dream-skin .dream-skin-home {
 .dream-skin-home > div:first-child {
   min-height: 100% !important;
   padding-top: 15px !important;
+  justify-content: flex-start !important;
 }
 
 .dream-skin-home > div:first-child > div:first-child {
@@ -554,6 +555,14 @@ html.codex-dream-skin .dream-skin-home {
   min-height: 440px !important;
   align-items: flex-start !important;
   padding-bottom: 0 !important;
+  margin-top: 0 !important;
+}
+
+/* Codex 2026.7 added a vertical centering spacer above the home hero. */
+html.codex-dream-skin main.main-surface.dream-skin-home-shell
+  .dream-skin-home > div:first-child > div:first-child {
+  align-self: stretch !important;
+  justify-content: flex-start !important;
 }
 
 html.codex-dream-skin .dream-skin-home > div:first-child > div:first-child > div:first-child {
@@ -1119,9 +1128,13 @@ html.codex-dream-skin body::before {
   background-position: var(--ds-art-position) !important;
   background-size: cover !important;
   background-repeat: no-repeat !important;
-  filter: blur(16px) saturate(112%) !important;
-  -webkit-filter: blur(16px) saturate(112%) !important;
-  opacity: .92;
+  /* Reference look: the photograph stays visibly sharp behind a pale UI veil.
+     Text readability is handled by the translucent sidebar/chat surfaces, not
+     by destroying detail in the user's image. A 1px softening only suppresses
+     high-frequency shimmer while keeping faces and objects recognizable. */
+  filter: blur(1px) saturate(103%) !important;
+  -webkit-filter: blur(1px) saturate(103%) !important;
+  opacity: 1;
 }
 
 html.codex-dream-skin body::after {
@@ -1131,13 +1144,13 @@ html.codex-dream-skin body::after {
   z-index: 0 !important;
   pointer-events: none !important;
   background: linear-gradient(180deg,
-    rgb(var(--ds-bg-rgb) / .34) 0%,
-    rgb(var(--ds-bg-rgb) / .22) 48%,
-    rgb(var(--ds-bg-rgb) / .38) 100%) !important;
+    rgb(var(--ds-bg-rgb) / .28) 0%,
+    rgb(var(--ds-bg-rgb) / .18) 48%,
+    rgb(var(--ds-bg-rgb) / .30) 100%) !important;
 }
 
 html.codex-dream-skin body > #root,
-html.codex-dream-skin body > #root > div,
+html.codex-dream-skin body > #root > div:has(> div > .app-shell-left-panel),
 html.codex-dream-skin main.main-surface {
   position: relative;
   z-index: 1;

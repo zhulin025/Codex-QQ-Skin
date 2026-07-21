@@ -246,8 +246,18 @@ assert.match(
   /\.dream-retro-titlebar[\s\S]{0,1200}-webkit-app-region:\s*drag/,
   "Retro titlebar must re-enable Electron window dragging under the skin chrome.",
 );
+assert.match(css, /\.dream-retro-titlebar\s*\{[\s\S]{0,220}inset:\s*3px 4px auto;/,
+  "Retro titlebar blue fill must extend behind the mode switch to the right edge.");
 assert.match(css, /\.dream-retro-toolbar[\s\S]{0,700}height:\s*29px;/,
   "The compact titlebar must be joined to a separate retro toolbar filler row.");
+assert.match(css, /data-pip-obstacle="thread-summary-panel"\][\s\S]{0,260}background:\s*linear-gradient\(180deg, #ffffff, #edf6fd\) !important;/,
+  "QQ light mode must override a stale native dark summary-panel surface.");
+assert.match(css, /data-pip-obstacle="thread-summary-panel"\] > div:first-child[\s\S]{0,260}background:\s*linear-gradient\(180deg, #ffffff, #edf6fd\) !important;/,
+  "QQ light mode must also override the current summary panel's inner dark surface.");
+assert.match(customCss, /\.dream-skin-home > div:first-child\s*\{[\s\S]{0,180}justify-content:\s*flex-start !important;/,
+  "Custom home content must not retain the new native vertical centering gap.");
+assert.doesNotMatch(customCss, /html\.codex-dream-skin body > #root > div,\s*\nhtml\.codex-dream-skin main\.main-surface/,
+  "Custom skin must not turn Codex's fixed portal nodes into in-flow layout spacers.");
 assert.match(css, /\.dream-retro-toolbar button[\s\S]{0,420}cursor:\s*pointer;/,
   "Retro toolbar entries must expose real button interaction styling.");
 assert.match(template, /data-retro-action="new-task"[\s\S]{0,500}data-retro-action="chat"/,
@@ -275,8 +285,10 @@ assert.match(template, /statusLabels[\s\S]{0,500}approval:\s*"需要你的确认
   "The companion must reflect live running, approval, completion, and connectivity states.");
 assert.match(template, /data-companion-action="pet"[\s\S]{0,300}data-companion-action="terminal"[\s\S]{0,300}data-companion-action="sound"/,
   "The companion must expose exactly the requested pet, terminal, and sound shortcuts.");
-assert.match(customCss, /html\.codex-dream-skin body::before[\s\S]{0,500}filter:\s*blur\(16px\)/,
-  "Custom wallpapers must be blurred so chat text stays readable.");
+assert.match(customCss, /html\.codex-dream-skin body::before[\s\S]{0,800}filter:\s*blur\(1px\) saturate\(103%\)/,
+  "Custom wallpapers should retain recognizable faces and object detail.");
+assert.match(customCss, /html\.codex-dream-skin body::after[\s\S]{0,300}rgb\(var\(--ds-bg-rgb\) \/ \.18\) 48%/,
+  "Custom wallpapers should use a light veil instead of destructive blur.");
 assert.match(customCss, /html\.codex-dream-skin body::before[\s\S]{0,300}background-image:\s*var\(--dream-skin-art\)/,
   "Blurred custom wallpaper must still use the uploaded art once behind the UI.");
 assert.match(template, /const TOGGLE_ID = "codex-qq-skin-toggle"[\s\S]{0,400}codex-qq-skin-mode/,
@@ -303,14 +315,20 @@ assert.match(template, /skinMode !== "custom"\) return/,
   "Late custom-image analysis must not reapply while QQ mode is active.");
 assert.match(template, /modeRevision = `\$\{STYLE_REVISION\}:\$\{skinMode\}`/,
   "Stylesheet injection must be mode-specific so custom CSS cannot linger in QQ mode.");
+assert.match(template, /const forceNativeLightForQQ = \(\) =>[\s\S]{0,1500}classList\.add\("electron-light"\)/,
+  "QQ mode must switch the native Codex palette to its complete light appearance.");
+assert.match(template, /const restoreNativeAppearance = \(\) =>[\s\S]{0,1500}snapshot\.variant === "dark"/,
+  "Leaving QQ mode must restore the native appearance captured before entry.");
+assert.match(template, /const cleanup = \(\) =>[\s\S]{0,220}restoreNativeAppearance\(\)/,
+  "Removing the skin must also restore the user's native appearance.");
 assert.match(customCss, /html\.codex-dream-skin \.dream-skin-home > div:first-child > div:first-child > div:first-child/,
   "Custom hero wallpaper rules must stay gated behind the custom skin root class.");
 assert.match(template, /const layoutMode = LAYOUT\.mode[\s\S]{0,500}const layoutRightWidth =/,
   "A skin-mode switch must re-read layout dimensions instead of freezing the startup mode.");
 assert.match(template, /ensureToggleButton\(\);[\s\S]{0,120}const firstEnsureStartedAt/,
   "The toggle must remain available even when startup preference selects native UI.");
-assert.match(css, /\.dream-retro-titlebar[\s\S]{0,220}inset:\s*3px 300px auto 4px/,
-  "QQ titlebar drag region must leave a gap for the skin-mode toggle.");
+assert.match(css, /\.dream-retro-titlebar[\s\S]{0,220}inset:\s*3px 4px auto/,
+  "QQ titlebar background must extend under the high-z-index skin-mode toggle.");
 assert.match(template, /ensureToggleButton\(\);[\s\S]{0,120}appendChild\(control\)/,
   "Mode switches must re-assert the toggle above newly created retro chrome.");
 assert.match(template, /ensureRetroProfile\(\);[\s\S]{0,80}ensureToggleButton\(\)/,

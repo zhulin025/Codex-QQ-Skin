@@ -256,9 +256,9 @@ html.codex-qq-skin body > #root > div:has(> div > .app-shell-left-panel) {
 
 .dream-retro-titlebar {
   position: absolute;
-  /* Leave the top-right free for #codex-qq-skin-toggle. A full-bleed drag
-     region here intercepts clicks even when the toggle has a higher z-index. */
-  inset: 3px 300px auto 4px;
+  /* Paint beneath the high-z-index, no-drag mode switch instead of ending
+     halfway through it when Codex changes the native title controls. */
+  inset: 3px 4px auto;
   height: 38px;
   overflow: hidden;
   border: 1px solid #76b9ff;
@@ -514,7 +514,7 @@ html.codex-qq-skin[data-dream-platform="windows"]
   :root.codex-qq-skin { --qq-retro-content-top: 62px; }
   html.codex-qq-skin body { padding-top: 0 !important; }
   html.codex-qq-skin body > #root { height: calc(100vh - 16px) !important; }
-  .dream-retro-titlebar { height: 35px; inset: 3px 260px auto 4px; }
+  .dream-retro-titlebar { height: 35px; inset: 3px 4px auto; }
   .dream-retro-title-penguin { left: 76px; width: 31px; height: 31px; }
   .dream-retro-titlebar strong {
     left: 111px;
@@ -1198,6 +1198,35 @@ html.codex-qq-skin[data-dream-shell="light"] {
   --dream-classic-panel: #f8fbfe;
   --dream-classic-panel-alt: #e7f2fc;
   --dream-classic-selected: #cfe7fb;
+  /* Codex can retain OS-dark semantic tokens after the fixed-light QQ skin
+     activates. Rebind the tokens used by the current renderer. */
+  --color-token-text-primary: #17395f;
+  --color-token-text-secondary: #587795;
+  --color-token-foreground: #17395f;
+  --color-token-main-surface-primary: #f8fbfe;
+  --color-token-main-surface-secondary: #e7f2fc;
+  --color-token-sidebar-surface-primary: #e2f0fc;
+}
+
+html.codex-qq-skin[data-dream-shell="light"] main.main-surface,
+html.codex-qq-skin[data-dream-shell="light"] main.main-surface [class*="text-token-"] {
+  color: #17395f !important;
+}
+
+html.codex-qq-skin[data-dream-shell="light"][data-dream-three-pane="true"]
+  [data-pip-obstacle="thread-summary-panel"] {
+  background: linear-gradient(180deg, #ffffff, #edf6fd) !important;
+  border-color: rgb(63 126 189 / .58) !important;
+  color: #17395f !important;
+  color-scheme: light !important;
+}
+
+html.codex-qq-skin[data-dream-shell="light"][data-dream-three-pane="true"]
+  [data-pip-obstacle="thread-summary-panel"] > div:first-child,
+html.codex-qq-skin[data-dream-shell="light"][data-dream-three-pane="true"]
+  [data-pip-obstacle="thread-summary-panel"] [class*="bg-token-main-surface"] {
+  background: linear-gradient(180deg, #ffffff, #edf6fd) !important;
+  color: #17395f !important;
 }
 
 html.codex-qq-skin[data-dream-shell="light"][data-dream-three-pane="true"]
