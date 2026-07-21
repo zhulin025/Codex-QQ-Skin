@@ -107,6 +107,14 @@ h1 {
   line-height: 1.7;
 }
 
+.cta-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
 .github-button {
   display: inline-flex;
   align-items: center;
