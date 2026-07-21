@@ -1,14 +1,16 @@
 import fs from "node:fs/promises";
-import { constants as fsConstants, watch as watchFs } from "node:fs";
+import { constants as fsConstants, watch as watchFs, existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { createHash } from "node:crypto";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { spawn } from "node:child_process";
+import os from "node:os";
 import { readImageMetadata } from "./image-metadata.mjs";
 
 const scriptPath = fileURLToPath(import.meta.url);
 const here = path.dirname(scriptPath);
 const root = path.resolve(here, "..");
-const SKIN_VERSION = "2.1.3";
+const SKIN_VERSION = "2.2.0";
 const LOOPBACK_HOSTS = new Set(["127.0.0.1", "localhost", "[::1]"]);
 const CDP_ID_PATTERN = /^[A-Za-z0-9._-]{1,200}$/;
 const MAX_ART_BYTES = 16 * 1024 * 1024;
@@ -497,6 +499,76 @@ function invalidateStaticPayloadAssets() {
   staticPayloadAssets = null;
 }
 
+function resolveStateRoot(themeDir) {
+  if (themeDir) return path.dirname(path.resolve(themeDir));
+  if (process.platform === "win32") {
+    return path.join(process.env.APPDATA || path.join(os.homedir(), "AppData", "Roaming"), "CodexQQSkin");
+  }
+  return path.join(os.homedir(), "Library", "Application Support", "CodexQQSkin");
+}
+
+function listThemeLibrary(themeDir, { limit = 12, customOnly = false } = {}) {
+  const stateRoot = resolveStateRoot(themeDir);
+  const themesRoot = path.join(stateRoot, "themes");
+  const liveThemePath = path.join(stateRoot, "theme", "theme.json");
+  let activeHash = "";
+  try {
+    if (existsSync(liveThemePath)) {
+      activeHash = createHash("sha256").update(readFileSync(liveThemePath)).digest("hex");
+    }
+  } catch {}
+  if (!existsSync(themesRoot)) return [];
+  const items = [];
+  for (const entry of readdirSync(themesRoot, { withFileTypes: true })) {
+    if (!entry.isDirectory()) continue;
+    if (!/^[A-Za-z0-9_-]{1,80}$/.test(entry.name)) continue;
+    const themePath = path.join(themesRoot, entry.name, "theme.json");
+    if (!existsSync(themePath)) continue;
+    try {
+      const raw = readFileSync(themePath, "utf8");
+      const theme = JSON.parse(raw);
+      const kind = theme.kind === "qq-stable" ? "qq-stable" : "custom-native";
+      if (customOnly && kind !== "custom-native") continue;
+      const hash = createHash("sha256").update(raw).digest("hex");
+      const mtimeMs = statSync(path.join(themesRoot, entry.name)).mtimeMs;
+      items.push({
+        id: entry.name,
+        name: typeof theme.name === "string" && theme.name.trim() ? theme.name.trim() : entry.name,
+        kind,
+        active: Boolean(activeHash && hash === activeHash),
+        mtimeMs,
+      });
+    } catch {}
+  }
+  items.sort((a, b) => b.mtimeMs - a.mtimeMs);
+  return items.slice(0, Math.max(1, limit)).map(({ id, name, kind, active }) => ({ id, name, kind, active }));
+}
+
+function runLibrarySwitch(themeId) {
+  if (!/^[A-Za-z0-9_-]{1,80}$/.test(themeId || "")) {
+    return Promise.reject(new Error(`Invalid theme id: ${themeId}`));
+  }
+  if (process.platform === "win32") {
+    return Promise.reject(new Error("In-app library switching is currently macOS-only"));
+  }
+  const script = path.join(root, "scripts", "switch-theme-macos.sh");
+  return new Promise((resolve, reject) => {
+    // --no-apply only stages the live theme pack. The watch loop refreshes
+    // the payload; never spawn a full start that would kill this injector.
+    const child = spawn("/bin/bash", [script, "--id", themeId, "--no-apply"], {
+      env: process.env,
+      stdio: ["ignore", "pipe", "pipe"],
+    });
+    let stderr = "";
+    child.stderr.on("data", (chunk) => { stderr += String(chunk); });
+    child.on("error", reject);
+    child.on("close", (code) => {
+      if (code === 0) resolve();
+      else reject(new Error(stderr.trim() || `switch-theme exited with ${code}`));
+    });
+  });
+}
+
 async function loadPayload(themeDir) {
   const startedAt = performance.now();
   const [staticAssets, loaded] = await Promise.all([
@@ -521,6 +593,7 @@ async function loadPayload(themeDir) {
   const retroFrameDataUrl = `data:image/png;base64,${retroFrame.toString("base64")}`;
   const qqAvatarDataUrl = `data:image/png;base64,${qqAvatar.toString("base64")}`;
   const coughAudioDataUrl = `data:audio/mpeg;base64,${coughAudio.toString("base64")}`;
+  const libraryThemes = listThemeLibrary(themeDir, { limit: 12, customOnly: true });
   const payload = template
     .replace("__QQ_SKIN_CSS_JSON__", JSON.stringify(css))
     .replace("__CUSTOM_SKIN_CSS_JSON__", JSON.stringify(customCss))
@@ -532,6 +605,7 @@ async function loadPayload(themeDir) {
     .replace("__QQ_SKIN_COUGH_AUDIO_JSON__", JSON.stringify(coughAudioDataUrl))
     .replace("__QQ_SKIN_THEME_JSON__", JSON.stringify(theme))
     .replace("__QQ_STABLE_THEME_JSON__", JSON.stringify(qqTheme))
+    .replace("__QQ_SKIN_LIBRARY_JSON__", JSON.stringify(libraryThemes))
     .replace("__QQ_SKIN_VERSION_JSON__", JSON.stringify(SKIN_VERSION))
     .replace("__QQ_SKIN_STYLE_REVISION_JSON__", JSON.stringify(styleRevision));
   const revision = createHash("sha256")
@@ -546,6 +620,7 @@ async function loadPayload(themeDir) {
     .update(qqAvatar)
     .update(coughAudio)
     .update(JSON.stringify(theme))
+    .update(JSON.stringify(libraryThemes))
     .digest("hex")
     .slice(0, 20);
   return {
@@ -829,7 +904,11 @@ function watchPayloadSources(themeDir, onDirty) {
     }
   };
   add(themeRoot, "theme");
-  if (themeRoot !== assetsRoot) add(assetsRoot, "static");
+  if (themeRoot !== assetsRoot) {
+    add(assetsRoot, "static");
+    const themesRoot = path.join(path.dirname(path.resolve(themeRoot)), "themes");
+    if (existsSync(themesRoot)) add(themesRoot, "theme");
+  }
   return () => watchers.forEach((watcher) => watcher.close());
 }
 
@@ -896,6 +975,46 @@ async function runWatch(options) {
     }, 45);
   };
   const closePayloadWatchers = watchPayloadSources(options.themeDir, queuePayloadRefresh);
+  let librarySwitchBusy = false;
+
+  const pollLibrarySwitchRequests = async () => {
+    if (librarySwitchBusy || process.platform === "win32" || !sessions.size) return;
+    for (const record of sessions.values()) {
+      if (record.session.closed) continue;
+      let themeId = null;
+      try {
+        themeId = await record.session.evaluate(`(() => {
+          try {
+            const raw = window.localStorage?.getItem("codex-qq-skin-library-switch");
+            if (!raw) return null;
+            window.localStorage.removeItem("codex-qq-skin-library-switch");
+            const parsed = JSON.parse(raw);
+            return parsed && typeof parsed.id === "string" ? parsed.id : null;
+          } catch {
+            return null;
+          }
+        })()`);
+      } catch {
+        continue;
+      }
+      if (!themeId) continue;
+      librarySwitchBusy = true;
+      try {
+        await runLibrarySwitch(themeId);
+        await record.session.evaluate(`try {
+          window.localStorage?.setItem("codex-qq-skin-mode", "custom");
+          window.localStorage?.setItem("codex-qq-skin-enabled", "true");
+        } catch {}`).catch(() => {});
+        await refreshPayload();
+        console.log(`[qq-skin] applied library theme ${themeId}`);
+      } catch (error) {
+        console.error(`[qq-skin] library switch failed: ${error.message}`);
+      } finally {
+        librarySwitchBusy = false;
+      }
+      return;
+    }
+  };
 
   try {
     while (!stopping) {
@@ -969,6 +1088,7 @@ async function runWatch(options) {
           console.error(`[qq-skin] inject failed for ${target.id}: ${error.message}`);
         }
       }
+      await pollLibrarySwitchRequests();
       const pollDelay = sessions.size ? 800 : (targets.length ? 250 : 100);
       await new Promise((resolve) => setTimeout(resolve, pollDelay));
     }

@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.2.0 — 2026-07-21
+
+- **皮肤管理器第二阶段：** macOS App 作为皮肤库主入口，支持列表、应用选中、删除、刷新与打开库文件夹。
+- Codex 右上角在「自定义」旁增加轻量 ▾ 菜单，仅列出最近自定义皮肤；完整增删改仍在 App。
+- 新增 `list-themes-macos.sh` / `remove-theme-macos.sh`；注入器注入库列表并通过 `localStorage` 通道热切换（`switch-theme --no-apply`，不重启注入进程）。
+- QQ 皮肤仍保持封闭产品形态，不与用户图片混用。
+
 ## 2.1.3 — 2026-07-21
 
 - macOS App 启动前自动比对内置版本与 `~/.codex/codex-qq-skin-studio`；若引擎仍是旧版或仍含 `MODE_ARGS[@]`，会先刷新再启动，避免只换 App 却继续报「操作没有完成」。

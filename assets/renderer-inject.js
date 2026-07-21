@@ -1,4 +1,4 @@
-((cssText, customCssText, artDataUrl, qqArtDataUrl, petDataUrl, retroFrameDataUrl, qqAvatarDataUrl, coughAudioDataUrl, themeConfig, qqThemeConfig) => {
+((cssText, customCssText, artDataUrl, qqArtDataUrl, petDataUrl, retroFrameDataUrl, qqAvatarDataUrl, coughAudioDataUrl, themeConfig, qqThemeConfig, libraryThemes) => {
   const STATE_KEY = "__CODEX_QQ_SKIN_STATE__";
   const DISABLED_KEY = "__CODEX_QQ_SKIN_DISABLED__";
   const STYLE_ID = "codex-qq-skin-style";
@@ -9,8 +9,13 @@
   const RETRO_SHELL_ID = "codex-qq-skin-retro-shell";
   const RETRO_PROFILE_ID = "codex-qq-skin-retro-profile";
   const TOGGLE_ID = "codex-qq-skin-toggle";
+  const LIBRARY_MENU_ID = "codex-qq-skin-library-menu";
   const ENABLED_STORAGE_KEY = "codex-qq-skin-enabled";
   const MODE_STORAGE_KEY = "codex-qq-skin-mode";
+  const LIBRARY_SWITCH_KEY = "codex-qq-skin-library-switch";
+  const LIBRARY_THEMES = Array.isArray(libraryThemes)
+    ? libraryThemes.filter((item) => item && typeof item.id === "string" && /^[A-Za-z0-9_-]{1,80}$/.test(item.id))
+    : [];
   const SHELL_ATTR = "data-dream-shell";
   const ART_ATTRS = [
     "data-dream-art-wide", "data-dream-art-safe", "data-dream-task-mode",
@@ -115,6 +120,7 @@
   }
   previous?.soundMonitor?.cleanup?.();
   document.getElementById(TOGGLE_ID)?.remove();
+  document.getElementById(LIBRARY_MENU_ID)?.remove();
   if (previous?.mediaHandler && previous?.mediaQuery) {
     try { previous.mediaQuery.removeEventListener("change", previous.mediaHandler); } catch {}
   }
@@ -1756,6 +1762,90 @@
         : "transparent";
       button.style.boxShadow = selected ? "inset 0 1px rgba(255,255,255,.42),0 1px 2px rgba(0,54,112,.22)" : "none";
     }
+    const libraryButton = control.querySelector("button[data-skin-library]");
+    if (libraryButton) {
+      const unavailable = CUSTOM_THEME.kind !== "custom-native" && LIBRARY_THEMES.length === 0;
+      libraryButton.disabled = unavailable;
+      libraryButton.style.opacity = unavailable ? ".45" : "1";
+      libraryButton.style.color = skinMode === "custom" ? "#fff" : "#3b3f45";
+      libraryButton.style.background = skinMode === "custom"
+        ? "linear-gradient(180deg,#4ba9f0 0%,#166fc8 100%)"
+        : "transparent";
+    }
+  };
+
+  const closeLibraryMenu = () => {
+    document.getElementById(LIBRARY_MENU_ID)?.remove();
+  };
+
+  const requestLibrarySwitch = (themeId) => {
+    if (!/^[A-Za-z0-9_-]{1,80}$/.test(themeId || "")) return;
+    closeLibraryMenu();
+    try {
+      // Injector watches this key, runs switch-theme --no-apply, then reinjects.
+      window.localStorage?.setItem(LIBRARY_SWITCH_KEY, JSON.stringify({
+        id: themeId,
+        requestedAt: Date.now(),
+      }));
+      window.localStorage?.setItem(MODE_STORAGE_KEY, "custom");
+      window.localStorage?.setItem(ENABLED_STORAGE_KEY, "true");
+    } catch {}
+  };
+
+  const openLibraryMenu = (anchor) => {
+    closeLibraryMenu();
+    if (!LIBRARY_THEMES.length) return;
+    const menu = document.createElement("div");
+    menu.id = LIBRARY_MENU_ID;
+    menu.setAttribute("role", "menu");
+    menu.setAttribute("aria-label", "最近自定义皮肤");
+    const rect = typeof anchor.getBoundingClientRect === "function"
+      ? anchor.getBoundingClientRect()
+      : { bottom: 36, right: 210 };
+    menu.style.cssText = [
+      "position:fixed", `top:${Math.round(rect.bottom + 6)}px`, `right:${Math.max(12, Math.round(window.innerWidth - rect.right))}px`,
+      "z-index:2147483001", "min-width:168px", "max-width:240px", "max-height:260px", "overflow:auto",
+      "padding:4px", "border:1px solid rgba(82,88,98,.18)", "border-radius:10px",
+      "background:rgba(248,248,249,.97)", "box-shadow:0 8px 24px rgba(0,0,0,.14)",
+      "backdrop-filter:blur(14px) saturate(110%)", "-webkit-app-region:no-drag",
+    ].join(";");
+    for (const item of LIBRARY_THEMES.slice(0, 8)) {
+      const option = document.createElement("button");
+      option.type = "button";
+      option.setAttribute("role", "menuitem");
+      option.dataset.themeId = item.id;
+      const label = typeof item.name === "string" && item.name.trim() ? item.name.trim() : item.id;
+      option.textContent = item.active ? `✓ ${label}` : label;
+      option.title = item.id;
+      option.style.cssText = [
+        "display:block", "width:100%", "text-align:left", "height:28px", "padding:0 10px",
+        "border:0", "border-radius:7px", "background:transparent", "cursor:pointer",
+        "font:500 12px/28px -apple-system,BlinkMacSystemFont,\"PingFang SC\",sans-serif",
+        "color:#2f3338", "white-space:nowrap", "overflow:hidden", "text-overflow:ellipsis",
+      ].join(";");
+      option.addEventListener?.("mouseenter", () => { option.style.background = "rgba(22,111,200,.12)"; });
+      option.addEventListener?.("mouseleave", () => { option.style.background = "transparent"; });
+      option.addEventListener?.("click", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        requestLibrarySwitch(item.id);
+      });
+      menu.appendChild(option);
+    }
+    const hint = document.createElement("div");
+    hint.textContent = "完整管理请打开 App";
+    hint.style.cssText = [
+      "margin:4px 6px 2px", "font:400 10px/14px -apple-system,BlinkMacSystemFont,\"PingFang SC\",sans-serif",
+      "color:#8a9098",
+    ].join(";");
+    menu.appendChild(hint);
+    document.body.appendChild(menu);
+    const dismiss = (event) => {
+      if (menu.contains(event?.target) || anchor.contains?.(event?.target)) return;
+      closeLibraryMenu();
+      document.removeEventListener?.("mousedown", dismiss, true);
+    };
+    document.addEventListener?.("mousedown", dismiss, true);
   };
 
   const selectSkinMode = (mode) => {
@@ -1793,8 +1883,14 @@
 
   const ensureToggleButton = () => {
     let control = document.getElementById(TOGGLE_ID);
-    if (!control || control.parentElement !== document.body || control.tagName === "BUTTON") {
+    const needsLibrary = LIBRARY_THEMES.length > 0;
+    const hasLibrary = Boolean(control?.querySelector?.("button[data-skin-library]"));
+    if (
+      !control || control.parentElement !== document.body || control.tagName === "BUTTON"
+      || needsLibrary !== hasLibrary
+    ) {
       control?.remove();
+      closeLibraryMenu();
       control = document.createElement("div");
       control.id = TOGGLE_ID;
       control.setAttribute("role", "group");
@@ -1823,6 +1919,26 @@
         });
         control.appendChild(button);
       }
+      if (needsLibrary) {
+        const libraryButton = document.createElement("button");
+        libraryButton.type = "button";
+        libraryButton.dataset.skinLibrary = "recent";
+        libraryButton.setAttribute("aria-label", "最近自定义皮肤");
+        libraryButton.setAttribute("aria-haspopup", "menu");
+        libraryButton.textContent = "▾";
+        libraryButton.style.cssText = [
+          "height:22px", "width:22px", "padding:0", "border:0", "border-radius:7px",
+          "font:700 12px/22px -apple-system,BlinkMacSystemFont,\"PingFang SC\",sans-serif",
+          "cursor:pointer", "user-select:none", "transition:background .16s ease,color .16s ease",
+        ].join(";");
+        libraryButton.addEventListener?.("click", (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          if (document.getElementById(LIBRARY_MENU_ID)) closeLibraryMenu();
+          else openLibraryMenu(libraryButton);
+        });
+        control.appendChild(libraryButton);
+      }
       document.body.appendChild(control);
     }
     syncToggleButton(control);
@@ -1835,6 +1951,7 @@
     window[DISABLED_KEY] = true;
     removeSkinVisuals();
     document.getElementById(TOGGLE_ID)?.remove();
+    document.getElementById(LIBRARY_MENU_ID)?.remove();
     state?.observer?.disconnect();
     state?.rootObserver?.disconnect();
     state?.resizeObserver?.disconnect();
@@ -2051,5 +2168,6 @@
   __QQ_SKIN_QQ_AVATAR_JSON__,
   __QQ_SKIN_COUGH_AUDIO_JSON__,
   __QQ_SKIN_THEME_JSON__,
-  __QQ_STABLE_THEME_JSON__
+  __QQ_STABLE_THEME_JSON__,
+  __QQ_SKIN_LIBRARY_JSON__
 )

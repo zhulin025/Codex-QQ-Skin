@@ -183,6 +183,41 @@ fi
 ' "$SWITCH_STATE/theme/theme.json"
 [ -z "$(/usr/bin/find "$SWITCH_STATE" -maxdepth 1 -name '.theme-switch.*' -print -quit)" ]
 
+LIST_JSON_FILE="$TMP/list-themes.json"
+/usr/bin/env HOME="$SWITCH_HOME" NODE="$NODE" \
+  "$ROOT/scripts/list-themes-macos.sh" --json --limit 5 > "$LIST_JSON_FILE"
+"$NODE" -e '
+  const payload = JSON.parse(require("fs").readFileSync(process.argv[1], "utf8"));
+  if (!Array.isArray(payload.themes) || !payload.themes.some((item) => item.id === "preset-switch-fixture")) {
+    process.exit(1);
+  }
+  if (payload.activeLibraryId !== "preset-switch-fixture") process.exit(1);
+' "$LIST_JSON_FILE"
+if /usr/bin/env HOME="$SWITCH_HOME" NODE="$NODE" \
+  "$ROOT/scripts/remove-theme-macos.sh" --id preset-switch-fixture >/dev/null 2>&1; then
+  printf 'remove-theme unexpectedly deleted the active theme.\n' >&2
+  exit 1
+fi
+/bin/mkdir -p "$SWITCH_STATE/themes/img-removable"
+/bin/cp "$ROOT/assets/portal-hero.png" "$SWITCH_STATE/themes/img-removable/background.png"
+/usr/bin/printf '%s\n' \
+  '{"schemaVersion":1,"id":"img-removable","kind":"custom-native","name":"可删","image":"background.png"}' \
+  > "$SWITCH_STATE/themes/img-removable/theme.json"
+/usr/bin/env HOME="$SWITCH_HOME" NODE="$NODE" \
+  "$ROOT/scripts/remove-theme-macos.sh" --id img-removable >/dev/null
+[ ! -d "$SWITCH_STATE/themes/img-removable" ]
+if ! /usr/bin/grep -F -q '__QQ_SKIN_LIBRARY_JSON__' "$ROOT/assets/renderer-inject.js" \
+  || ! /usr/bin/grep -F -q 'codex-qq-skin-library-switch' "$ROOT/scripts/injector.mjs" \
+  || ! /usr/bin/grep -F -q 'pollLibrarySwitchRequests' "$ROOT/scripts/injector.mjs"; then
+  printf 'library picker / injector switch channel is missing.\n' >&2
+  exit 1
+fi
+if ! /usr/bin/grep -F -q '我的皮肤库' "$ROOT/macos-app/main.swift" \
+  || ! /usr/bin/grep -F -q 'list-themes-macos.sh' "$ROOT/macos-app/main.swift"; then
+  printf 'macOS App skin library UI is missing.\n' >&2
+  exit 1
+fi
+
 RUNTIME_HOME="$TMP/runtime-home"
 RUNTIME_STATE_ROOT="$RUNTIME_HOME/Library/Application Support/CodexQQSkin"
 RUNTIME_STATE="$RUNTIME_STATE_ROOT/state.json"
@@ -774,7 +809,7 @@ CRLF_BACKUP="$TMP/config-crlf-backup.json"
 "$NODE" "$ROOT/scripts/theme-config.mjs" restore "$CRLF_CONFIG" "$CRLF_BACKUP" >/dev/null
 /usr/bin/cmp -s "$CRLF_CONFIG" "$TMP/original-crlf.toml"
 
-/usr/bin/env -u HOME /bin/bash -c '. "$1/scripts/common-macos.sh"; [ -n "$HOME" ] && [ "$SKIN_VERSION" = "2.1.3" ]' _ "$ROOT"
+/usr/bin/env -u HOME /bin/bash -c '. "$1/scripts/common-macos.sh"; [ -n "$HOME" ] && [ "$SKIN_VERSION" = "2.2.0" ]' _ "$ROOT"
 DOCTOR_HOME="$TMP/doctor-home"
 /bin/mkdir -p "$DOCTOR_HOME/.codex" "$DOCTOR_HOME/Library/Application Support/CodexQQSkin/theme"
 /usr/bin/printf '%s\n' 'model = "gpt-5"' > "$DOCTOR_HOME/.codex/config.toml"

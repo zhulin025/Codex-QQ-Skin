@@ -279,6 +279,12 @@ assert.match(template, /const TOGGLE_ID = "codex-qq-skin-toggle"[\s\S]{0,400}cod
   "The renderer must ship a persistent three-mode UI selector.");
 assert.match(template, /\["native", "原生"\][\s\S]{0,80}\["qq", "QQ"\][\s\S]{0,80}\["custom", "自定义"\]/,
   "The title-bar selector must expose native, stable QQ, and custom skins.");
+assert.match(template, /LIBRARY_SWITCH_KEY = "codex-qq-skin-library-switch"/,
+  "Codex must request library switches through a dedicated localStorage channel.");
+assert.match(template, /dataset\.skinLibrary = "recent"/,
+  "The custom segment must expose a lightweight recent-skin chevron when a library exists.");
+assert.match(template, /完整管理请打开 App/,
+  "The lightweight picker must defer full library management to the macOS App.");
 assert.match(template, /"right:210px"[\s\S]{0,500}"display:flex"/,
   "The three-mode selector must sit left of the native folder control and use a segmented layout.");
 assert.match(template, /const selectSkinMode[\s\S]{0,1800}removeSkinVisuals\(\)[\s\S]{0,200}skinMode !== "native"/,
@@ -504,6 +510,9 @@ function createFixture(theme, {
       appendChild(child) { child.parentElement = element; element.children.push(child); },
       setAttribute() {},
       querySelector(selector) {
+        if (selector === "button[data-skin-library]") {
+          return element.children.find((child) => child.dataset?.skinLibrary) ?? null;
+        }
         if (!childNodes.has(selector)) childNodes.set(selector, { textContent: "" });
         return childNodes.get(selector);
       },
@@ -698,6 +707,10 @@ function createFixture(theme, {
         line: "rgba(54, 112, 174, .30)",
       },
     }))
+    .replace("__QQ_SKIN_LIBRARY_JSON__", JSON.stringify([
+      { id: "img-fixture-one", name: "Fixture One", kind: "custom-native", active: false },
+      { id: "img-fixture-two", name: "Fixture Two", kind: "custom-native", active: true },
+    ]))
     .replace("__QQ_SKIN_VERSION_JSON__", JSON.stringify("test"))
     .replace("__QQ_SKIN_STYLE_REVISION_JSON__", JSON.stringify(cssText));
   const flushTimers = (maximumDelay = Infinity) => {

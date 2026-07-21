@@ -221,7 +221,9 @@ html.codex-qq-skin body > #root > div:has(> div > .app-shell-left-panel) {
 
 /* Keep skin-mode toggle and other floating chrome clickable, not window-draggable. */
 #codex-qq-skin-toggle,
-#codex-qq-skin-toggle * {
+#codex-qq-skin-toggle *,
+#codex-qq-skin-library-menu,
+#codex-qq-skin-library-menu * {
   -webkit-app-region: no-drag !important;
   app-region: no-drag !important;
   pointer-events: auto !important;
