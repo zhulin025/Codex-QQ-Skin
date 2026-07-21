@@ -279,20 +279,32 @@ assert.match(template, /const TOGGLE_ID = "codex-qq-skin-toggle"[\s\S]{0,400}cod
   "The renderer must ship a persistent three-mode UI selector.");
 assert.match(template, /\["native", "原生"\][\s\S]{0,80}\["qq", "QQ"\][\s\S]{0,80}\["custom", "自定义"\]/,
   "The title-bar selector must expose native, stable QQ, and custom skins.");
-assert.match(template, /"right:148px"[\s\S]{0,500}"display:flex"/,
-  "The three-mode selector must reserve title-bar control space and use a segmented layout.");
+assert.match(template, /"right:210px"[\s\S]{0,500}"display:flex"/,
+  "The three-mode selector must sit left of the native folder control and use a segmented layout.");
 assert.match(template, /const selectSkinMode[\s\S]{0,1800}removeSkinVisuals\(\)[\s\S]{0,200}skinMode !== "native"/,
   "Mode selection must fully restore native visuals or apply exactly one injected skin.");
 assert.match(template, /state\.skinMode = skinMode[\s\S]{0,160}state\.themeId = THEME\.id/,
   "Mode selection must keep the public injector state synchronized with the selected skin.");
 assert.match(template, /const explicit = new Set\(skinMode === "qq"[\s\S]{0,180}Object\.keys\(colors\)/,
   "QQ mode must restore its fixed palette instead of retaining custom-image colors.");
+assert.match(template, /skinMode === "qq"[\s\S]{0,220}removeProperty\("--dream-skin-art"\)/,
+  "QQ mode must clear the custom wallpaper CSS variable.");
+assert.match(template, /skinMode !== "custom"\) return/,
+  "Late custom-image analysis must not reapply while QQ mode is active.");
+assert.match(template, /modeRevision = `\$\{STYLE_REVISION\}:\$\{skinMode\}`/,
+  "Stylesheet injection must be mode-specific so custom CSS cannot linger in QQ mode.");
+assert.match(customCss, /html\.codex-dream-skin \.dream-skin-home > div:first-child > div:first-child > div:first-child/,
+  "Custom hero wallpaper rules must stay gated behind the custom skin root class.");
 assert.match(template, /const layoutMode = LAYOUT\.mode[\s\S]{0,500}const layoutRightWidth =/,
   "A skin-mode switch must re-read layout dimensions instead of freezing the startup mode.");
 assert.match(template, /ensureToggleButton\(\);[\s\S]{0,120}const firstEnsureStartedAt/,
   "The toggle must remain available even when startup preference selects native UI.");
-assert.match(template, /-webkit-app-region:no-drag/,
-  "The fixed title-bar control must remain clickable inside Electron's draggable chrome.");
+assert.match(css, /\.dream-retro-titlebar[\s\S]{0,220}inset:\s*3px 300px auto 4px/,
+  "QQ titlebar drag region must leave a gap for the skin-mode toggle.");
+assert.match(template, /ensureToggleButton\(\);[\s\S]{0,120}appendChild\(control\)/,
+  "Mode switches must re-assert the toggle above newly created retro chrome.");
+assert.match(template, /ensureRetroProfile\(\);[\s\S]{0,80}ensureToggleButton\(\)/,
+  "QQ route sync must keep the mode toggle available after rebuilding chrome.");
 assert.match(template, /sendMessageFromView\?\.\(\{ type: "avatar-overlay-open" \}\)/,
   "The pet shortcut must open Codex's native avatar overlay.");
 assert.match(template, /toggleNativeTerminal[\s\S]{0,900}切换底部面板显示[\s\S]{0,900}target\?\.click\?\.\(\)/,
@@ -386,6 +398,7 @@ function createFixture(theme, {
   viewportWidth = 1400,
   notificationButtons = [],
   soundEvents = null,
+  preferredMode = null,
 } = {}) {
   let fixtureShell = nativeShell;
   const nodes = new Map();
@@ -396,6 +409,8 @@ function createFixture(theme, {
   const timers = new Map();
   let nextTimer = 1;
   let nextBlob = 1;
+  const storage = new Map();
+  if (preferredMode) storage.set("codex-qq-skin-mode", preferredMode);
   const rootStyle = createStyleDeclaration();
   const root = {
     className: nativeShell === "dark" ? "electron-dark" : "electron-light",
@@ -539,6 +554,11 @@ function createFixture(theme, {
     location: { pathname: "/thread/fixture", search: "" },
     addEventListener() {},
     removeEventListener() {},
+    localStorage: {
+      getItem(key) { return storage.has(key) ? storage.get(key) : null; },
+      setItem(key, value) { storage.set(key, String(value)); },
+      removeItem(key) { storage.delete(key); },
+    },
     matchMedia() {
       mediaQuery.matches = fixtureShell === "dark";
       return mediaQuery;
@@ -660,7 +680,24 @@ function createFixture(theme, {
     .replace("__QQ_SKIN_QQ_AVATAR_JSON__", JSON.stringify("data:image/png;base64,AA=="))
     .replace("__QQ_SKIN_COUGH_AUDIO_JSON__", JSON.stringify("data:audio/mpeg;base64,SUQz"))
     .replace("__QQ_SKIN_THEME_JSON__", JSON.stringify(nextTheme))
-    .replace("__QQ_STABLE_THEME_JSON__", JSON.stringify({ ...nextTheme, kind: "qq-stable" }))
+    .replace("__QQ_STABLE_THEME_JSON__", JSON.stringify({
+      schemaVersion: 1,
+      id: "qq-stable-default",
+      kind: "qq-stable",
+      name: "QQ Skin",
+      appearance: "light",
+      art: { safeArea: "center", taskMode: "off" },
+      layout: nextTheme.layout || {
+        mode: "classic-three-pane", rightPanel: "open", minWidth: 1180, rightWidth: 300,
+      },
+      sound: nextTheme.sound || { enabled: true, volume: 0.48 },
+      colors: nextTheme.colors || {
+        background: "#eaf6ff", panel: "#ffffff", panelAlt: "#e2f0fc",
+        accent: "#2f7dcc", accentAlt: "#5ba7ec", secondary: "#76b8ee",
+        highlight: "#1f64ad", text: "#17395f", muted: "#587795",
+        line: "rgba(54, 112, 174, .30)",
+      },
+    }))
     .replace("__QQ_SKIN_VERSION_JSON__", JSON.stringify("test"))
     .replace("__QQ_SKIN_STYLE_REVISION_JSON__", JSON.stringify(cssText));
   const flushTimers = (maximumDelay = Infinity) => {
@@ -705,9 +742,10 @@ const defaultResult = vm.runInNewContext(defaults.payload, defaults.context);
 assert.equal(defaultResult.installed, true);
 assert.equal(defaults.attributes.get("data-dream-shell"), "light");
 assert.equal(defaults.attributes.get("data-dream-art-safe-area"), "center");
-assert.equal(defaults.attributes.get("data-dream-art-task-mode"), "ambient");
-assert.equal(defaults.attributes.get("data-dream-art-fit"), "cover");
-assert.equal(defaults.attributes.get("data-dream-art-ready"), "false");
+assert.equal(defaults.attributes.get("data-dream-art-task-mode"), "off");
+assert.equal(defaults.attributes.get("data-dream-art-wide"), "false");
+assert.equal(defaults.attributes.get("data-dream-art-fit"), "contain");
+assert.equal(defaults.attributes.get("data-dream-art-ready"), "true");
 assert.equal(defaults.attributes.get("data-dream-three-pane"), "false");
 assert.ok(defaults.nodes.has("codex-qq-skin-companion"));
 assert.ok(defaults.nodes.has("codex-qq-skin-right-tray"));
@@ -716,6 +754,10 @@ assert.equal(typeof defaults.window.__CODEX_QQ_SKIN_STATE__.soundMonitor.preview
 assert.equal(defaults.window.__CODEX_QQ_SKIN_STATE__.soundMonitor.enabled, true);
 assert.equal(defaults.rootStyle.values.get("--dream-retro-frame"), 'url("blob:fixture-4")');
 assert.equal(defaults.rootStyle.values.get("--dream-art-position"), "50.00% 50.00%");
+assert.equal(defaults.rootStyle.values.get("--qq-skin-art"), 'url("blob:fixture-2")');
+assert.equal(defaults.rootStyle.values.has("--dream-skin-art"), false);
+assert.equal(defaults.root.classList.contains("codex-qq-skin"), true);
+assert.equal(defaults.root.classList.contains("codex-dream-skin"), false);
 const defaultMetrics = defaults.window.__CODEX_QQ_SKIN_STATE__.metrics;
 assert.equal(defaultMetrics.rootPasses, 1);
 assert.equal(defaultMetrics.routePasses, 1);
@@ -805,9 +847,10 @@ assert.equal(soundEvents.tones, 4, "The same approval card must not alert twice.
 // for each light → dark → light transition.
 const shellFollow = createFixture({
   id: "shell-follow",
+  kind: "custom-native",
   appearance: "auto",
   art: { safeArea: "auto", taskMode: "auto" },
-});
+}, { preferredMode: "custom" });
 shellFollow.root.className = "";
 vm.runInNewContext(shellFollow.payload, shellFollow.context);
 assert.equal(shellFollow.attributes.get("data-dream-shell"), "light");
@@ -822,8 +865,19 @@ defaults.root.className = "";
 defaults.body.setAttribute("data-theme", "dark");
 defaults.observers[1].callback([{ type: "attributes", target: defaults.body }]);
 defaults.flushTimers(64);
-assert.equal(defaults.attributes.get("data-dream-shell"), "dark", "Body theme changes must apply without the fallback interval.");
+assert.equal(defaults.attributes.get("data-dream-shell"), "light",
+  "Bundled QQ skin keeps its fixed light shell and ignores native body theme flips.");
 
+shellFollow.root.className = "";
+shellFollow.body.setAttribute("data-theme", "dark");
+shellFollow.observers[1].callback([{ type: "attributes", target: shellFollow.body }]);
+shellFollow.flushTimers(64);
+assert.equal(shellFollow.attributes.get("data-dream-shell"), "dark",
+  "Custom auto appearance still follows native body theme without the fallback interval.");
+shellFollow.body.setAttribute("data-theme", "light");
+shellFollow.setNativeShell("light");
+shellFollow.window.__CODEX_QQ_SKIN_STATE__.ensure();
+assert.equal(shellFollow.attributes.get("data-dream-shell"), "light");
 const synchronousWide = createFixture({
   id: "synchronous-wide",
   appearance: "auto",
@@ -839,14 +893,17 @@ const synchronousWide = createFixture({
   },
 });
 vm.runInNewContext(synchronousWide.payload, synchronousWide.context);
-assert.equal(synchronousWide.attributes.get("data-dream-art-wide"), "true");
-assert.equal(synchronousWide.attributes.get("data-dream-art-aspect"), "wide");
-assert.equal(synchronousWide.attributes.get("data-dream-art-task-mode"), "ambient");
-assert.equal(synchronousWide.attributes.get("data-dream-art-fit"), "cover");
-assert.equal(synchronousWide.attributes.get("data-dream-art-ready"), "false");
+assert.equal(synchronousWide.attributes.get("data-dream-art-wide"), "false",
+  "QQ mode must ignore uploaded-image wide metadata.");
+assert.equal(synchronousWide.attributes.get("data-dream-art-aspect"), "landscape");
+assert.equal(synchronousWide.attributes.get("data-dream-art-task-mode"), "off");
+assert.equal(synchronousWide.attributes.get("data-dream-art-fit"), "contain");
+assert.equal(synchronousWide.attributes.get("data-dream-art-ready"), "true");
+assert.equal(synchronousWide.rootStyle.values.has("--dream-skin-art"), false);
 
 const conventionalPortraitPhoto = createFixture({
   id: "conventional-portrait-photo",
+  kind: "custom-native",
   appearance: "auto",
   art: { safeArea: "auto", taskMode: "auto" },
   artMetadata: {
@@ -857,9 +914,11 @@ const conventionalPortraitPhoto = createFixture({
     aspect: "landscape",
     taskMode: "ambient",
   },
-});
+}, { preferredMode: "custom" });
 vm.runInNewContext(conventionalPortraitPhoto.payload, conventionalPortraitPhoto.context);
 assert.equal(conventionalPortraitPhoto.attributes.get("data-dream-art-fit"), "contain");
+assert.equal(conventionalPortraitPhoto.rootStyle.values.has("--dream-skin-art"), true);
+assert.equal(conventionalPortraitPhoto.rootStyle.values.has("--qq-skin-art"), false);
 
 const cachedAnalysis = {
   width: 2400,
@@ -875,14 +934,23 @@ const cachedAnalysis = {
 };
 const cached = createFixture({
   id: "cached-wide",
+  kind: "custom-native",
   appearance: "auto",
   art: { safeArea: "auto", taskMode: "auto" },
   artKey: "cached-art",
-  artMetadata: synchronousWide.window.__CODEX_QQ_SKIN_STATE__.artMetadata,
-}, { analysisCache: new Map([["cached-art", cachedAnalysis]]) });
+  artMetadata: {
+    width: 2400,
+    height: 1350,
+    ratio: 2400 / 1350,
+    wide: true,
+    aspect: "wide",
+    taskMode: "ambient",
+  },
+}, { analysisCache: new Map([["cached-art", cachedAnalysis]]), preferredMode: "custom" });
 vm.runInNewContext(cached.payload, cached.context);
 assert.equal(cached.attributes.get("data-dream-art-ready"), "true");
 assert.equal(cached.attributes.get("data-dream-art-safe-area"), "left");
+assert.equal(cached.attributes.get("data-dream-art-wide"), "true");
 assert.equal(cached.window.__CODEX_QQ_SKIN_STATE__.metrics.analysisCacheHits, 1);
 assert.equal(cached.window.__CODEX_QQ_SKIN_STATE__.metrics.analysisRuns, 0);
 
@@ -903,9 +971,11 @@ vm.runInNewContext(synchronousWide.payloadFor({
   },
 }, ".fixture { color: red; }"), synchronousWide.context);
 assert.equal(synchronousWide.nodes.get("codex-qq-skin-style"), stableStyle);
-assert.equal(stableStyle.textContent, ".fixture { color: red; }\n.custom-fixture { color: pink; }");
+assert.equal(stableStyle.textContent, ".fixture { color: red; }",
+  "QQ mode must not keep custom-skin.css injected.");
 assert.equal(stableStyle.dataset.dreamSkinVersion, "test");
 assert.equal(synchronousWide.rootStyle.values.get("--qq-skin-art"), 'url("blob:fixture-8")');
+assert.equal(synchronousWide.rootStyle.values.has("--dream-skin-art"), false);
 assert.deepEqual(synchronousWide.revokedUrls, [
   "blob:fixture-1", "blob:fixture-2", "blob:fixture-3", "blob:fixture-4", "blob:fixture-5", "blob:fixture-6",
 ]);
@@ -920,10 +990,12 @@ for (let offset = 0; offset < brightPixels.length; offset += 4) {
 }
 const nativeDark = createFixture({
   id: "native-dark-contract",
+  kind: "custom-native",
   appearance: "auto",
   art: { safeArea: "auto", taskMode: "auto" },
 }, {
   nativeShell: "dark",
+  preferredMode: "custom",
   analysisFixture: { naturalWidth: 2400, naturalHeight: 800, pixels: brightPixels },
 });
 vm.runInNewContext(nativeDark.payload, nativeDark.context);
@@ -937,9 +1009,10 @@ assert.ok(Number.parseInt(nativeDark.rootStyle.values.get("--ds-bg").slice(1), 1
 
 const explicit = createFixture({
   id: "explicit-contract",
+  kind: "custom-native",
   appearance: "dark",
   art: { focusX: 0.15, focusY: 0.8, safeArea: "none", taskMode: "off" },
-});
+}, { preferredMode: "custom" });
 const explicitResult = vm.runInNewContext(explicit.payload, explicit.context);
 assert.equal(explicitResult.shell, "dark");
 assert.equal(explicit.attributes.get("data-dream-shell"), "dark");
@@ -951,6 +1024,7 @@ assert.equal(explicit.window.__CODEX_QQ_SKIN_STATE__.analysis, null);
 
 const banner = createFixture({
   id: "banner-contract",
+  kind: "custom-native",
   appearance: "auto",
   art: { safeArea: "left", taskMode: "banner" },
   artMetadata: {
@@ -964,12 +1038,52 @@ const banner = createFixture({
     focusX: 0.72,
     focusY: 0.44,
   },
-});
+}, { preferredMode: "custom" });
 vm.runInNewContext(banner.payload, banner.context);
 assert.equal(banner.attributes.get("data-dream-art-wide"), "true");
 assert.equal(banner.attributes.get("data-dream-art-task-mode"), "banner");
 assert.equal(banner.attributes.get("data-dream-task-mode"), "banner");
+assert.equal(banner.root.classList.contains("codex-dream-skin"), true);
+assert.equal(banner.root.classList.contains("codex-qq-skin"), false);
 
+// custom → QQ must drop the uploaded wallpaper completely.
+const isolation = createFixture({
+  id: "custom-to-qq-isolation",
+  kind: "custom-native",
+  appearance: "auto",
+  art: { safeArea: "left", taskMode: "ambient" },
+  artKey: "isolation-art",
+  artMetadata: {
+    width: 2400,
+    height: 1200,
+    ratio: 2,
+    wide: true,
+    aspect: "wide",
+    taskMode: "ambient",
+    safeArea: "left",
+    focusX: 0.8,
+    focusY: 0.4,
+  },
+}, {
+  preferredMode: "custom",
+  analysisCache: new Map([["isolation-art", {
+    width: 2400, height: 1200, ratio: 2, wide: true, aspect: "wide",
+    taskMode: "ambient", safeArea: "left", focusX: 0.8, focusY: 0.4,
+    accentRgb: { r: 200, g: 80, b: 90 },
+  }]]),
+});
+vm.runInNewContext(isolation.payload, isolation.context);
+assert.equal(isolation.root.classList.contains("codex-dream-skin"), true);
+assert.equal(isolation.rootStyle.values.has("--dream-skin-art"), true);
+assert.match(isolation.nodes.get("codex-qq-skin-style").textContent, /custom-fixture/);
+isolation.window.__CODEX_QQ_SKIN_STATE__.selectSkinMode("qq");
+assert.equal(isolation.root.classList.contains("codex-qq-skin"), true);
+assert.equal(isolation.root.classList.contains("codex-dream-skin"), false);
+assert.equal(isolation.rootStyle.values.has("--dream-skin-art"), false);
+assert.equal(isolation.rootStyle.values.get("--qq-skin-art")?.startsWith("url(\"blob:"), true);
+assert.equal(isolation.attributes.get("data-dream-art-wide"), "false");
+assert.equal(isolation.attributes.get("data-dream-art-task-mode"), "off");
+assert.equal(isolation.nodes.get("codex-qq-skin-style").textContent.includes("custom-fixture"), false);
 assert.equal(explicit.window.__CODEX_QQ_SKIN_STATE__.cleanup(), true);
 assert.equal(explicit.root.classList.contains("codex-qq-skin"), false);
 assert.equal(explicit.attributes.has("data-dream-shell"), false);

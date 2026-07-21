@@ -254,7 +254,9 @@ html.codex-qq-skin body > #root > div:has(> div > .app-shell-left-panel) {
 
 .dream-retro-titlebar {
   position: absolute;
-  inset: 3px 4px auto;
+  /* Leave the top-right free for #codex-qq-skin-toggle. A full-bleed drag
+     region here intercepts clicks even when the toggle has a higher z-index. */
+  inset: 3px 300px auto 4px;
   height: 38px;
   overflow: hidden;
   border: 1px solid #76b9ff;
@@ -285,7 +287,7 @@ html.codex-qq-skin body > #root > div:has(> div > .app-shell-left-panel) {
 .dream-retro-titlebar strong {
   position: absolute;
   left: 126px;
-  right: 128px;
+  right: 16px;
   top: 0;
   overflow: hidden;
   color: #fff;
@@ -510,11 +512,11 @@ html.codex-qq-skin[data-dream-platform="windows"]
   :root.codex-qq-skin { --qq-retro-content-top: 62px; }
   html.codex-qq-skin body { padding-top: 0 !important; }
   html.codex-qq-skin body > #root { height: calc(100vh - 16px) !important; }
-  .dream-retro-titlebar { height: 35px; }
+  .dream-retro-titlebar { height: 35px; inset: 3px 260px auto 4px; }
   .dream-retro-title-penguin { left: 76px; width: 31px; height: 31px; }
   .dream-retro-titlebar strong {
     left: 111px;
-    right: 112px;
+    right: 12px;
     top: 0;
     font-size: 16px;
     line-height: 34px;

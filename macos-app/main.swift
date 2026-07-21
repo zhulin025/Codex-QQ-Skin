@@ -54,7 +54,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let title = NSTextField(labelWithString: "Codex QQ Skin")
         title.font = .boldSystemFont(ofSize: 24)
 
-        let subtitle = NSTextField(wrappingLabelWithString: "2.1 支持上传任意图片，自动分析主色、明暗、视觉焦点和安全留白，生成专属 QQ 皮肤。全程仅在本机处理。")
+        let subtitle = NSTextField(wrappingLabelWithString: "2.1.3 支持上传任意图片，自动分析主色、明暗、视觉焦点和安全留白，生成专属 QQ 皮肤。全程仅在本机处理。")
         subtitle.alignment = .center
         subtitle.textColor = .secondaryLabelColor
         subtitle.maximumNumberOfLines = 2
@@ -93,16 +93,67 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func refreshState() {
         let installed = FileManager.default.isExecutableFile(atPath: installedStart.path)
-        statusLabel.stringValue = installed ? "✓ 已安装，可以直接启动" : "尚未安装，点击下方按钮即可完成"
-        primaryButton.title = installed ? "启动 Codex QQ Skin" : "一键安装并启动"
+        let bundledVersion = skinVersion(at: bundledRoot) ?? "未知"
+        if !installed {
+            statusLabel.stringValue = "尚未安装，点击下方按钮即可完成（App \(bundledVersion)）"
+            primaryButton.title = "一键安装并启动"
+        } else if engineNeedsUpdate() {
+            let installedVersion = skinVersion(at: installedRoot) ?? "旧版"
+            statusLabel.stringValue = "✓ 已安装 \(installedVersion)，启动时会自动更新到 \(bundledVersion)"
+            primaryButton.title = "更新并启动"
+        } else {
+            statusLabel.stringValue = "✓ 已安装 \(bundledVersion)，可以直接启动"
+            primaryButton.title = "启动 Codex QQ Skin"
+        }
         updateButton.isHidden = !installed
         customizeButton.isEnabled = installed && !busy
         restoreButton.isEnabled = installed
     }
 
+    /// Read SKIN_VERSION=... from scripts/common-macos.sh in an engine tree.
+    private func skinVersion(at root: URL) -> String? {
+        let common = root.appendingPathComponent("scripts/common-macos.sh")
+        guard let text = try? String(contentsOf: common, encoding: .utf8) else { return nil }
+        for line in text.components(separatedBy: .newlines) {
+            let trimmed = line.trimmingCharacters(in: .whitespaces)
+            guard trimmed.hasPrefix("SKIN_VERSION=") else { continue }
+            return trimmed
+                .dropFirst("SKIN_VERSION=".count)
+                .trimmingCharacters(in: CharacterSet(charactersIn: "\"'"))
+        }
+        return nil
+    }
+
+    /// True when the installed engine is missing, older, or still has the bash 3.2 MODE_ARGS bug.
+    private func engineNeedsUpdate() -> Bool {
+        guard FileManager.default.isExecutableFile(atPath: installedStart.path) else { return true }
+        if let start = try? String(contentsOf: installedStart, encoding: .utf8),
+           start.contains("${MODE_ARGS[@]}") || start.contains("${mode_args[@]}") {
+            return true
+        }
+        let bundled = skinVersion(at: bundledRoot)
+        let installed = skinVersion(at: installedRoot)
+        guard let bundled, let installed else { return bundled != installed }
+        return bundled != installed
+    }
+
     @objc private func primaryAction() {
         if FileManager.default.isExecutableFile(atPath: installedStart.path) {
-            run(script: installedStart, arguments: ["--prompt-restart"], progress: "正在启动 QQ 皮肤版 Codex…", success: "Codex QQ Skin 已启动。")
+            if engineNeedsUpdate() {
+                // Quietly refresh ~/.codex/codex-qq-skin-studio from the App bundle so
+                // users who only replaced the .app do not keep running a stale engine.
+                closeCodex {
+                    let installer = self.bundledRoot.appendingPathComponent("scripts/install-qq-skin-macos.sh")
+                    self.run(
+                        script: installer,
+                        arguments: ["--no-launchers"],
+                        progress: "发现旧引擎，正在更新到 App 内置版本并启动…",
+                        success: "引擎已更新，Codex QQ Skin 已启动。"
+                    )
+                }
+            } else {
+                run(script: installedStart, arguments: ["--prompt-restart"], progress: "正在启动 QQ 皮肤版 Codex…", success: "Codex QQ Skin 已启动。")
+            }
         } else {
             installOrUpdate()
         }
@@ -219,6 +270,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if details.contains("Could not find the official Codex app") { return "没有找到官方 Codex 应用，请先安装并至少打开一次 Codex。" }
         if details.contains("Codex config not found") { return "请先正常打开一次 Codex，随后退出，再重新安装。" }
         if details.contains("signature is not valid") { return "官方 Codex 应用签名校验失败，请重新安装官方版本后再试。" }
+        if details.contains("MODE_ARGS") || details.contains("unbound variable") {
+            return "检测到旧版启动脚本。请点击「重新安装 / 更新」，或直接再点一次主按钮以自动刷新引擎。"
+        }
         return "操作没有完成。可以展开下方详情查看原因。"
     }
 

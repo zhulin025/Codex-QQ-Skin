@@ -34,8 +34,8 @@
   let ART = THEME.art && typeof THEME.art === "object" ? THEME.art : {};
   let LAYOUT = THEME.layout && typeof THEME.layout === "object" ? THEME.layout : {};
   let SOUND = THEME.sound && typeof THEME.sound === "object" ? THEME.sound : {};
-  const ART_METADATA = THEME.artMetadata && typeof THEME.artMetadata === "object"
-    ? THEME.artMetadata : null;
+  const CUSTOM_ART_METADATA = CUSTOM_THEME.artMetadata && typeof CUSTOM_THEME.artMetadata === "object"
+    ? CUSTOM_THEME.artMetadata : null;
   const ANALYSIS_CACHE_KEY = "__CODEX_QQ_SKIN_ANALYSIS_CACHE__";
   const THEME_VARIABLES = [
     "--ds-bg", "--ds-panel", "--ds-panel-2", "--ds-green", "--ds-lime",
@@ -57,7 +57,9 @@
   const analysisCache = existingAnalysisCache && typeof existingAnalysisCache.get === "function" &&
     typeof existingAnalysisCache.set === "function" ? existingAnalysisCache : new Map();
   window[ANALYSIS_CACHE_KEY] = analysisCache;
-  let artAnalysis = typeof THEME.artKey === "string" ? analysisCache.get(THEME.artKey) ?? null : null;
+  let artAnalysis = (skinMode === "custom" && typeof CUSTOM_THEME.artKey === "string")
+    ? analysisCache.get(CUSTOM_THEME.artKey) ?? null
+    : null;
   let analysisTimer = null;
   let samplingNativeShell = false;
   let rootObserver = null;
@@ -396,21 +398,38 @@
   };
 
   const applyArtMetadata = (root) => {
-    const profile = skinMode === "qq" && !QQ_THEME.art ? {
-      wide: false, aspect: "landscape", safeArea: "center",
-      focusX: 0.5, focusY: 0.5, taskMode: "off",
-    } : artAnalysis || ART_METADATA;
-    const inferredSafe = profile?.safeArea || "center";
-    const safeArea = ART.safeArea && ART.safeArea !== "auto" ? ART.safeArea : inferredSafe;
+    // QQ is a closed product pack. Never inherit uploaded-image analysis/metadata,
+    // or ambient/wide wallpaper rules will keep painting custom art after a switch.
+    let safeArea;
+    let taskMode;
+    let wide;
+    let aspect;
+    let focusX;
+    let focusY;
+    let artReady;
+    if (skinMode === "qq") {
+      safeArea = ART.safeArea && ART.safeArea !== "auto" ? ART.safeArea : "center";
+      taskMode = ART.taskMode && ART.taskMode !== "auto" ? ART.taskMode : "off";
+      wide = false;
+      aspect = "landscape";
+      focusX = typeof ART.focusX === "number" ? ART.focusX : 0.5;
+      focusY = typeof ART.focusY === "number" ? ART.focusY : 0.5;
+      artReady = true;
+    } else {
+      const profile = artAnalysis || CUSTOM_ART_METADATA;
+      const inferredSafe = profile?.safeArea || "center";
+      safeArea = ART.safeArea && ART.safeArea !== "auto" ? ART.safeArea : inferredSafe;
+      taskMode = ART.taskMode && ART.taskMode !== "auto"
+        ? ART.taskMode : profile?.taskMode || "ambient";
+      wide = profile?.wide || false;
+      aspect = profile?.aspect || "unknown";
+      focusX = typeof ART.focusX === "number" ? ART.focusX
+        : profile?.focusX ?? (safeArea === "left" ? 0.72 : safeArea === "right" ? 0.28 : 0.5);
+      focusY = typeof ART.focusY === "number" ? ART.focusY : profile?.focusY ?? 0.5;
+      artReady = Boolean(artAnalysis);
+    }
     const canonicalSafe = ["left", "right", "center", "none"].includes(safeArea)
       ? safeArea : "center";
-    const focusX = typeof ART.focusX === "number" ? ART.focusX
-      : profile?.focusX ?? (safeArea === "left" ? 0.72 : safeArea === "right" ? 0.28 : 0.5);
-    const focusY = typeof ART.focusY === "number" ? ART.focusY : profile?.focusY ?? 0.5;
-    const taskMode = ART.taskMode && ART.taskMode !== "auto"
-      ? ART.taskMode : profile?.taskMode || "ambient";
-    const wide = profile?.wide || false;
-    const aspect = profile?.aspect || "unknown";
     // A conventional photo is much taller than the panoramic home hero. Using
     // cover there can remove most of a portrait (including the head or body).
     // Reserve cropping for genuinely wide artwork; fit ordinary photo and
@@ -426,7 +445,7 @@
     setAttribute(root, "data-dream-art-task-mode", taskMode);
     setAttribute(root, "data-dream-art-aspect", aspect);
     setAttribute(root, "data-dream-art-fit", artFit);
-    setAttribute(root, "data-dream-art-ready", artAnalysis ? "true" : "false");
+    setAttribute(root, "data-dream-art-ready", artReady ? "true" : "false");
     setStyleProperty(root, "--dream-art-focus-x", focusXValue);
     setStyleProperty(root, "--dream-art-focus-y", focusYValue);
     setStyleProperty(root, "--dream-art-position", `${focusXValue} ${focusYValue}`);
@@ -1421,17 +1440,24 @@
 
   const ensureStyle = (root) => {
     let style = document.getElementById(STYLE_ID);
+    // Include the active product stylesheet only. Keeping custom-skin.css out of
+    // QQ mode prevents leftover/ungated wallpaper rules from painting the upload.
+    const modeRevision = `${STYLE_REVISION}:${skinMode}`;
+    const nextText = skinMode === "custom"
+      ? `${cssText}\n${customCssText}`
+      : skinMode === "qq"
+        ? cssText
+        : "";
     if (!style) {
       style = document.createElement("style");
       style.id = STYLE_ID;
-      style.textContent = `${cssText}\n${customCssText}`;
-      style.dataset.dreamSkinVersion = VERSION;
       (document.head || root).appendChild(style);
-    } else if (style.dataset.dreamSkinStyleRevision !== STYLE_REVISION) {
-      style.textContent = `${cssText}\n${customCssText}`;
+    }
+    if (style.dataset.dreamSkinStyleRevision !== modeRevision) {
+      style.textContent = nextText;
     }
     style.dataset.dreamSkinVersion = VERSION;
-    style.dataset.dreamSkinStyleRevision = STYLE_REVISION;
+    style.dataset.dreamSkinStyleRevision = modeRevision;
     return style;
   };
 
@@ -1441,13 +1467,27 @@
     const shell = resolvedShell();
     setAttribute(root, SHELL_ATTR, shell);
     setAttribute(root, "data-dream-platform", /Win/i.test(window.navigator?.platform || window.navigator?.userAgent || "") ? "windows" : "other");
-    setStyleProperty(root, "--qq-skin-art", `url("${qqArtUrl}")`);
-    setStyleProperty(root, "--dream-skin-art", `url("${artUrl}")`);
-    setStyleProperty(root, "--dream-retro-frame", `url("${retroFrameUrl}")`);
+    // Hard-isolate art variables: never leave the other mode's wallpaper URL on :root.
+    if (skinMode === "qq") {
+      setStyleProperty(root, "--qq-skin-art", `url("${qqArtUrl}")`);
+      setStyleProperty(root, "--dream-retro-frame", `url("${retroFrameUrl}")`);
+      root.style.removeProperty("--dream-skin-art");
+    } else if (skinMode === "custom") {
+      setStyleProperty(root, "--dream-skin-art", `url("${artUrl}")`);
+      root.style.removeProperty("--qq-skin-art");
+      root.style.removeProperty("--dream-retro-frame");
+    } else {
+      root.style.removeProperty("--qq-skin-art");
+      root.style.removeProperty("--dream-skin-art");
+      root.style.removeProperty("--dream-retro-frame");
+    }
     applyTheme(root, shell);
     applyArtMetadata(root);
     root.classList.toggle("codex-qq-skin", skinMode === "qq");
     root.classList.toggle("codex-dream-skin", skinMode === "custom");
+    // Belt-and-suspenders: never allow both product skins on the same document.
+    if (skinMode === "qq") root.classList.remove("codex-dream-skin");
+    if (skinMode === "custom") root.classList.remove("codex-qq-skin");
     return shell;
   };
 
@@ -1517,6 +1557,7 @@
     syncRetroToolbarActions();
     syncRetroWindowControls();
     ensureRetroProfile();
+    ensureToggleButton();
     if (observedShellMain !== shellMain) {
       resizeObserver?.disconnect();
       resizeObserver?.observe(shellMain);
@@ -1725,6 +1766,10 @@
     ART = THEME.art && typeof THEME.art === "object" ? THEME.art : {};
     LAYOUT = THEME.layout && typeof THEME.layout === "object" ? THEME.layout : {};
     SOUND = THEME.sound && typeof THEME.sound === "object" ? THEME.sound : {};
+    // Keep cached custom analysis for later, but never let it tint QQ after a switch.
+    if (skinMode === "custom" && !artAnalysis && typeof CUSTOM_THEME.artKey === "string") {
+      artAnalysis = analysisCache.get(CUSTOM_THEME.artKey) ?? null;
+    }
     window[DISABLED_KEY] = skinMode === "native";
     try {
       window.localStorage?.setItem(MODE_STORAGE_KEY, skinMode);
@@ -1737,8 +1782,10 @@
     }
     removeSkinVisuals();
     if (skinMode !== "native") ensure({ root: true, route: true, layout: true });
-    const control = document.getElementById(TOGGLE_ID);
-    if (control) syncToggleButton(control);
+    // Always re-assert the toggle above retro chrome so Electron drag regions
+    // created during ensure() cannot swallow the next click.
+    const control = ensureToggleButton();
+    if (control?.parentElement === document.body) document.body.appendChild(control);
     if (typeof window.dispatchEvent === "function" && typeof window.Event === "function") {
       window.dispatchEvent(new window.Event("resize"));
     }
@@ -1753,7 +1800,7 @@
       control.setAttribute("role", "group");
       control.setAttribute("aria-label", "切换皮肤");
       control.style.cssText = [
-        "position:fixed", "z-index:2147483000", "top:7px", "right:148px", "height:28px",
+        "position:fixed", "z-index:2147483000", "top:7px", "right:210px", "height:28px",
         "display:flex", "align-items:center", "gap:2px", "padding:2px",
         "border:1px solid rgba(82,88,98,.18)", "border-radius:10px",
         "background:rgba(248,248,249,.91)", "box-shadow:0 1px 2px rgba(0,0,0,.08),0 5px 14px rgba(0,0,0,.08)",
@@ -1890,7 +1937,7 @@
     coughAudioUrl,
     installToken,
     analysis: artAnalysis,
-    artMetadata: ART_METADATA,
+    artMetadata: CUSTOM_ART_METADATA,
     metrics,
     version: VERSION,
     themeId: THEME.id || "custom",
@@ -1899,6 +1946,7 @@
     customThemeId: CUSTOM_THEME.id || null,
     qqThemeId: QQ_THEME.id || null,
     detectShellMode,
+    selectSkinMode,
   };
   ensureToggleButton();
   const firstEnsureStartedAt = now();
@@ -1968,15 +2016,20 @@
     }
   }, 250);
   window[STATE_KEY].startupTimer = startupTimer;
-  const analysisPromise = artAnalysis ? Promise.resolve(null) : analyzeArt();
+  // Only analyze the uploaded custom image while custom mode is active. QQ must
+  // never adopt that analysis after a mode switch or a late analysis callback.
+  const analysisPromise = (skinMode === "custom" && !artAnalysis)
+    ? analyzeArt()
+    : Promise.resolve(null);
   window[STATE_KEY].analysisTimer = analysisTimer;
   analysisPromise.then((analysis) => {
     const state = window[STATE_KEY];
     if (!analysis || state?.installToken !== installToken || window[DISABLED_KEY]) return;
+    if (skinMode !== "custom") return;
     artAnalysis = analysis;
     state.analysis = analysis;
-    if (typeof THEME.artKey === "string") {
-      analysisCache.set(THEME.artKey, analysis);
+    if (typeof CUSTOM_THEME.artKey === "string") {
+      analysisCache.set(CUSTOM_THEME.artKey, analysis);
       while (analysisCache.size > 8) analysisCache.delete(analysisCache.keys().next().value);
     }
     ensure({ root: true, route: false, layout: false });

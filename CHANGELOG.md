@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.1.3 — 2026-07-21
+
+- macOS App 启动前自动比对内置版本与 `~/.codex/codex-qq-skin-studio`；若引擎仍是旧版或仍含 `MODE_ARGS[@]`，会先刷新再启动，避免只换 App 却继续报「操作没有完成」。
+- 对 `MODE_ARGS` / `unbound variable` 给出更明确的中文提示，引导点击「重新安装 / 更新」。
+- **QQ / 自定义硬隔离：** 切到 QQ 时清除 `--dream-skin-art`、不再注入 `custom-skin.css`、忽略上传图的 art 分析；切到自定义时清除 `--qq-skin-art`。两套皮肤不再混用背景。
+- 修复 QQ 复古标题栏拖动区域挡住皮肤切换按钮，导致无法切回「原生 / 自定义」。
+- 皮肤切换条右移避让，避免盖住 Codex 原生文件夹入口。
+
 ## 2.1.1 — 2026-07-21
 
 - 修复 macOS `/bin/bash 3.2` 在 `set -u` 下展开空数组 `${MODE_ARGS[@]}` 导致 GUI「操作没有完成」误报（皮肤其实已启动）。

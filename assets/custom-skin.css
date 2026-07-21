@@ -556,7 +556,7 @@ html.codex-dream-skin .dream-skin-home {
   padding-bottom: 0 !important;
 }
 
-.dream-skin-home > div:first-child > div:first-child > div:first-child {
+html.codex-dream-skin .dream-skin-home > div:first-child > div:first-child > div:first-child {
   position: relative !important;
   isolation: isolate;
   width: calc(100% - 44px) !important;
