@@ -15,7 +15,7 @@ $windowsIcon = Join-Path $work 'AppIcon.ico'
 
 try {
   New-Item -ItemType Directory -Force -Path $payload, $OutputDirectory | Out-Null
-  foreach ($directory in @('assets','presets','scripts')) {
+  foreach ($directory in @('assets','presets','scripts','skills')) {
     $null = & robocopy.exe (Join-Path $root $directory) (Join-Path $payload $directory) /E /XD macos-app menubar /XF '*.sh' '*.command' '.DS_Store' /NFL /NDL /NJH /NJS
     if ($LASTEXITCODE -ge 8) { throw "robocopy failed for $directory with exit code $LASTEXITCODE" }
   }

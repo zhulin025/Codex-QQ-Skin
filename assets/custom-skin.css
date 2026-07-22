@@ -1203,3 +1203,115 @@ html.codex-dream-skin main.main-surface:not(.dream-skin-home-shell)
   .app-shell-main-content-frame {
   background: transparent !important;
 }
+
+/* Generic schema-v2 deep themes use only validated assets and layout variables. */
+html.codex-dream-skin[data-dream-deep-theme="true"] body::before {
+  inset: 0 !important;
+  background-color: var(--ds-bg) !important;
+  background-image: var(--dream-skin-art) !important;
+  background-position: center !important;
+  background-size: cover !important;
+  filter: saturate(.82) contrast(.96) brightness(1.035) !important;
+  -webkit-filter: saturate(.82) contrast(.96) brightness(1.035) !important;
+}
+
+html.codex-dream-skin[data-dream-deep-theme="true"] body::after {
+  opacity: var(--dream-deep-right-opacity, 1) !important;
+  background-image: var(--dream-deep-right) !important;
+  background-repeat: no-repeat !important;
+  background-position: right var(--dream-deep-right-right, -24px) bottom var(--dream-deep-right-bottom, -120px) !important;
+  background-size: min(32vw, var(--dream-deep-right-width, 520px)) auto !important;
+}
+
+html.codex-dream-skin[data-dream-deep-theme="true"] main.main-surface::after {
+  content: "" !important;
+  position: absolute !important;
+  inset: 0 !important;
+  z-index: 0 !important;
+  pointer-events: none !important;
+  background: var(--dream-deep-watermark)
+    var(--dream-deep-watermark-x, 56%) var(--dream-deep-watermark-y, 8%) /
+    var(--dream-deep-watermark-width, 170px) auto no-repeat !important;
+  opacity: var(--dream-deep-watermark-opacity, .1) !important;
+}
+
+html.codex-dream-skin[data-dream-deep-theme="true"] aside.app-shell-left-panel {
+  position: relative !important;
+  isolation: isolate !important;
+  background: linear-gradient(90deg,
+    rgb(var(--ds-panel-rgb) / .94), rgb(var(--ds-panel-rgb) / .72)) !important;
+  border-right: 1px solid rgb(var(--ds-accent-rgb) / .35) !important;
+  backdrop-filter: blur(16px) saturate(105%) !important;
+  -webkit-backdrop-filter: blur(16px) saturate(105%) !important;
+}
+
+html.codex-dream-skin[data-dream-deep-theme="true"][data-dream-art-wide]:has(main.main-surface)
+  aside.app-shell-left-panel::after {
+  content: "" !important;
+  display: block !important;
+  position: absolute !important;
+  inset: 122px 0 44px !important;
+  z-index: -1 !important;
+  pointer-events: none !important;
+  background: var(--dream-deep-sidebar) center var(--dream-deep-sidebar-y, 22%) /
+    var(--dream-deep-sidebar-size, 138%) auto no-repeat !important;
+  opacity: var(--dream-deep-sidebar-opacity, .075) !important;
+  filter: saturate(.75) !important;
+}
+
+html.codex-dream-skin[data-dream-deep-theme="true"] aside.app-shell-left-panel::before {
+  content: var(--dream-deep-brand-title, "CODEX") "\A" var(--dream-deep-brand-subtitle, "MORE THAN CODE") !important;
+  white-space: pre !important;
+  position: absolute !important;
+  z-index: 2 !important;
+  inset: 54px 10px auto !important;
+  height: 70px !important;
+  box-sizing: border-box !important;
+  padding: 13px 62px 10px 16px !important;
+  border: 1px solid rgb(var(--ds-accent-rgb) / .42) !important;
+  border-radius: 12px !important;
+  background: var(--dream-deep-brand) right 12px center / 45px 45px no-repeat,
+    linear-gradient(135deg, rgb(var(--ds-panel-rgb) / .96), rgb(var(--ds-panel-2-rgb) / .88)) !important;
+  color: var(--ds-accent) !important;
+  font-size: 22px !important;
+  font-weight: 950 !important;
+  font-style: italic !important;
+  line-height: 22px !important;
+  letter-spacing: -.8px !important;
+  text-shadow: 0 1px 0 #fff, 0 2px 0 rgba(40,36,22,.75) !important;
+  box-shadow: 0 8px 24px rgb(var(--ds-accent-rgb) / .10) !important;
+}
+
+html.codex-dream-skin[data-dream-deep-theme="true"] aside.app-shell-left-panel nav {
+  padding-top: 82px !important;
+}
+
+html.codex-dream-skin[data-dream-deep-theme="true"] aside.app-shell-left-panel [aria-current="page"],
+html.codex-dream-skin[data-dream-deep-theme="true"] aside.app-shell-left-panel [class~="bg-token-list-hover-background"] {
+  background: linear-gradient(90deg, rgb(var(--ds-accent-rgb) / .60), rgb(var(--ds-accent-rgb) / .22)) !important;
+  border-color: rgb(var(--ds-accent-rgb) / .28) !important;
+  box-shadow: 0 5px 15px rgb(var(--ds-accent-rgb) / .12) !important;
+}
+
+html.codex-dream-skin[data-dream-deep-theme="true"] .composer-surface-chrome,
+html.codex-dream-skin[data-dream-deep-theme="true"] [data-turn-key],
+html.codex-dream-skin[data-dream-deep-theme="true"] main.main-surface article {
+  border-color: rgb(var(--ds-accent-rgb) / .22) !important;
+  background-color: rgb(var(--ds-panel-rgb) / .78) !important;
+  box-shadow: 0 12px 28px rgba(63, 51, 20, .08) !important;
+  backdrop-filter: blur(10px) saturate(105%) !important;
+  -webkit-backdrop-filter: blur(10px) saturate(105%) !important;
+}
+
+html.codex-dream-skin[data-dream-deep-theme="true"] main.main-surface > header.app-header-tint,
+html.codex-dream-skin[data-dream-deep-theme="true"] body > #root > div > .app-header-tint {
+  background: rgb(var(--ds-panel-rgb) / .58) !important;
+  border-bottom-color: rgb(var(--ds-accent-rgb) / .18) !important;
+}
+
+@media (max-width: 1050px) {
+  html.codex-dream-skin[data-dream-deep-theme="true"] body::after {
+    background-size: min(40vw, var(--dream-deep-right-width, 520px)) auto !important;
+    opacity: min(.72, var(--dream-deep-right-opacity, 1)) !important;
+  }
+}

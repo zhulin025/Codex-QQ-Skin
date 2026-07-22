@@ -1,6 +1,7 @@
 import fs from "node:fs/promises";
 import { constants as fsConstants } from "node:fs";
 import path from "node:path";
+import { loadDeepThemeDirectory } from "./deep-theme-core.mjs";
 
 const [sourceDirArg, stageDirArg] = process.argv.slice(2);
 if (!sourceDirArg || !stageDirArg) {
@@ -87,6 +88,18 @@ async function main() {
   const configPath = path.join(sourceRoot, "theme.json");
   const config = await readStableFile(configPath, "Theme config", MAX_CONFIG_BYTES);
   const theme = decodeJson(config.bytes, "Theme config");
+  if (theme?.schemaVersion === 2) {
+    const loaded = await loadDeepThemeDirectory(sourceRoot);
+    const stageRoot = await fs.realpath(stageDirArg);
+    if (!(await fs.stat(stageRoot)).isDirectory()) throw new Error("Theme stage must be a directory");
+    for (const asset of Object.values(loaded.assets)) {
+      assertContained(stageRoot, path.join(stageRoot, asset.filename), `Staged asset ${asset.filename}`);
+      await writeExclusive(path.join(stageRoot, asset.filename), asset.bytes);
+    }
+    await writeExclusive(path.join(stageRoot, "theme.json"), loaded.configBytes);
+    process.stdout.write(loaded.theme.assets.background);
+    return;
+  }
   if (theme?.schemaVersion !== 1 || typeof theme.image !== "string" || !theme.image) {
     throw new Error("Theme config has an unsupported schema or image field");
   }

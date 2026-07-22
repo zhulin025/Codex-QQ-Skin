@@ -1,7 +1,7 @@
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-$script:SkinVersion = '2.4.0'
+$script:SkinVersion = '2.5.0'
 $script:ScriptRoot = Split-Path -Parent $PSCommandPath
 $script:ProjectRoot = (Resolve-Path (Join-Path $script:ScriptRoot '..\..')).Path
 $script:InjectorPath = Join-Path $script:ProjectRoot 'scripts\injector.mjs'
@@ -21,6 +21,35 @@ $script:CodexExe = $null
 $script:CodexVersion = $null
 $script:CodexAppUserModelId = $null
 $script:CodexAppIds = @{}
+
+function ConvertTo-SkinVersion {
+  param([Parameter(Mandatory)][string]$Value)
+  $normalized = $Value.Trim().TrimStart('v','V')
+  if ($normalized -notmatch '^\d+\.\d+\.\d+$') { return $null }
+  try { return [version]$normalized } catch { return $null }
+}
+
+function Get-EngineVersionAt {
+  param([Parameter(Mandatory)][string]$Root)
+  $common = Join-Path $Root 'scripts\common-windows.ps1'
+  if (-not (Test-Path -LiteralPath $common -PathType Leaf)) { return $null }
+  $match = [regex]::Match((Get-Content -LiteralPath $common -Raw), '(?m)^\s*\$script:SkinVersion\s*=\s*[''"]([^''"]+)[''"]')
+  if (-not $match.Success) { return $null }
+  return ConvertTo-SkinVersion -Value $match.Groups[1].Value
+}
+
+function Test-InstalledEngineComplete {
+  param([Parameter(Mandatory)][string]$Root)
+  foreach ($relative in @(
+    'scripts\windows\start-qq-skin-windows.ps1',
+    'scripts\injector.mjs',
+    'scripts\windows\switch-theme-windows.ps1',
+    'scripts\deep-theme.mjs'
+  )) {
+    if (-not (Test-Path -LiteralPath (Join-Path $Root $relative) -PathType Leaf)) { return $false }
+  }
+  return $true
+}
 
 function Stop-WithError {
   param([Parameter(Mandatory)][string]$Message)
@@ -307,10 +336,14 @@ function Start-Injector {
 
 function Seed-BundledTheme {
   Initialize-StateRoot
-  $preset = Join-Path $script:ProjectRoot 'presets\preset-classic-codex'
-  $libraryPreset = Join-Path $script:ThemesRoot 'preset-classic-codex'
-  if (Test-Path -LiteralPath $libraryPreset) { Remove-Item -LiteralPath $libraryPreset -Recurse -Force }
-  Copy-Item -LiteralPath $preset -Destination $libraryPreset -Recurse
+  $presetRoot = Join-Path $script:ProjectRoot 'presets'
+  Get-ChildItem -LiteralPath $presetRoot -Directory -Filter 'preset-*' | ForEach-Object {
+    if (-not (Test-Path -LiteralPath (Join-Path $_.FullName 'theme.json') -PathType Leaf)) { return }
+    $libraryPreset = Join-Path $script:ThemesRoot $_.Name
+    if (Test-Path -LiteralPath $libraryPreset) { Remove-Item -LiteralPath $libraryPreset -Recurse -Force }
+    Copy-Item -LiteralPath $_.FullName -Destination $libraryPreset -Recurse
+  }
+  $preset = Join-Path $presetRoot 'preset-classic-codex'
   if (-not (Test-Path -LiteralPath (Join-Path $script:ThemeDir 'theme.json'))) {
     if (Test-Path -LiteralPath $script:ThemeDir) { Remove-Item -LiteralPath $script:ThemeDir -Recurse -Force }
     Copy-Item -LiteralPath $preset -Destination $script:ThemeDir -Recurse

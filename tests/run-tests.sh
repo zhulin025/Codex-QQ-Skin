@@ -53,6 +53,13 @@ if ! /usr/bin/grep -F -q '上传图片，生成我的皮肤' "$ROOT/macos-app/ma
   printf 'The 2.0 custom-image entrypoints are incomplete.\n' >&2
   exit 1
 fi
+if ! /usr/bin/grep -F -q '安装 Codex 深度皮肤助手' "$ROOT/macos-app/main.swift" \
+  || ! /usr/bin/grep -F -q '安装 Codex 深度皮肤助手' "$ROOT/windows-app/Program.cs" \
+  || [ ! -f "$ROOT/skills/codex-deep-skin-builder/SKILL.md" ] \
+  || [ ! -f "$ROOT/scripts/install-deep-skin-skill.mjs" ]; then
+  printf 'The 2.5 deep-skin skill and installer entrypoints are incomplete.\n' >&2
+  exit 1
+fi
 if ! /usr/bin/grep -F -q 'localStorage?.setItem("codex-qq-skin-enabled", "true")' "$ROOT/scripts/injector.mjs" \
   || ! /usr/bin/grep -F -q -- '--once --enable-skin' "$ROOT/scripts/start-qq-skin-macos.sh" \
   || ! /usr/bin/grep -F -q -- '--once --enable-skin' "$ROOT/scripts/common-macos.sh"; then
@@ -68,8 +75,17 @@ fi
 "$NODE" "$ROOT/tests/image-metadata.test.mjs"
 "$NODE" "$ROOT/tests/injector-bootstrap.test.mjs"
 "$NODE" "$ROOT/tests/renderer-inject.test.mjs"
+"$NODE" "$ROOT/tests/deep-theme.test.mjs"
+"$NODE" "$ROOT/tests/skill-install.test.mjs"
+"$NODE" "$ROOT/tests/update-flow.test.mjs"
 "$NODE" "$ROOT/tests/theme-stage.test.mjs"
 "$NODE" "$ROOT/tests/usage-level.test.mjs"
+
+VERSION_POLICY_TEST="$(/usr/bin/mktemp /tmp/codex-version-policy.XXXXXX)"
+/bin/rm -f "$VERSION_POLICY_TEST"
+/usr/bin/xcrun swiftc "$ROOT/macos-app/VersionPolicy.swift" "$ROOT/tests/version-policy.swift" -o "$VERSION_POLICY_TEST"
+"$VERSION_POLICY_TEST"
+/bin/rm -f "$VERSION_POLICY_TEST"
 
 # Every bundled preset must be a valid, injectable theme pack with a preset-* id.
 for preset in "$ROOT"/presets/preset-*/; do
@@ -828,7 +844,7 @@ CRLF_BACKUP="$TMP/config-crlf-backup.json"
 "$NODE" "$ROOT/scripts/theme-config.mjs" restore "$CRLF_CONFIG" "$CRLF_BACKUP" >/dev/null
 /usr/bin/cmp -s "$CRLF_CONFIG" "$TMP/original-crlf.toml"
 
-/usr/bin/env -u HOME /bin/bash -c '. "$1/scripts/common-macos.sh"; [ -n "$HOME" ] && [ "$SKIN_VERSION" = "2.4.0" ]' _ "$ROOT"
+/usr/bin/env -u HOME /bin/bash -c '. "$1/scripts/common-macos.sh"; [ -n "$HOME" ] && [ "$SKIN_VERSION" = "2.5.0" ]' _ "$ROOT"
 DOCTOR_HOME="$TMP/doctor-home"
 /bin/mkdir -p "$DOCTOR_HOME/.codex" "$DOCTOR_HOME/Library/Application Support/CodexQQSkin/theme"
 /usr/bin/printf '%s\n' 'model = "gpt-5"' > "$DOCTOR_HOME/.codex/config.toml"

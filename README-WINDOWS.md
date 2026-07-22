@@ -1,6 +1,6 @@
-# ChatGPT QQ Skin for Windows 2.4.0
+# ChatGPT QQ Skin for Windows 2.5.0
 
-Windows 10/11 x64 原生 C# GUI 版本。安装器提供“一键安装并启动”和“上传图片生成皮肤”两个入口，并内置运行引擎与 Node.js，无需用户另外安装依赖。
+Windows 10/11 x64 原生 C# GUI 版本。安装器提供“一键安装并启动”“上传图片生成皮肤”和“安装 Codex 深度皮肤助手”入口，并内置运行引擎与 Node.js，无需用户另外安装依赖。
 
 项目不会修改官方 ChatGPT/Codex 安装目录、`app.asar`、API Key 或 Base URL。皮肤通过仅监听 `127.0.0.1` 的 Chromium DevTools Protocol 注入。
 
@@ -9,8 +9,8 @@ Windows 10/11 x64 原生 C# GUI 版本。安装器提供“一键安装并启动
 从 [GitHub Releases](https://github.com/zhulin025/Codex-QQ-Skin/releases) 下载：
 
 ```text
-ChatGPT QQ Skin Setup 2.4.0.exe
-ChatGPT QQ Skin Setup 2.4.0.exe.sha256
+ChatGPT QQ Skin Setup 2.5.0.exe
+ChatGPT QQ Skin Setup 2.5.0.exe.sha256
 ```
 
 当前 EXE 尚未使用商业代码签名，Windows SmartScreen 可能在首次运行时显示提示。请只从本项目正式 Release 下载，并核对 SHA-256。
@@ -24,10 +24,11 @@ ChatGPT QQ Skin Setup 2.4.0.exe.sha256
 
 ## 安装与使用
 
-1. 双击 `ChatGPT QQ Skin Setup 2.4.0.exe`。
+1. 双击 `ChatGPT QQ Skin Setup 2.5.0.exe`。
 2. 点击“一键安装并启动”。安装器会安装或升级引擎、启动 ChatGPT、注入并验证皮肤。
-3. 点击“上传图片生成皮肤”，选择 PNG、JPEG 或 WebP 图片，即可在本机生成并应用自定义皮肤。
-4. ChatGPT 右上角可在 `原生 / QQ / 自定义` 三种模式间即时切换。
+3. 深度皮肤助手区域会明确显示“安装”“更新”或“已安装”；按提示完成后，在 Codex 输入一句主题关键词即可生成完整分层皮肤。
+4. 点击“上传图片生成皮肤”，仍可选择 PNG、JPEG 或 WebP 图片生成单背景自定义皮肤。
+5. ChatGPT 右上角可在 `原生 / QQ / 自定义` 三种模式间即时切换。
 
 图片分析完全在本机完成，不会上传用户图片。支持最大 16 MB、单边不超过 16384 像素且总像素不超过 5000 万的 PNG、JPEG 和 WebP。
 
@@ -37,11 +38,13 @@ QQ 模式右侧上方可显示本机 Codex 的今日、近 7 天、历史累计 
 
 统计只读取当前 Windows 用户目录下的 Codex 本地 session 日志，增量缓存保存在 `%APPDATA%\CodexQQSkin\usage`。默认统计包含缓存 Token，可在成长中心开启“净用量”排除缓存。不需要额外登录，不读取 API Key，也不会上传 prompt 或 token 数据。统计是本机口径，不是 OpenAI 官方账单或账号云端等级。
 
-## 2.4.0 更新
+## 2.5.0 更新
 
-- 新增本机 Codex Token 统计、七日趋势、活跃天数和 QQ 风格等级。
-- 默认展示包含缓存的总用量，可通过“净用量”开关查看排除缓存的数据。
-- 版本号与 macOS 统一为 2.4.0，并继续支持启动时自动检查升级和 SHA-256 校验。
+- 自动更新改为严格的版本号比较：只有服务器版本高于本地版本才更新；版本相同不重复更新，本地版本更高时禁止降级。
+- 自动更新会核对目标资源名、SHA-256、下载文件版本；macOS 还会校验应用签名并在替换失败时恢复备份。
+- 安装器新增 Codex 深度皮肤助手状态区域：未安装可一键安装、内置新版可更新、已是当前版本时仍明确显示“已安装”和一句话用法。
+- 新增安全的 V2 分层主题和 `.codexskin` 导入导出能力，同时兼容旧版单背景主题。
+- 大黄蜂主题迁移为通用 V2 预设，Windows 与 macOS 共用渲染协议。
 
 ## 2.2.1 更新
 
@@ -86,12 +89,12 @@ $env:CODEX_EXE = 'C:\完整路径\ChatGPT.exe'
 需要 **Windows 10/11** 或 GitHub Actions `windows-2022`。macOS 无法直接生成本安装器 `.exe`。
 
 ```powershell
-.\scripts\windows\build-gui-installer.ps1 -UseInstalledNode -OutputFileName 'ChatGPT QQ Skin Setup 2.4.0.exe'
+.\scripts\windows\build-gui-installer.ps1 -UseInstalledNode -OutputFileName 'ChatGPT QQ Skin Setup 2.5.0.exe'
 ```
 
 不使用 `-UseInstalledNode` 时，构建脚本会下载官方 Node.js 运行时并校验 SHA-256。输出文件保存在 `release` 目录。
 
-发布时也可在仓库 Actions 中运行 `Publish release assets`，输入已有 draft tag（如 `v2.4.0`），由 CI 构建并上传 EXE。
+发布时也可在仓库 Actions 中运行 `Publish release assets`，输入已有 draft tag（如 `v2.5.0`），由 CI 构建并上传 EXE。
 
 ## 安全说明
 

@@ -1,0 +1,54 @@
+{
+  "schemaVersion": 2,
+  "kind": "deep-custom",
+  "id": "preset-bumblebee",
+  "name": "大黄蜂 · Cybertron",
+  "tagline": "和大黄蜂一起，把每一次构建变成英雄任务。",
+  "appearance": "light",
+  "assets": {
+    "background": "cybertron-city-bg.png",
+    "foregroundRight": "foreground-right.png",
+    "sidebarCharacter": "sidebar-character.png",
+    "watermark": "watermark.png",
+    "brandEmblem": "brand-emblem.png"
+  },
+  "brand": {
+    "title": "CODEX",
+    "subtitle": "MORE THAN CODE"
+  },
+  "colors": {
+    "background": "#fbfaf6",
+    "panel": "#fffefa",
+    "panelAlt": "#fff8d9",
+    "accent": "#f2b705",
+    "accentAlt": "#ffd64a",
+    "secondary": "#e7a900",
+    "highlight": "#ffc400",
+    "text": "#24231f",
+    "muted": "#716e63",
+    "line": "rgba(222, 169, 0, 0.30)"
+  },
+  "art": {
+    "safeArea": "center",
+    "taskMode": "ambient"
+  },
+  "layout": {
+    "foregroundRight": {
+      "width": 520,
+      "right": -24,
+      "bottom": -120,
+      "opacity": 1
+    },
+    "sidebarCharacter": {
+      "size": 138,
+      "positionY": 22,
+      "opacity": 0.075
+    },
+    "watermark": {
+      "width": 170,
+      "positionX": 56,
+      "positionY": 8,
+      "opacity": 0.1
+    }
+  }
+}

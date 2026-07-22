@@ -23,6 +23,7 @@ for arch in arm64 x86_64; do
     -target "${arch}-apple-macosx12.0" \
     -O \
     -framework AppKit \
+    "$ROOT/macos-app/VersionPolicy.swift" \
     "$ROOT/macos-app/main.swift" \
     -o "$BUILD_DIR/CodexQQSkin-$arch"
 done

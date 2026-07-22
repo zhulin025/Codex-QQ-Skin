@@ -1,4 +1,4 @@
-﻿param([int]$Port = 9341, [switch]$RestartExisting)
+﻿param([int]$Port = 9341, [switch]$RestartExisting, [ValidateSet('native','qq','custom')][string]$SkinMode = '')
 . (Join-Path $PSScriptRoot 'common-windows.ps1')
 
 if ($Port -lt 1024 -or $Port -gt 65535) { Stop-WithError 'Port must be between 1024 and 65535.' }
@@ -27,9 +27,9 @@ if (-not $debugReady) {
 # Apply and verify synchronously before starting the persistent watcher. This
 # avoids a startup race where verification begins before the packaged app has
 # finished constructing its renderer shell.
-Invoke-Injector -Arguments @(
-  '--once','--enable-skin','--port',$Port,'--theme-dir',$script:ThemeDir,'--timeout-ms','60000'
-) | Out-Null
+$injectArgs = @('--once','--enable-skin','--port',$Port,'--theme-dir',$script:ThemeDir,'--timeout-ms','60000')
+if ($SkinMode) { $injectArgs += @('--skin-mode', $SkinMode) }
+Invoke-Injector -Arguments $injectArgs | Out-Null
 $injector = Start-Injector -Port $Port
 $codexProcess = @(Get-CodexProcesses) | Select-Object -First 1
 if (-not $codexProcess) {

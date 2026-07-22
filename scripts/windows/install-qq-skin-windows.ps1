@@ -5,6 +5,25 @@ if ($Port -lt 1024 -or $Port -gt 65535) { Stop-WithError 'Port must be between 1
 Initialize-StateRoot
 
 if (-not $InPlace -and $script:ProjectRoot -ne $script:InstallRoot) {
+  $bundledVersion = ConvertTo-SkinVersion -Value $script:SkinVersion
+  $installedVersion = Get-EngineVersionAt -Root $script:InstallRoot
+  $installedComplete = Test-InstalledEngineComplete -Root $script:InstallRoot
+  if ($installedVersion -and $bundledVersion -and $installedVersion -gt $bundledVersion) {
+    Write-Host "Installed engine $installedVersion is newer than bundled $bundledVersion; downgrade skipped."
+    if (-not $NoLaunch) {
+      & (Join-Path $script:InstallRoot 'scripts\windows\start-qq-skin-windows.ps1') -Port $Port -RestartExisting
+      exit $LASTEXITCODE
+    }
+    exit 0
+  }
+  if ($installedVersion -and $bundledVersion -and $installedVersion -eq $bundledVersion -and $installedComplete) {
+    Write-Host "Installed engine $installedVersion is already current; replacement skipped."
+    if (-not $NoLaunch) {
+      & (Join-Path $script:InstallRoot 'scripts\windows\start-qq-skin-windows.ps1') -Port $Port -RestartExisting
+      exit $LASTEXITCODE
+    }
+    exit 0
+  }
   $parent = Split-Path -Parent $script:InstallRoot
   $stage = "$($script:InstallRoot).installing.$PID"
   $previous = "$($script:InstallRoot).previous.$PID"

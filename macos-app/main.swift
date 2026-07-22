@@ -27,6 +27,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTableViewDataSource,
     private var window: NSWindow!
     private var statusLabel: NSTextField!
     private var primaryButton: NSButton!
+    private var skillButton: NSButton!
+    private var skillStatusLabel: NSTextField!
     private var customizeButton: NSButton!
     private var restoreButton: NSButton!
     private var tableView: NSTableView!
@@ -40,11 +42,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTableViewDataSource,
     private var home: URL { FileManager.default.homeDirectoryForCurrentUser }
     private var installedRoot: URL { home.appendingPathComponent(".codex/codex-qq-skin-studio") }
     private var installedStart: URL { installedRoot.appendingPathComponent("scripts/start-qq-skin-macos.sh") }
+    private var installedSkill: URL { home.appendingPathComponent(".codex/skills/codex-deep-skin-builder/SKILL.md") }
+    private var bundledSkill: URL { bundledRoot.appendingPathComponent("skills/codex-deep-skin-builder/SKILL.md") }
     private var bundledRoot: URL {
         Bundle.main.resourceURL!.appendingPathComponent("CodexQQSkin")
     }
     private var scriptRoot: URL {
         FileManager.default.isExecutableFile(atPath: installedStart.path) ? installedRoot : bundledRoot
+    }
+
+    private func bundledSkillIsCurrent() -> Bool {
+        guard let installedData = try? Data(contentsOf: installedSkill),
+              let bundledData = try? Data(contentsOf: bundledSkill) else { return false }
+        return installedData == bundledData
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -60,17 +70,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTableViewDataSource,
         Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0.0.0"
     }
 
-    private func isNewer(_ candidate: String, than current: String) -> Bool {
-        let lhs = candidate.trimmingCharacters(in: CharacterSet(charactersIn: "vV")).split(separator: ".").map { Int($0) ?? 0 }
-        let rhs = current.trimmingCharacters(in: CharacterSet(charactersIn: "vV")).split(separator: ".").map { Int($0) ?? 0 }
-        for index in 0..<max(lhs.count, rhs.count) {
-            let a = index < lhs.count ? lhs[index] : 0
-            let b = index < rhs.count ? rhs[index] : 0
-            if a != b { return a > b }
-        }
-        return false
-    }
-
     private func checkForUpdates() {
         var request = URLRequest(url: releaseAPI)
         request.timeoutInterval = 12
@@ -79,7 +78,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTableViewDataSource,
         URLSession.shared.dataTask(with: request) { [weak self] data, _, _ in
             guard let self, let data,
                   let release = try? JSONDecoder().decode(GitHubRelease.self, from: data),
-                  self.isNewer(release.tag_name, than: self.appVersion) else { return }
+                  VersionPolicy.serverUpdateAvailable(remote: release.tag_name, current: self.appVersion) else { return }
             DispatchQueue.main.async { self.offerUpdate(release) }
         }.resume()
     }
@@ -107,7 +106,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTableViewDataSource,
             showError("当前应用所在位置无法自动替换。请先把 Codex QQ Skin.app 拖到“应用程序”文件夹，再重新打开并升级。")
             return
         }
-        guard let archive = release.assets.first(where: { $0.name.lowercased().hasSuffix(".app.zip") }),
+        guard VersionPolicy.serverUpdateAvailable(remote: release.tag_name, current: appVersion) else { return }
+        guard let archive = release.assets.first(where: { $0.name == "Codex.QQ.Skin.app.zip" }),
               let checksum = release.assets.first(where: { $0.name == archive.name + ".sha256" }) else {
             showError("这个 Release 缺少 macOS 安装包或 SHA-256 校验文件。")
             return
@@ -137,12 +137,31 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTableViewDataSource,
                       let staged = FileManager.default.enumerator(at: expanded, includingPropertiesForKeys: nil)?.compactMap({ $0 as? URL }).first(where: { $0.pathExtension == "app" && $0.lastPathComponent == "Codex QQ Skin.app" }) else {
                     throw NSError(domain: "Updater", code: 3, userInfo: [NSLocalizedDescriptionKey: "无法解压新的应用。"])
                 }
+                try self.validateStagedUpdate(staged, releaseTag: release.tag_name)
                 try self.launchUpdater(stagedApp: staged, work: work)
             } catch {
                 try? FileManager.default.removeItem(at: work)
                 DispatchQueue.main.async { self.setBusy(false, message: "更新失败"); self.showError(error.localizedDescription) }
             }
         }.resume()
+    }
+
+    private func validateStagedUpdate(_ app: URL, releaseTag: String) throws {
+        guard let bundle = Bundle(url: app),
+              bundle.bundleIdentifier == "xyz.liuwa.codex-qq-skin",
+              let version = bundle.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String,
+              VersionPolicy.compare(version, releaseTag) == .orderedSame,
+              VersionPolicy.serverUpdateAvailable(remote: version, current: appVersion) else {
+            throw NSError(domain: "Updater", code: 4, userInfo: [NSLocalizedDescriptionKey: "更新包版本或应用身份与 Release 不匹配。"])
+        }
+        let verify = Process()
+        verify.executableURL = URL(fileURLWithPath: "/usr/bin/codesign")
+        verify.arguments = ["--verify", "--deep", "--strict", app.path]
+        try verify.run()
+        verify.waitUntilExit()
+        guard verify.terminationStatus == 0 else {
+            throw NSError(domain: "Updater", code: 5, userInfo: [NSLocalizedDescriptionKey: "更新包代码签名校验失败。"])
+        }
     }
 
     private func launchUpdater(stagedApp: URL, work: URL) throws {
@@ -155,7 +174,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTableViewDataSource,
         BACKUP=\(q(current.path + ".update-backup"))
         /bin/rm -rf "$BACKUP"
         /bin/mv \(q(current.path)) "$BACKUP" || exit 1
-        if ! /usr/bin/ditto \(q(stagedApp.path)) \(q(current.path)); then
+        if ! /usr/bin/ditto \(q(stagedApp.path)) \(q(current.path)) \
+          || ! /usr/bin/codesign --verify --deep --strict \(q(current.path)); then
+          /bin/rm -rf \(q(current.path))
           /bin/mv "$BACKUP" \(q(current.path))
           exit 1
         fi
@@ -176,7 +197,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTableViewDataSource,
 
     private func buildWindow() {
         window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 540, height: 390),
+            contentRect: NSRect(x: 0, y: 0, width: 540, height: 440),
             styleMask: [.titled, .closable, .miniaturizable],
             backing: .buffered,
             defer: false
@@ -245,10 +266,23 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTableViewDataSource,
         primaryButton.controlSize = .large
         stylePrimaryButton(primaryButton)
 
+        skillButton = NSButton(title: "安装 Codex 深度皮肤助手", target: self, action: #selector(installDeepSkinSkill))
+        skillButton.bezelStyle = .rounded
+        skillButton.controlSize = .large
+        skillButton.translatesAutoresizingMaskIntoConstraints = false
+        skillButton.widthAnchor.constraint(equalToConstant: 320).isActive = true
+
+        skillStatusLabel = NSTextField(labelWithString: "正在检查深度皮肤助手…")
+        skillStatusLabel.alignment = .center
+        skillStatusLabel.textColor = .secondaryLabelColor
+        skillStatusLabel.font = .systemFont(ofSize: 12)
+        skillStatusLabel.translatesAutoresizingMaskIntoConstraints = false
+        skillStatusLabel.widthAnchor.constraint(equalToConstant: 440).isActive = true
+
         restoreButton = NSButton(title: "恢复官方外观", target: self, action: #selector(restore))
         restoreButton.bezelStyle = .rounded
 
-        [icon, title, subtitle, primaryButton, restoreButton].forEach(launchPane.addArrangedSubview)
+        [icon, title, subtitle, primaryButton, skillButton, skillStatusLabel, restoreButton].forEach(launchPane.addArrangedSubview)
     }
 
     private func buildLibraryPane() {
@@ -388,19 +422,43 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTableViewDataSource,
 
     private func refreshState() {
         let installed = FileManager.default.isExecutableFile(atPath: installedStart.path)
-        let bundledVersion = skinVersion(at: bundledRoot) ?? "未知"
-        if !installed {
-            statusLabel.stringValue = "尚未安装，点击下方按钮即可完成（App \(bundledVersion)）"
+        let bundled = skinVersion(at: bundledRoot)
+        let installedVersion = skinVersion(at: installedRoot)
+        let bundledLabel = bundled ?? "未知"
+        switch engineUpdateDecision() {
+        case .install:
+            statusLabel.stringValue = "尚未安装，点击下方按钮即可完成（App \(bundledLabel)）"
             primaryButton.title = "一键安装并启动"
-        } else if engineNeedsUpdate() {
-            let installedVersion = skinVersion(at: installedRoot) ?? "旧版"
-            statusLabel.stringValue = "✓ 已安装 \(installedVersion)，启动时会自动更新到 \(bundledVersion)"
+        case .update:
+            statusLabel.stringValue = "✓ 已安装 \(installedVersion ?? "旧版")，启动时会更新到 \(bundledLabel)"
             primaryButton.title = "更新并启动"
-        } else {
-            statusLabel.stringValue = "✓ 已安装 \(bundledVersion)，可以直接启动"
+        case .repair:
+            statusLabel.stringValue = "已安装 \(installedVersion ?? bundledLabel)，启动时会修复同版本引擎"
+            primaryButton.title = "修复并启动"
+        case .installedNewer:
+            statusLabel.stringValue = "✓ 已安装 \(installedVersion ?? "较新版本")，高于此安装器内置 \(bundledLabel)，不会降级"
+            primaryButton.title = "启动 Codex QQ Skin"
+        case .current:
+            statusLabel.stringValue = "✓ 已安装 \(installedVersion ?? bundledLabel)，可以直接启动"
+            primaryButton.title = "启动 Codex QQ Skin"
+        case .unknown:
+            statusLabel.stringValue = "已检测到本地引擎，但无法安全比较版本；不会自动覆盖"
             primaryButton.title = "启动 Codex QQ Skin"
         }
         let enabled = installed && !busy
+        let skillInstalled = FileManager.default.fileExists(atPath: installedSkill.path)
+        let skillCurrent = skillInstalled && bundledSkillIsCurrent()
+        if skillCurrent {
+            skillButton.title = "✓ 已安装 Codex 深度皮肤助手"
+            skillStatusLabel.stringValue = "用法：在 Codex 输入“用深度皮肤助手生成钢铁侠主题皮肤”"
+        } else if skillInstalled {
+            skillButton.title = "更新 Codex 深度皮肤助手"
+            skillStatusLabel.stringValue = "检测到内置新版 Skill，可以安全更新"
+        } else {
+            skillButton.title = "安装 Codex 深度皮肤助手"
+            skillStatusLabel.stringValue = "尚未安装 Codex 深度皮肤助手"
+        }
+        skillButton.isEnabled = !busy && !skillCurrent
         customizeButton.isEnabled = enabled
         restoreButton.isEnabled = installed && !busy
         libraryLabel.stringValue = installed ? "我的皮肤库（\(themes.count)）" : "我的皮肤库（安装后可用）"
@@ -420,8 +478,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTableViewDataSource,
         return nil
     }
 
-    private func engineNeedsUpdate() -> Bool {
-        guard FileManager.default.isExecutableFile(atPath: installedStart.path) else { return true }
+    private func engineHasCompatibilityIssue() -> Bool {
         if let start = try? String(contentsOf: installedStart, encoding: .utf8),
            start.contains("${MODE_ARGS[@]}") || start.contains("${mode_args[@]}") {
             return true
@@ -435,10 +492,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTableViewDataSource,
             let path = installedRoot.appendingPathComponent(relative)
             if !FileManager.default.isExecutableFile(atPath: path.path) { return true }
         }
-        let bundled = skinVersion(at: bundledRoot)
-        let installed = skinVersion(at: installedRoot)
-        guard let bundled, let installed else { return bundled != installed }
-        return bundled != installed
+        return false
+    }
+
+    private func engineUpdateDecision() -> EngineUpdateDecision {
+        VersionPolicy.engineDecision(
+            bundled: skinVersion(at: bundledRoot),
+            installed: skinVersion(at: installedRoot),
+            engineExists: FileManager.default.isExecutableFile(atPath: installedStart.path),
+            compatibilityIssue: engineHasCompatibilityIssue()
+        )
+    }
+
+    private func engineNeedsUpdate() -> Bool {
+        let decision = engineUpdateDecision()
+        return decision == .install || decision == .update || decision == .repair
     }
 
     @objc private func reloadThemeLibrary() {
@@ -568,6 +636,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTableViewDataSource,
         } else {
             installFresh()
         }
+    }
+
+    @objc private func installDeepSkinSkill() {
+        let script = bundledRoot.appendingPathComponent("scripts/install-deep-skin-skill-macos.sh")
+        run(
+            script: script,
+            arguments: ["install"],
+            progress: "正在安装 Codex 深度皮肤助手…",
+            success: "深度皮肤助手已安装。在 Codex 中输入：用 Codex 深度皮肤助手生成一个钢铁侠主题皮肤",
+            onSuccess: { [weak self] in self?.refreshState() }
+        )
     }
 
     private func installFresh() {
@@ -741,6 +820,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTableViewDataSource,
         busy = value
         statusLabel.stringValue = message
         primaryButton.isEnabled = !value
+        skillButton.isEnabled = !value
         let installed = FileManager.default.isExecutableFile(atPath: installedStart.path)
         customizeButton.isEnabled = !value && installed
         restoreButton.isEnabled = !value && installed

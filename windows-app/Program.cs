@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Diagnostics;
 using System.Drawing;
 using System.IO;
@@ -15,8 +16,8 @@ using System.Web.Script.Serialization;
 [assembly: AssemblyDescription("ChatGPT QQ Skin native Windows installer")]
 [assembly: AssemblyCompany("Codex QQ Skin")]
 [assembly: AssemblyProduct("ChatGPT QQ Skin")]
-[assembly: AssemblyVersion("2.4.0.0")]
-[assembly: AssemblyFileVersion("2.4.0.0")]
+[assembly: AssemblyVersion("2.5.0.0")]
+[assembly: AssemblyFileVersion("2.5.0.0")]
 
 namespace CodexQQSkinSetup
 {
@@ -35,11 +36,13 @@ namespace CodexQQSkinSetup
     {
         private readonly Button installButton;
         private readonly Button imageButton;
+        private readonly Button skillButton;
+        private readonly Label skillStatusLabel;
         private readonly Label statusLabel;
         private readonly ProgressBar progress;
         private readonly TextBox log;
 
-        private const string CurrentVersion = "2.4.0";
+        private const string CurrentVersion = "2.5.0";
         private const string LatestReleaseApi = "https://api.github.com/repos/zhulin025/Codex-QQ-Skin/releases/latest";
 
         public MainForm(string[] args)
@@ -48,8 +51,8 @@ namespace CodexQQSkinSetup
             Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath);
             ShowIcon = true;
             StartPosition = FormStartPosition.CenterScreen;
-            ClientSize = new Size(660, 480);
-            MinimumSize = new Size(600, 430);
+            ClientSize = new Size(660, 580);
+            MinimumSize = new Size(600, 530);
             BackColor = Color.FromArgb(245, 248, 255);
             Font = new Font("Microsoft YaHei UI", 10F);
 
@@ -65,9 +68,17 @@ namespace CodexQQSkinSetup
             Controls.Add(installButton);
             Controls.Add(imageButton);
 
-            progress = new ProgressBar { Location = new Point(36, 190), Size = new Size(588, 7), Style = ProgressBarStyle.Marquee, Visible = false };
-            statusLabel = new Label { Text = "准备就绪", AutoSize = false, Location = new Point(36, 211), Size = new Size(588, 28), ForeColor = Color.FromArgb(55, 68, 93) };
-            log = new TextBox { Location = new Point(36, 246), Size = new Size(588, 190), Multiline = true, ReadOnly = true, ScrollBars = ScrollBars.Vertical, BackColor = Color.White, BorderStyle = BorderStyle.FixedSingle, Font = new Font("Consolas", 9F) };
+            skillButton = MakeButton("安装 Codex 深度皮肤助手", new Point(36, 184), Color.FromArgb(224, 164, 20));
+            skillButton.Size = new Size(588, 50);
+            skillButton.Click += async delegate { await InstallSkillAsync(); };
+            Controls.Add(skillButton);
+            skillStatusLabel = new Label { AutoSize = false, TextAlign = ContentAlignment.MiddleCenter, Location = new Point(36, 236), Size = new Size(588, 24), ForeColor = Color.FromArgb(76, 92, 122) };
+            Controls.Add(skillStatusLabel);
+            RefreshSkillButton();
+
+            progress = new ProgressBar { Location = new Point(36, 270), Size = new Size(588, 7), Style = ProgressBarStyle.Marquee, Visible = false };
+            statusLabel = new Label { Text = "准备就绪", AutoSize = false, Location = new Point(36, 291), Size = new Size(588, 28), ForeColor = Color.FromArgb(55, 68, 93) };
+            log = new TextBox { Location = new Point(36, 326), Size = new Size(588, 210), Multiline = true, ReadOnly = true, ScrollBars = ScrollBars.Vertical, BackColor = Color.White, BorderStyle = BorderStyle.FixedSingle, Font = new Font("Consolas", 9F) };
             Controls.Add(progress);
             Controls.Add(statusLabel);
             Controls.Add(log);
@@ -80,7 +91,7 @@ namespace CodexQQSkinSetup
             {
                 ReleaseInfo release = await DownloadReleaseInfoAsync();
                 Version latest, current;
-                if (!Version.TryParse(release.tag_name.TrimStart('v', 'V'), out latest) || !Version.TryParse(CurrentVersion, out current) || latest <= current) return;
+                if (!TryReleaseVersion(release.tag_name, out latest) || !TryReleaseVersion(CurrentVersion, out current) || latest <= current) return;
                 DialogResult choice = MessageBox.Show(this, "发现新版本 " + release.tag_name + "。\r\n\r\n当前版本：" + CurrentVersion + "\r\n\r\n是否现在下载并安装？", "ChatGPT QQ Skin 更新", MessageBoxButtons.YesNo, MessageBoxIcon.Information);
                 if (choice == DialogResult.Yes) await InstallUpdateAsync(release);
             }
@@ -98,7 +109,10 @@ namespace CodexQQSkinSetup
 
         private async Task InstallUpdateAsync(ReleaseInfo release)
         {
-            ReleaseAsset installer = Array.Find(release.assets, delegate(ReleaseAsset a) { return a.name.EndsWith(".exe", StringComparison.OrdinalIgnoreCase); });
+            Version latest, current;
+            if (!TryReleaseVersion(release.tag_name, out latest) || !TryReleaseVersion(CurrentVersion, out current) || latest <= current) return;
+            string expectedName = "ChatGPT QQ Skin Setup " + latest.ToString(3) + ".exe";
+            ReleaseAsset installer = Array.Find(release.assets, delegate(ReleaseAsset a) { return a.name.Equals(expectedName, StringComparison.OrdinalIgnoreCase); });
             ReleaseAsset checksum = installer == null ? null : Array.Find(release.assets, delegate(ReleaseAsset a) { return a.name == installer.name + ".sha256"; });
             if (installer == null || checksum == null) throw new InvalidOperationException("最新 Release 缺少 Windows 安装包或 SHA-256 校验文件。");
             await RunBusyAsync("正在下载 " + release.tag_name + "…", async delegate
@@ -115,6 +129,13 @@ namespace CodexQQSkinSetup
                 string actual;
                 using (SHA256 sha = SHA256.Create()) using (FileStream stream = File.OpenRead(target)) actual = BitConverter.ToString(sha.ComputeHash(stream)).Replace("-", "").ToLowerInvariant();
                 if (expected.Length != 64 || expected != actual) { File.Delete(target); throw new InvalidDataException("安装包校验失败，已取消更新。"); }
+                FileVersionInfo downloaded = FileVersionInfo.GetVersionInfo(target);
+                Version downloadedVersion;
+                if (!TryReleaseVersion(downloaded.FileVersion, out downloadedVersion) || downloadedVersion != latest || downloadedVersion <= current)
+                {
+                    File.Delete(target);
+                    throw new InvalidDataException("安装包版本与 Release 不匹配，已取消更新。");
+                }
                 Process.Start(new ProcessStartInfo(target, "--updated") { UseShellExecute = true });
                 BeginInvoke((Action)(delegate { Close(); }));
                 return "新版本安装程序已启动。";
@@ -128,6 +149,16 @@ namespace CodexQQSkinSetup
             client.Headers[HttpRequestHeader.Accept] = "application/vnd.github+json";
             client.Headers[HttpRequestHeader.UserAgent] = "Codex-QQ-Skin/" + CurrentVersion;
             return client;
+        }
+
+        private static bool TryReleaseVersion(string value, out Version version)
+        {
+            version = null;
+            if (String.IsNullOrWhiteSpace(value)) return false;
+            Version parsed;
+            if (!Version.TryParse(value.Trim().TrimStart('v', 'V'), out parsed) || parsed.Build < 0) return false;
+            version = new Version(parsed.Major, parsed.Minor, parsed.Build);
+            return true;
         }
 
         private sealed class ReleaseInfo { public string tag_name { get; set; } public ReleaseAsset[] assets { get; set; } }
@@ -171,9 +202,65 @@ namespace CodexQQSkinSetup
             }
         }
 
+        private void RefreshSkillButton()
+        {
+            string skill = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".codex", "skills", "codex-deep-skin-builder", "SKILL.md");
+            bool installed = File.Exists(skill);
+            bool current = installed && BundledSkillMatches(skill);
+            if (current)
+            {
+                skillButton.Text = "✓ 已安装 Codex 深度皮肤助手";
+                skillStatusLabel.Text = "用法：在 Codex 输入“用深度皮肤助手生成钢铁侠主题皮肤”";
+            }
+            else if (installed)
+            {
+                skillButton.Text = "更新 Codex 深度皮肤助手";
+                skillStatusLabel.Text = "检测到内置新版 Skill，可以安全更新";
+            }
+            else
+            {
+                skillButton.Text = "安装 Codex 深度皮肤助手";
+                skillStatusLabel.Text = "尚未安装 Codex 深度皮肤助手";
+            }
+            skillButton.Enabled = !current;
+        }
+
+        private static bool BundledSkillMatches(string installedPath)
+        {
+            try
+            {
+                using (Stream resource = Assembly.GetExecutingAssembly().GetManifestResourceStream("CodexQQSkin.payload.zip"))
+                using (ZipArchive archive = new ZipArchive(resource, ZipArchiveMode.Read))
+                {
+                    ZipArchiveEntry entry = archive.GetEntry("skills/codex-deep-skin-builder/SKILL.md");
+                    if (entry == null) return false;
+                    using (Stream bundled = entry.Open())
+                    using (SHA256 sha = SHA256.Create())
+                    {
+                        byte[] bundledHash = sha.ComputeHash(bundled);
+                        byte[] installedHash;
+                        using (FileStream file = File.OpenRead(installedPath)) installedHash = sha.ComputeHash(file);
+                        return StructuralComparisons.StructuralEqualityComparer.Equals(bundledHash, installedHash);
+                    }
+                }
+            }
+            catch { return false; }
+        }
+
+        private async Task InstallSkillAsync()
+        {
+            await RunBusyAsync("正在安装 Codex 深度皮肤助手…", async delegate
+            {
+                string root = await ExtractPayloadAsync();
+                await RunPowerShellAsync(Path.Combine(root, "scripts", "windows", "install-deep-skin-skill-windows.ps1"), "");
+                BeginInvoke((Action)RefreshSkillButton);
+                return "深度皮肤助手已安装。现在可在 Codex 中输入：用 Codex 深度皮肤助手生成一个钢铁侠主题皮肤";
+            });
+        }
+
         private async Task RunBusyAsync(string running, Func<Task<string>> action)
         {
-            installButton.Enabled = imageButton.Enabled = false;
+            installButton.Enabled = imageButton.Enabled = skillButton.Enabled = false;
             progress.Visible = true;
             statusLabel.Text = running;
             log.Clear();
@@ -191,7 +278,7 @@ namespace CodexQQSkinSetup
             finally
             {
                 progress.Visible = false;
-                installButton.Enabled = imageButton.Enabled = true;
+                installButton.Enabled = imageButton.Enabled = skillButton.Enabled = true;
             }
         }
 

@@ -1,4 +1,4 @@
-((cssText, customCssText, artDataUrl, qqArtDataUrl, petDataUrl, retroFrameDataUrl, qqAvatarDataUrl, coughAudioDataUrl, themeConfig, qqThemeConfig, libraryThemes) => {
+((cssText, customCssText, artDataUrl, qqArtDataUrl, petDataUrl, retroFrameDataUrl, qqAvatarDataUrl, coughAudioDataUrl, deepThemeAssets, themeConfig, qqThemeConfig, libraryThemes) => {
   const STATE_KEY = "__CODEX_QQ_SKIN_STATE__";
   const DISABLED_KEY = "__CODEX_QQ_SKIN_DISABLED__";
   const STYLE_ID = "codex-qq-skin-style";
@@ -33,15 +33,17 @@
   const STYLE_REVISION = __QQ_SKIN_STYLE_REVISION_JSON__;
   const CUSTOM_THEME = themeConfig && typeof themeConfig === "object" ? themeConfig : {};
   const QQ_THEME = qqThemeConfig && typeof qqThemeConfig === "object" ? qqThemeConfig : {};
+  const DEEP_THEME_ASSETS = deepThemeAssets && typeof deepThemeAssets === "object" ? deepThemeAssets : {};
+  const CUSTOM_THEME_KINDS = new Set(["custom-native", "deep-custom"]);
   let skinMode = "qq";
   try {
     const savedMode = window.localStorage?.getItem(MODE_STORAGE_KEY);
     const legacyEnabled = window.localStorage?.getItem(ENABLED_STORAGE_KEY);
     if (["native", "qq", "custom"].includes(savedMode)) skinMode = savedMode;
     else if (legacyEnabled === "false") skinMode = "native";
-    else if (CUSTOM_THEME.kind === "custom-native") skinMode = "custom";
+    else if (CUSTOM_THEME_KINDS.has(CUSTOM_THEME.kind)) skinMode = "custom";
   } catch {}
-  if (skinMode === "custom" && CUSTOM_THEME.kind !== "custom-native") skinMode = "qq";
+  if (skinMode === "custom" && !CUSTOM_THEME_KINDS.has(CUSTOM_THEME.kind)) skinMode = "qq";
   let THEME = skinMode === "qq" ? QQ_THEME : CUSTOM_THEME;
   let ART = THEME.art && typeof THEME.art === "object" ? THEME.art : {};
   let LAYOUT = THEME.layout && typeof THEME.layout === "object" ? THEME.layout : {};
@@ -61,6 +63,12 @@
     "--qq-skin-project-label", "--dream-three-pane-min-width", "--dream-right-panel-width",
     "--dream-retro-frame", "--dream-summary-panel-width",
     "--dream-right-tray-inset", "--dream-right-panel-right",
+    "--dream-deep-right", "--dream-deep-sidebar", "--dream-deep-watermark",
+    "--dream-deep-brand", "--dream-deep-avatar", "--dream-deep-right-width",
+    "--dream-deep-right-right", "--dream-deep-right-bottom", "--dream-deep-right-opacity",
+    "--dream-deep-sidebar-size", "--dream-deep-sidebar-y", "--dream-deep-sidebar-opacity",
+    "--dream-deep-watermark-width", "--dream-deep-watermark-x", "--dream-deep-watermark-y",
+    "--dream-deep-watermark-opacity", "--dream-deep-brand-title", "--dream-deep-brand-subtitle",
   ];
   const installToken = {};
   const autoOpenedSummaryToggles = new WeakSet();
@@ -110,6 +118,9 @@
   const retroFrameUrl = dataUrlToObjectUrl(retroFrameDataUrl, "image/png");
   const qqAvatarUrl = dataUrlToObjectUrl(qqAvatarDataUrl, "image/png");
   const coughAudioUrl = dataUrlToObjectUrl(coughAudioDataUrl, "audio/mpeg");
+  const deepThemeUrls = Object.fromEntries(Object.entries(DEEP_THEME_ASSETS)
+    .filter(([, dataUrl]) => typeof dataUrl === "string" && dataUrl.startsWith("data:"))
+    .map(([key, dataUrl]) => [key, dataUrlToObjectUrl(dataUrl, "image/png")]));
 
   if (previous?.observer) previous.observer.disconnect();
   if (previous?.rootObserver) previous.rootObserver.disconnect();
@@ -1790,14 +1801,60 @@
       setStyleProperty(root, "--qq-skin-art", `url("${qqArtUrl}")`);
       setStyleProperty(root, "--dream-retro-frame", `url("${retroFrameUrl}")`);
       root.style.removeProperty("--dream-skin-art");
+      setAttribute(root, "data-dream-deep-theme", "");
+      root.style.removeProperty("--dream-deep-right");
+      root.style.removeProperty("--dream-deep-sidebar");
+      root.style.removeProperty("--dream-deep-watermark");
+      root.style.removeProperty("--dream-deep-brand");
+      root.style.removeProperty("--dream-deep-avatar");
+      for (const name of THEME_VARIABLES.filter((value) => value.startsWith("--dream-deep-") && ![
+        "--dream-deep-right", "--dream-deep-sidebar", "--dream-deep-watermark", "--dream-deep-brand", "--dream-deep-avatar",
+      ].includes(value))) root.style.removeProperty(name);
     } else if (skinMode === "custom") {
       setStyleProperty(root, "--dream-skin-art", `url("${artUrl}")`);
+      const deepActive = THEME.schemaVersion === 2 && THEME.kind === "deep-custom";
+      setAttribute(root, "data-dream-deep-theme", deepActive ? "true" : "");
+      if (deepActive) {
+        const asset = (key, fallback = "") => deepThemeUrls[key] || (fallback ? deepThemeUrls[fallback] : "");
+        const setAsset = (name, value) => value
+          ? setStyleProperty(root, name, `url("${value}")`)
+          : root.style.removeProperty(name);
+        setAsset("--dream-deep-right", asset("foregroundRight"));
+        setAsset("--dream-deep-sidebar", asset("sidebarCharacter"));
+        setAsset("--dream-deep-watermark", asset("watermark", "brandEmblem"));
+        setAsset("--dream-deep-brand", asset("brandEmblem", "watermark"));
+        setAsset("--dream-deep-avatar", asset("avatar", "brandEmblem"));
+        const foreground = THEME.layout?.foregroundRight || {};
+        const sidebar = THEME.layout?.sidebarCharacter || {};
+        const watermark = THEME.layout?.watermark || {};
+        setStyleProperty(root, "--dream-deep-right-width", `${foreground.width ?? 520}px`);
+        setStyleProperty(root, "--dream-deep-right-right", `${foreground.right ?? -24}px`);
+        setStyleProperty(root, "--dream-deep-right-bottom", `${foreground.bottom ?? -120}px`);
+        setStyleProperty(root, "--dream-deep-right-opacity", `${foreground.opacity ?? 1}`);
+        setStyleProperty(root, "--dream-deep-sidebar-size", `${sidebar.size ?? 138}%`);
+        setStyleProperty(root, "--dream-deep-sidebar-y", `${sidebar.positionY ?? 22}%`);
+        setStyleProperty(root, "--dream-deep-sidebar-opacity", `${sidebar.opacity ?? .075}`);
+        setStyleProperty(root, "--dream-deep-watermark-width", `${watermark.width ?? 170}px`);
+        setStyleProperty(root, "--dream-deep-watermark-x", `${watermark.positionX ?? 56}%`);
+        setStyleProperty(root, "--dream-deep-watermark-y", `${watermark.positionY ?? 8}%`);
+        setStyleProperty(root, "--dream-deep-watermark-opacity", `${watermark.opacity ?? .1}`);
+        setStyleProperty(root, "--dream-deep-brand-title", cssString(THEME.brand?.title || "CODEX"));
+        setStyleProperty(root, "--dream-deep-brand-subtitle", cssString(THEME.brand?.subtitle || "MORE THAN CODE"));
+      } else {
+        for (const name of THEME_VARIABLES.filter((value) => value.startsWith("--dream-deep-"))) {
+          root.style.removeProperty(name);
+        }
+      }
       root.style.removeProperty("--qq-skin-art");
       root.style.removeProperty("--dream-retro-frame");
     } else {
+      setAttribute(root, "data-dream-deep-theme", "");
       root.style.removeProperty("--qq-skin-art");
       root.style.removeProperty("--dream-skin-art");
       root.style.removeProperty("--dream-retro-frame");
+      for (const name of THEME_VARIABLES.filter((value) => value.startsWith("--dream-deep-"))) {
+        root.style.removeProperty(name);
+      }
     }
     applyTheme(root, shell);
     applyArtMetadata(root);
@@ -2308,6 +2365,7 @@
     if (state?.retroFrameUrl) URL.revokeObjectURL(state.retroFrameUrl);
     if (state?.qqAvatarUrl) URL.revokeObjectURL(state.qqAvatarUrl);
     if (state?.coughAudioUrl) URL.revokeObjectURL(state.coughAudioUrl);
+    for (const url of Object.values(state?.deepThemeUrls || {})) URL.revokeObjectURL(url);
     delete window[STATE_KEY];
     return true;
   };
@@ -2384,6 +2442,7 @@
     retroFrameUrl,
     qqAvatarUrl,
     coughAudioUrl,
+    deepThemeUrls,
     installToken,
     analysis: artAnalysis,
     artMetadata: CUSTOM_ART_METADATA,
@@ -2413,6 +2472,7 @@
   if (previous?.coughAudioUrl && previous.coughAudioUrl !== coughAudioUrl) {
     URL.revokeObjectURL(previous.coughAudioUrl);
   }
+  for (const url of Object.values(previous?.deepThemeUrls || {})) URL.revokeObjectURL(url);
 
   observer.observe(document.documentElement, {
     childList: true,
@@ -2499,6 +2559,7 @@
   __QQ_SKIN_RETRO_FRAME_JSON__,
   __QQ_SKIN_QQ_AVATAR_JSON__,
   __QQ_SKIN_COUGH_AUDIO_JSON__,
+  __QQ_SKIN_DEEP_ASSETS_JSON__,
   __QQ_SKIN_THEME_JSON__,
   __QQ_STABLE_THEME_JSON__,
   __QQ_SKIN_LIBRARY_JSON__

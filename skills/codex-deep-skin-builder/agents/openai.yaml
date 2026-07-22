@@ -1,0 +1,4 @@
+interface:
+  display_name: "Codex 深度皮肤助手"
+  short_description: "一句话生成、安装并验收 Codex 深度定制主题皮肤"
+  default_prompt: "使用 $codex-deep-skin-builder 根据一个主题关键词生成、应用并验证深度皮肤。"

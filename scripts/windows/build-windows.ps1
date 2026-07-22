@@ -12,7 +12,7 @@ $runtime = Join-Path $stage 'runtime'
 
 try {
   New-Item -ItemType Directory -Force -Path $stage, $runtime, $OutputDirectory | Out-Null
-  $includeDirectories = @('assets','presets','scripts')
+  $includeDirectories = @('assets','presets','scripts','skills')
   foreach ($directory in $includeDirectories) {
     $source = Join-Path $root $directory
     $destination = Join-Path $stage $directory

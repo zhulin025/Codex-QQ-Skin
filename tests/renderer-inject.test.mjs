@@ -747,6 +747,11 @@ function createFixture(theme, {
     .replace("__QQ_SKIN_RETRO_FRAME_JSON__", JSON.stringify("data:image/png;base64,AA=="))
     .replace("__QQ_SKIN_QQ_AVATAR_JSON__", JSON.stringify("data:image/png;base64,AA=="))
     .replace("__QQ_SKIN_COUGH_AUDIO_JSON__", JSON.stringify("data:audio/mpeg;base64,SUQz"))
+    .replace("__QQ_SKIN_DEEP_ASSETS_JSON__", JSON.stringify({
+      foregroundRight: "data:image/png;base64,iVBORw0KGgo=",
+      sidebarCharacter: "data:image/png;base64,iVBORw0KGgo=",
+      watermark: "data:image/png;base64,iVBORw0KGgo=",
+    }))
     .replace("__QQ_SKIN_THEME_JSON__", JSON.stringify(nextTheme))
     .replace("__QQ_STABLE_THEME_JSON__", JSON.stringify({
       schemaVersion: 1,
@@ -967,6 +972,27 @@ shellFollow.setNativeShell("light");
 shellFollow.window.__CODEX_QQ_SKIN_STATE__.ensure();
 assert.equal(shellFollow.attributes.get("data-dream-shell"), "light");
 
+const deepThemeFixture = createFixture({
+  schemaVersion: 2,
+  id: "deep-bumblebee",
+  kind: "deep-custom",
+  appearance: "light",
+  art: { safeArea: "center", taskMode: "ambient" },
+  brand: { title: "CODEX", subtitle: "MORE THAN CODE" },
+  layout: {
+    foregroundRight: { width: 520, right: -24, bottom: -120, opacity: 1 },
+    sidebarCharacter: { size: 138, positionY: 22, opacity: 0.075 },
+    watermark: { width: 170, positionX: 56, positionY: 8, opacity: 0.1 },
+  },
+}, { preferredMode: "custom" });
+vm.runInNewContext(deepThemeFixture.payload, deepThemeFixture.context);
+assert.equal(deepThemeFixture.attributes.get("data-dream-deep-theme"), "true");
+assert.match(deepThemeFixture.rootStyle.getPropertyValue("--dream-deep-right"), /^url\("blob:/);
+assert.match(deepThemeFixture.rootStyle.getPropertyValue("--dream-deep-sidebar"), /^url\("blob:/);
+assert.match(deepThemeFixture.rootStyle.getPropertyValue("--dream-deep-watermark"), /^url\("blob:/);
+assert.match(deepThemeFixture.rootStyle.getPropertyValue("--dream-deep-brand"), /^url\("blob:/);
+assert.equal(deepThemeFixture.rootStyle.getPropertyValue("--dream-deep-right-width"), "520px");
+
 defaults.root.className = "";
 defaults.body.setAttribute("data-theme", "dark");
 defaults.observers[1].callback([{ type: "attributes", target: defaults.body }]);
@@ -1080,10 +1106,11 @@ assert.equal(synchronousWide.nodes.get("codex-qq-skin-style"), stableStyle);
 assert.equal(stableStyle.textContent, ".fixture { color: red; }",
   "QQ mode must not keep custom-skin.css injected.");
 assert.equal(stableStyle.dataset.dreamSkinVersion, "test");
-assert.equal(synchronousWide.rootStyle.values.get("--qq-skin-art"), 'url("blob:fixture-8")');
+assert.equal(synchronousWide.rootStyle.values.get("--qq-skin-art"), 'url("blob:fixture-11")');
 assert.equal(synchronousWide.rootStyle.values.has("--dream-skin-art"), false);
 assert.deepEqual(synchronousWide.revokedUrls, [
   "blob:fixture-1", "blob:fixture-2", "blob:fixture-3", "blob:fixture-4", "blob:fixture-5", "blob:fixture-6",
+  "blob:fixture-7", "blob:fixture-8", "blob:fixture-9",
 ]);
 assert.equal(previousWideState.cleanup(), false, "An old async cleanup must not remove the new theme.");
 
@@ -1204,6 +1231,7 @@ assert.equal(explicit.nodes.has("codex-qq-skin-right-tray"), false);
 assert.equal(explicit.nodes.has("codex-qq-skin-retro-shell"), false);
 assert.deepEqual(explicit.revokedUrls, [
   "blob:fixture-1", "blob:fixture-2", "blob:fixture-3", "blob:fixture-4", "blob:fixture-5", "blob:fixture-6",
+  "blob:fixture-7", "blob:fixture-8", "blob:fixture-9",
 ]);
 await Promise.resolve();
 await Promise.resolve();

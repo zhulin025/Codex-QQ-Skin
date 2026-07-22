@@ -6,11 +6,12 @@ import { fileURLToPath } from "node:url";
 import { spawn } from "node:child_process";
 import os from "node:os";
 import { readImageMetadata } from "./image-metadata.mjs";
+import { loadDeepThemeDirectory, mimeForExtension } from "./deep-theme-core.mjs";
 
 const scriptPath = fileURLToPath(import.meta.url);
 const here = path.dirname(scriptPath);
 const root = path.resolve(here, "..");
-const SKIN_VERSION = "2.4.0";
+const SKIN_VERSION = "2.5.0";
 const LOOPBACK_HOSTS = new Set(["127.0.0.1", "localhost", "[::1]"]);
 const CDP_ID_PATTERN = /^[A-Za-z0-9._-]{1,200}$/;
 const MAX_ART_BYTES = 16 * 1024 * 1024;
@@ -311,6 +312,30 @@ async function loadTheme(themeDir) {
     throw error;
   }
   const raw = JSON.parse(config);
+  if (raw.schemaVersion === 2) {
+    const loaded = await loadDeepThemeDirectory(assetsRoot);
+    const background = loaded.assets.background;
+    const theme = {
+      ...loaded.theme,
+      explicitColorKeys: Object.keys(loaded.theme.colors),
+      image: background.filename,
+      brandSubtitle: loaded.theme.brand.subtitle,
+      tagline: loaded.theme.tagline,
+      projectPrefix: "选择项目 · ",
+      projectLabel: "选择项目",
+      statusText: "DEEP SKIN ONLINE",
+      quote: loaded.theme.brand.subtitle,
+      sound: { enabled: true, volume: 0.48, completed: "cough", approval: "alert", online: "knock" },
+    };
+    return {
+      art: background.bytes,
+      assetsRoot,
+      extension: background.extension,
+      imagePath: path.join(assetsRoot, background.filename),
+      theme,
+      deepAssets: loaded.assets,
+    };
+  }
   if (raw.schemaVersion !== 1 || typeof raw.image !== "string" || !raw.image) {
     throw new Error(`${configPath} has an unsupported schema or image field`);
   }
@@ -661,8 +686,9 @@ function listThemeLibrary(themeDir, { limit = 12, customOnly = false } = {}) {
     try {
       const raw = readFileSync(themePath, "utf8");
       const theme = JSON.parse(raw);
-      const kind = theme.kind === "qq-stable" ? "qq-stable" : "custom-native";
-      if (customOnly && kind !== "custom-native") continue;
+      const kind = theme.kind === "qq-stable" ? "qq-stable"
+        : theme.kind === "deep-custom" ? "deep-custom" : "custom-native";
+      if (customOnly && kind === "qq-stable") continue;
       const hash = createHash("sha256").update(raw).digest("hex");
       const mtimeMs = statSync(path.join(themesRoot, entry.name)).mtimeMs;
       items.push({
@@ -710,7 +736,7 @@ async function loadPayload(themeDir) {
     loadTheme(themeDir),
   ]);
   const { css, customCss, template, qqArt, qqTheme, pet, retroFrame, qqAvatar, coughAudio } = staticAssets;
-  const { art, extension, theme } = loaded;
+  const { art, extension, theme, deepAssets = {} } = loaded;
   const styleRevision = createHash("sha256").update(css).update(customCss).digest("hex").slice(0, 20);
   const artMetadata = readImageMetadata(art, extension);
   if (!artMetadata) {
@@ -727,6 +753,13 @@ async function loadPayload(themeDir) {
   const retroFrameDataUrl = `data:image/png;base64,${retroFrame.toString("base64")}`;
   const qqAvatarDataUrl = `data:image/png;base64,${qqAvatar.toString("base64")}`;
   const coughAudioDataUrl = `data:audio/mpeg;base64,${coughAudio.toString("base64")}`;
+  const deepThemeAssets = Object.fromEntries(Object.entries(deepAssets)
+    .filter(([key]) => key !== "background")
+    .map(([key, asset]) => [key,
+      `data:${mimeForExtension(asset.extension)};base64,${asset.bytes.toString("base64")}`]));
+  const deepAssetRevision = Object.entries(deepAssets)
+    .map(([key, asset]) => `${key}:${createHash("sha256").update(asset.bytes).digest("hex")}`)
+    .join("|");
   const libraryThemes = listThemeLibrary(themeDir, { limit: 12, customOnly: true });
   const payload = template
     .replace("__QQ_SKIN_CSS_JSON__", JSON.stringify(css))
@@ -737,6 +770,7 @@ async function loadPayload(themeDir) {
     .replace("__QQ_SKIN_RETRO_FRAME_JSON__", JSON.stringify(retroFrameDataUrl))
     .replace("__QQ_SKIN_QQ_AVATAR_JSON__", JSON.stringify(qqAvatarDataUrl))
     .replace("__QQ_SKIN_COUGH_AUDIO_JSON__", JSON.stringify(coughAudioDataUrl))
+    .replace("__QQ_SKIN_DEEP_ASSETS_JSON__", JSON.stringify(deepThemeAssets))
     .replace("__QQ_SKIN_THEME_JSON__", JSON.stringify(theme))
     .replace("__QQ_STABLE_THEME_JSON__", JSON.stringify(qqTheme))
     .replace("__QQ_SKIN_LIBRARY_JSON__", JSON.stringify(libraryThemes))
@@ -753,6 +787,7 @@ async function loadPayload(themeDir) {
     .update(retroFrame)
     .update(qqAvatar)
     .update(coughAudio)
+    .update(deepAssetRevision)
     .update(JSON.stringify(theme))
     .update(JSON.stringify(libraryThemes))
     .digest("hex")
@@ -763,6 +798,7 @@ async function loadPayload(themeDir) {
     frameBytes: retroFrame.length,
     qqAvatarBytes: qqAvatar.length,
     coughAudioBytes: coughAudio.length,
+    deepAssetBytes: Object.values(deepAssets).reduce((sum, asset) => sum + asset.bytes.length, 0),
     payload,
     revision,
     theme,
