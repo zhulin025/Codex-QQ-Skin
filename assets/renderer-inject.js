@@ -4,6 +4,8 @@
   const STYLE_ID = "codex-qq-skin-style";
   const CHROME_ID = "codex-qq-skin-chrome";
   const COMPANION_ID = "codex-qq-skin-companion";
+  const USAGE_PANEL_ID = "codex-qq-skin-usage-panel";
+  const USAGE_TOGGLE_ID = "codex-qq-skin-usage-toggle";
   const HOME_PET_ID = "codex-qq-skin-home-pet";
   const RIGHT_TRAY_ID = "codex-qq-skin-right-tray";
   const RETRO_SHELL_ID = "codex-qq-skin-retro-shell";
@@ -13,6 +15,9 @@
   const ENABLED_STORAGE_KEY = "codex-qq-skin-enabled";
   const MODE_STORAGE_KEY = "codex-qq-skin-mode";
   const LIBRARY_SWITCH_KEY = "codex-qq-skin-library-switch";
+  const USAGE_MODE_KEY = "codex-qq-skin-usage-mode";
+  const USAGE_NET_MODE_KEY = "codex-qq-skin-usage-net-mode";
+  const USAGE_REFRESH_KEY = "codex-qq-skin-usage-refresh";
   const NATIVE_APPEARANCE_STATE_KEY = "__CODEX_QQ_SKIN_NATIVE_APPEARANCE__";
   const LIBRARY_THEMES = Array.isArray(libraryThemes)
     ? libraryThemes.filter((item) => item && typeof item.id === "string" && /^[A-Za-z0-9_-]{1,80}$/.test(item.id))
@@ -22,6 +27,7 @@
     "data-dream-art-wide", "data-dream-art-safe", "data-dream-task-mode",
     "data-dream-art-safe-area", "data-dream-art-task-mode", "data-dream-art-aspect",
     "data-dream-art-ready", "data-dream-art-fit", "data-dream-three-pane", "data-dream-summary-state", "data-dream-left-sidebar",
+    "data-qq-usage-mode", "data-qq-usage-state",
   ];
   const VERSION = __QQ_SKIN_VERSION_JSON__;
   const STYLE_REVISION = __QQ_SKIN_STYLE_REVISION_JSON__;
@@ -122,6 +128,10 @@
   previous?.soundMonitor?.cleanup?.();
   document.getElementById(TOGGLE_ID)?.remove();
   document.getElementById(LIBRARY_MENU_ID)?.remove();
+  // These controls own closures over the current renderer generation. Rebuild
+  // them on every reinjection so their mode/refresh clicks never call stale code.
+  document.getElementById(USAGE_PANEL_ID)?.remove();
+  document.getElementById(USAGE_TOGGLE_ID)?.remove();
   if (previous?.mediaHandler && previous?.mediaQuery) {
     try { previous.mediaQuery.removeEventListener("change", previous.mediaHandler); } catch {}
   }
@@ -653,6 +663,16 @@
 
   let chromeParts = null;
   let companionParts = null;
+  let usageParts = null;
+  let usageSnapshot = window.__CODEX_QQ_SKIN_USAGE_SNAPSHOT__ && typeof window.__CODEX_QQ_SKIN_USAGE_SNAPSHOT__ === "object"
+    ? window.__CODEX_QQ_SKIN_USAGE_SNAPSHOT__
+    : { schemaVersion: 1, status: "loading", scope: "device" };
+  let usageMode = "stats";
+  let usageNetMode = false;
+  try {
+    usageMode = window.localStorage?.getItem(USAGE_MODE_KEY) === "native" ? "native" : "stats";
+    usageNetMode = window.localStorage?.getItem(USAGE_NET_MODE_KEY) === "true";
+  } catch {}
   let retroShellParts = null;
   let retroProfileParts = null;
   let observedShellMain = null;
@@ -1229,6 +1249,213 @@
     return tray;
   };
 
+  const formatTokenCount = (value) => {
+    const number = Math.max(0, Number(value) || 0);
+    if (number >= 1_000_000_000) return `${(number / 1_000_000_000).toFixed(number >= 10_000_000_000 ? 0 : 1)}B`;
+    if (number >= 1_000_000) return `${(number / 1_000_000).toFixed(number >= 100_000_000 ? 0 : 1)}M`;
+    if (number >= 1_000) return `${(number / 1_000).toFixed(number >= 100_000 ? 0 : 1)}K`;
+    return String(Math.round(number));
+  };
+
+  const setUsageMode = (mode) => {
+    usageMode = mode === "native" ? "native" : "stats";
+    try { window.localStorage?.setItem(USAGE_MODE_KEY, usageMode); } catch {}
+    const root = document.documentElement;
+    setAttribute(root, "data-qq-usage-mode", usageMode);
+    document.getElementById(USAGE_PANEL_ID)?.classList?.toggle("is-visible", usageMode === "stats");
+    document.getElementById(USAGE_TOGGLE_ID)?.classList?.toggle("is-visible", usageMode === "native");
+  };
+
+  const visibleUsageTokens = (value) => {
+    const effective = Math.max(0, Number(value?.effectiveTokens) || 0);
+    if (usageNetMode) return effective;
+    const total = Number(value?.totalTokens);
+    return Number.isFinite(total) && total >= 0
+      ? total
+      : effective + Math.max(0, Number(value?.cachedInputTokens) || 0);
+  };
+
+  const setUsageNetMode = (enabled) => {
+    usageNetMode = Boolean(enabled);
+    try { window.localStorage?.setItem(USAGE_NET_MODE_KEY, String(usageNetMode)); } catch {}
+    renderUsageSnapshot();
+  };
+
+  const renderUsageSnapshot = () => {
+    const parts = usageParts;
+    if (!parts?.panel) return;
+    const snapshot = usageSnapshot && typeof usageSnapshot === "object" ? usageSnapshot : { status: "error" };
+    const status = ["loading", "indexing", "empty", "ready", "error"].includes(snapshot.status)
+      ? snapshot.status : "error";
+    if (parts.panel.dataset) parts.panel.dataset.usageStatus = status;
+    setAttribute(document.documentElement, "data-qq-usage-state", status);
+
+    const totals = snapshot.totals || {};
+    const lifetime = totals.lifetime || {};
+    const growth = snapshot.growth || {};
+    setTextContent(parts.today, formatTokenCount(visibleUsageTokens(totals.today)));
+    setTextContent(parts.week, formatTokenCount(visibleUsageTokens(totals.week)));
+    setTextContent(parts.lifetime, formatTokenCount(visibleUsageTokens(lifetime)));
+    setTextContent(parts.level, `Lv.${Math.max(0, Math.round(Number(growth.level) || 0))}`);
+    if (parts.icons) {
+      const icons = Array.isArray(growth.icons) && growth.icons.length
+        ? growth.icons.slice(0, 12)
+        : [{ kind: "empty", symbol: "☆" }];
+      parts.icons.innerHTML = icons.map((item) =>
+        `<i data-kind="${["crown", "sun", "moon", "star"].includes(item.kind) ? item.kind : "empty"}">${item.symbol || "☆"}</i>`
+      ).join("");
+    }
+    const remaining = Math.max(0, Number(growth.remaining) || 0);
+    setTextContent(parts.progressText, growth.level == null
+      ? "正在计算成长值"
+      : `距离 Lv.${Math.max(0, Math.round(Number(growth.level) || 0)) + 1} 还差 ${remaining.toFixed(remaining % 1 ? 2 : 0)} 成长值`);
+    parts.progressFill?.style?.setProperty?.("width", `${clamp(Math.round(Number(growth.percent) || 0), 0, 100)}%`);
+    setTextContent(parts.activity,
+      `活跃 ${Math.max(0, Number(snapshot.activity?.activeDays) || 0)} 天 · 连续 ${Math.max(0, Number(snapshot.activity?.streakDays) || 0)} 天`);
+    setTextContent(parts.breakdown,
+      `输入 ${formatTokenCount(lifetime.inputTokens)} · 输出 ${formatTokenCount(lifetime.outputTokens)} · 推理 ${formatTokenCount(lifetime.reasoningOutputTokens)} · 缓存 ${formatTokenCount(lifetime.cachedInputTokens)}`);
+    if (parts.netToggle) {
+      setAttribute(parts.netToggle, "aria-checked", usageNetMode ? "true" : "false");
+      setAttribute(parts.netToggle, "title", usageNetMode
+        ? "当前已排除缓存 Token，点击切换为总用量"
+        : "当前包含缓存 Token，开启后只看净用量");
+      parts.netToggle.classList?.toggle?.("is-on", usageNetMode);
+    }
+
+    if (parts.chart) {
+      const chart = Array.isArray(snapshot.chart) ? snapshot.chart.slice(-7) : [];
+      const maximum = Math.max(1, ...chart.map(visibleUsageTokens));
+      parts.chart.innerHTML = chart.length
+        ? chart.map((item) => {
+          const value = visibleUsageTokens(item);
+          const height = value > 0 ? Math.max(9, Math.round(value / maximum * 100)) : 4;
+          const day = String(item?.date || "").slice(5);
+          return `<i style="--usage-bar:${height}%" title="${day} · ${formatTokenCount(value)} token"><span></span></i>`;
+        }).join("")
+        : "<i style=\"--usage-bar:4%\"><span></span></i>".repeat(7);
+    }
+
+    let message = "";
+    if (status === "loading") message = "正在读取本地 Codex 统计…";
+    else if (status === "indexing") {
+      const completed = Number(snapshot.indexing?.completed) || 0;
+      const total = Number(snapshot.indexing?.total) || 0;
+      message = total ? `正在建立本地索引 ${completed}/${total}…` : "正在建立本地统计索引…";
+    } else if (status === "empty") message = "完成一次 Codex 任务后，这里会出现 token 统计。";
+    else if (status === "error") message = snapshot.totals
+      ? "本次更新失败，正在显示上次的本地数据。"
+      : "暂时无法读取本地统计，皮肤其他功能不受影响。";
+    setTextContent(parts.message, message);
+    parts.message?.classList?.toggle?.("is-visible", Boolean(message));
+    const generated = snapshot.generatedAt ? new Date(snapshot.generatedAt) : null;
+    const timeText = generated && !Number.isNaN(generated.getTime())
+      ? generated.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+      : "--:--";
+    setTextContent(parts.updated, `本机统计 · 更新于 ${timeText}`);
+    if (parts.refreshButton) {
+      parts.refreshButton.disabled = status === "loading" || status === "indexing";
+      parts.refreshButton.textContent = status === "indexing" ? "索引中" : "刷新";
+    }
+  };
+
+  const setUsageSnapshot = (snapshot) => {
+    if (!snapshot || typeof snapshot !== "object" || Number(snapshot.schemaVersion) !== 1) return false;
+    usageSnapshot = snapshot;
+    window.__CODEX_QQ_SKIN_USAGE_SNAPSHOT__ = snapshot;
+    renderUsageSnapshot();
+    return true;
+  };
+
+  const ensureUsagePanel = () => {
+    let panel = document.getElementById(USAGE_PANEL_ID);
+    if (!panel || panel.parentElement !== document.body) {
+      panel?.remove();
+      panel = document.createElement("section");
+      panel.id = USAGE_PANEL_ID;
+      panel.setAttribute("aria-label", "Codex 成长中心");
+      panel.innerHTML = `
+        <div class="qq-skin-usage-title"><span>Codex 成长中心 <small>本机</small></span><button type="button" data-usage-action="native">资料</button></div>
+        <div class="qq-skin-usage-level">
+          <img alt="" draggable="false">
+          <div class="qq-skin-usage-level-main"><b></b><span class="qq-skin-level-icons"></span><small></small></div>
+          <button class="qq-skin-usage-net-toggle" type="button" role="switch" aria-checked="false" data-usage-action="net"><span>净用量</span><i></i></button>
+        </div>
+        <div class="qq-skin-level-progress"><i></i></div>
+        <div class="qq-skin-usage-metrics">
+          <div><b data-usage-metric="today">0</b><span>今日 Token</span></div>
+          <div><b data-usage-metric="week">0</b><span>近 7 天</span></div>
+          <div><b data-usage-metric="lifetime">0</b><span>历史累计</span></div>
+        </div>
+        <div class="qq-skin-usage-chart" aria-label="近七天 token 趋势"></div>
+        <div class="qq-skin-usage-activity"></div>
+        <div class="qq-skin-usage-breakdown"></div>
+        <div class="qq-skin-usage-message"></div>
+        <div class="qq-skin-usage-footer"><span></span><button type="button" data-usage-action="refresh">刷新</button></div>`;
+      document.body.appendChild(panel);
+      usageParts = null;
+    }
+    if (!usageParts || usageParts.panel !== panel) {
+      usageParts = {
+        panel,
+        image: panel.querySelector(".qq-skin-usage-level img"),
+        level: panel.querySelector(".qq-skin-usage-level-main b"),
+        icons: panel.querySelector(".qq-skin-level-icons"),
+        progressText: panel.querySelector(".qq-skin-usage-level-main small"),
+        progressFill: panel.querySelector(".qq-skin-level-progress i"),
+        today: panel.querySelector('[data-usage-metric="today"]'),
+        week: panel.querySelector('[data-usage-metric="week"]'),
+        lifetime: panel.querySelector('[data-usage-metric="lifetime"]'),
+        chart: panel.querySelector(".qq-skin-usage-chart"),
+        activity: panel.querySelector(".qq-skin-usage-activity"),
+        breakdown: panel.querySelector(".qq-skin-usage-breakdown"),
+        message: panel.querySelector(".qq-skin-usage-message"),
+        updated: panel.querySelector(".qq-skin-usage-footer span"),
+        nativeButton: panel.querySelector('[data-usage-action="native"]'),
+        refreshButton: panel.querySelector('[data-usage-action="refresh"]'),
+        netToggle: panel.querySelector('[data-usage-action="net"]'),
+      };
+      usageParts.nativeButton?.addEventListener?.("click", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        setUsageMode("native");
+      });
+      usageParts.refreshButton?.addEventListener?.("click", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        try { window.localStorage?.setItem(USAGE_REFRESH_KEY, String(Date.now())); } catch {}
+        if (usageParts.refreshButton) {
+          usageParts.refreshButton.disabled = true;
+          usageParts.refreshButton.textContent = "刷新中";
+        }
+      });
+      usageParts.netToggle?.addEventListener?.("click", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        setUsageNetMode(!usageNetMode);
+      });
+    }
+    if (usageParts.image && usageParts.image.src !== qqAvatarUrl) usageParts.image.src = qqAvatarUrl;
+    renderUsageSnapshot();
+
+    let toggle = document.getElementById(USAGE_TOGGLE_ID);
+    if (!toggle || toggle.parentElement !== document.body) {
+      toggle?.remove();
+      toggle = document.createElement("button");
+      toggle.id = USAGE_TOGGLE_ID;
+      toggle.type = "button";
+      toggle.textContent = "成长统计";
+      toggle.setAttribute("aria-label", "返回 Codex 成长统计");
+      toggle.addEventListener?.("click", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        setUsageMode("stats");
+      });
+      document.body.appendChild(toggle);
+    }
+    setUsageMode(usageMode);
+    return { panel, toggle };
+  };
+
   const ensureHomePet = (home) => {
     let pet = document.getElementById(HOME_PET_ID);
     if (!home) {
@@ -1585,6 +1812,8 @@
   const removeQQDecorations = () => {
     document.getElementById(CHROME_ID)?.remove();
     document.getElementById(COMPANION_ID)?.remove();
+    document.getElementById(USAGE_PANEL_ID)?.remove();
+    document.getElementById(USAGE_TOGGLE_ID)?.remove();
     document.getElementById(HOME_PET_ID)?.remove();
     document.getElementById(RIGHT_TRAY_ID)?.remove();
     document.getElementById(RETRO_SHELL_ID)?.remove();
@@ -1596,6 +1825,7 @@
       "dream-retro-control-bottom", "dream-retro-control-sidebar",
     ));
     companionParts = null;
+    usageParts = null;
     chromeParts = null;
     retroProfileParts = null;
   };
@@ -1658,6 +1888,7 @@
     ensureHomePet(home);
     ensureSidebarSectionBars();
     const companion = ensureCompanion();
+    const usageUi = ensureUsagePanel();
     const leftSidebarToggle = findLeftSidebarToggle();
     const leftSidebarLabel = leftSidebarToggle?.getAttribute("aria-label") || "";
     let leftSidebarOpen = hideSidebarLabel.test(leftSidebarLabel) ||
@@ -1734,6 +1965,12 @@
       setStyleProperty(rightTray, "width", `${trayWidth}px`);
       setStyleProperty(root, "--dream-right-tray-inset", `${trayPad}px`);
       setStyleProperty(root, "--dream-right-panel-right", `${panelRight}px`);
+      setStyleProperty(usageUi.panel, "left", `${Math.round(summaryBox.left)}px`);
+      setStyleProperty(usageUi.panel, "top", `${Math.round(summaryBox.top)}px`);
+      setStyleProperty(usageUi.panel, "width", `${summaryWidth}px`);
+      setStyleProperty(usageUi.panel, "height", `${Math.round(summaryBox.height)}px`);
+      setStyleProperty(usageUi.toggle, "right", `${panelRight + 10}px`);
+      setStyleProperty(usageUi.toggle, "top", `${Math.round(summaryBox.top) + 8}px`);
       rightTray.classList.add("is-visible");
     } else {
       rightTray.classList.remove("is-visible");
@@ -1742,6 +1979,9 @@
     // The summary and generic sidebar controls can briefly report the same
     // pressed state. Show the companion only while the summary is visible.
     companion.classList.toggle("is-visible", Boolean(summaryPanel));
+    usageUi.panel.classList.toggle("is-available", Boolean(summaryPanel));
+    usageUi.toggle.classList.toggle("is-available", Boolean(summaryPanel));
+    setUsageMode(usageMode);
     let chrome = document.getElementById(CHROME_ID);
     let created = false;
     if (!chrome || chrome.parentElement !== document.body) {
@@ -1818,6 +2058,8 @@
     document.getElementById(STYLE_ID)?.remove();
     document.getElementById(CHROME_ID)?.remove();
     document.getElementById(COMPANION_ID)?.remove();
+    document.getElementById(USAGE_PANEL_ID)?.remove();
+    document.getElementById(USAGE_TOGGLE_ID)?.remove();
     document.getElementById(HOME_PET_ID)?.remove();
     document.getElementById(RIGHT_TRAY_ID)?.remove();
     document.getElementById(RETRO_SHELL_ID)?.remove();
@@ -1830,6 +2072,7 @@
         "dream-retro-control-bottom", "dream-retro-control-sidebar",
       ));
     companionParts = null;
+    usageParts = null;
     chromeParts = null;
     retroProfileParts = null;
   };
@@ -2123,6 +2366,7 @@
     ensure,
     cleanup,
     ensureToggleButton,
+    setUsageSnapshot,
     observer,
     rootObserver,
     resizeObserver,

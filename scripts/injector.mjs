@@ -10,10 +10,12 @@ import { readImageMetadata } from "./image-metadata.mjs";
 const scriptPath = fileURLToPath(import.meta.url);
 const here = path.dirname(scriptPath);
 const root = path.resolve(here, "..");
-const SKIN_VERSION = "2.3.1";
+const SKIN_VERSION = "2.4.0";
 const LOOPBACK_HOSTS = new Set(["127.0.0.1", "localhost", "[::1]"]);
 const CDP_ID_PATTERN = /^[A-Za-z0-9._-]{1,200}$/;
 const MAX_ART_BYTES = 16 * 1024 * 1024;
+const MAX_USAGE_SNAPSHOT_BYTES = 256 * 1024;
+const USAGE_REFRESH_INTERVAL_MS = 60_000;
 let staticPayloadAssets = null;
 
 function parseArgs(argv) {
@@ -507,6 +509,138 @@ function resolveStateRoot(themeDir) {
   return path.join(os.homedir(), "Library", "Application Support", "CodexQQSkin");
 }
 
+function finiteCount(value, max = Number.MAX_SAFE_INTEGER) {
+  const number = Number(value);
+  if (!Number.isFinite(number) || number < 0) return 0;
+  return Math.min(max, Math.round(number));
+}
+
+function sanitizeUsageTotals(value) {
+  const inputTokens = finiteCount(value?.inputTokens);
+  const outputTokens = finiteCount(value?.outputTokens);
+  const reasoningOutputTokens = finiteCount(value?.reasoningOutputTokens);
+  const cachedInputTokens = finiteCount(value?.cachedInputTokens);
+  const effectiveTokens = inputTokens + outputTokens + reasoningOutputTokens;
+  return {
+    inputTokens,
+    outputTokens,
+    reasoningOutputTokens,
+    cachedInputTokens,
+    effectiveTokens,
+    totalTokens: effectiveTokens + cachedInputTokens,
+  };
+}
+
+export function sanitizeUsageSnapshot(value) {
+  const statuses = new Set(["loading", "indexing", "empty", "ready", "error"]);
+  const status = statuses.has(value?.status) ? value.status : "error";
+  const snapshot = {
+    schemaVersion: 1,
+    status,
+    scope: "device",
+    generatedAt: typeof value?.generatedAt === "string" && !Number.isNaN(Date.parse(value.generatedAt))
+      ? value.generatedAt : new Date().toISOString(),
+  };
+  if (value?.stale === true) snapshot.stale = true;
+  if (value?.error) snapshot.error = String(value.error).replace(/[\r\n]+/g, " ").slice(0, 160);
+  if (value?.indexing && typeof value.indexing === "object") {
+    snapshot.indexing = {
+      phase: String(value.indexing.phase || "usage").slice(0, 32),
+      completed: finiteCount(value.indexing.completed, 1_000_000),
+      total: finiteCount(value.indexing.total, 1_000_000),
+    };
+  }
+  if (value?.totals && typeof value.totals === "object") {
+    snapshot.totals = {
+      today: sanitizeUsageTotals(value.totals.today),
+      week: sanitizeUsageTotals(value.totals.week),
+      lifetime: sanitizeUsageTotals(value.totals.lifetime),
+    };
+  }
+  if (value?.activity && typeof value.activity === "object") {
+    snapshot.activity = {
+      activeDays: finiteCount(value.activity.activeDays, 100_000),
+      streakDays: finiteCount(value.activity.streakDays, 100_000),
+      sessionCount: finiteCount(value.activity.sessionCount, 10_000_000),
+    };
+  }
+  if (value?.growth && typeof value.growth === "object") {
+    const level = finiteCount(value.growth.level, 10_000);
+    snapshot.growth = {
+      points: Math.max(0, Math.min(1_000_000_000, Number(value.growth.points) || 0)),
+      level,
+      remaining: Math.max(0, Math.min(1_000_000_000, Number(value.growth.remaining) || 0)),
+      percent: finiteCount(value.growth.percent, 100),
+      icons: Array.isArray(value.growth.icons) ? value.growth.icons.slice(0, 16).map((item) => ({
+        kind: ["crown", "sun", "moon", "star"].includes(item?.kind) ? item.kind : "star",
+        symbol: ["♛", "☀", "☾", "★"].includes(item?.symbol) ? item.symbol : "★",
+      })) : [],
+    };
+  }
+  snapshot.chart = Array.isArray(value?.chart) ? value.chart.slice(-7).map((item) => ({
+    date: /^\d{4}-\d{2}-\d{2}$/.test(String(item?.date || "")) ? item.date : "",
+    effectiveTokens: finiteCount(item?.effectiveTokens),
+    totalTokens: finiteCount(item?.totalTokens) || finiteCount(item?.effectiveTokens),
+  })) : [];
+  return snapshot;
+}
+
+function runUsageWorker(themeDir) {
+  const workerPath = path.join(root, "scripts", "usage", "codex-usage-worker.mjs");
+  const usageDir = path.join(resolveStateRoot(themeDir), "usage");
+  return new Promise((resolve, reject) => {
+    const child = spawn(process.execPath, [workerPath, "--state-dir", usageDir], {
+      stdio: ["ignore", "pipe", "pipe"],
+      env: process.env,
+      windowsHide: true,
+    });
+    let stdout = "";
+    let stderr = "";
+    let settled = false;
+    const finish = (error, value) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timeout);
+      if (error) reject(error);
+      else resolve(value);
+    };
+    const timeout = setTimeout(() => {
+      try { child.kill("SIGTERM"); } catch {}
+      finish(new Error("Codex usage worker timed out"));
+    }, 20_000);
+    child.stdout.on("data", (chunk) => {
+      if (stdout.length <= MAX_USAGE_SNAPSHOT_BYTES) stdout += String(chunk);
+    });
+    child.stderr.on("data", (chunk) => {
+      if (stderr.length < 16_384) stderr += String(chunk);
+    });
+    child.on("error", (error) => finish(error));
+    child.on("close", (code) => {
+      if (stdout.length > MAX_USAGE_SNAPSHOT_BYTES) {
+        finish(new Error("Codex usage worker returned an oversized snapshot"));
+        return;
+      }
+      try {
+        const parsed = JSON.parse(stdout);
+        if (code !== 0 && parsed?.status !== "error") throw new Error(stderr.trim() || `usage worker exited ${code}`);
+        finish(null, sanitizeUsageSnapshot(parsed));
+      } catch (error) {
+        finish(new Error(stderr.trim() || error.message));
+      }
+    });
+  });
+}
+
+async function pushUsageSnapshot(session, snapshot) {
+  const safe = sanitizeUsageSnapshot(snapshot);
+  return session.evaluate(`(() => {
+    const snapshot = ${JSON.stringify(safe)};
+    window.__CODEX_QQ_SKIN_USAGE_SNAPSHOT__ = snapshot;
+    window.__CODEX_QQ_SKIN_STATE__?.setUsageSnapshot?.(snapshot);
+    return true;
+  })()`);
+}
+
 function listThemeLibrary(themeDir, { limit = 12, customOnly = false } = {}) {
   const stateRoot = resolveStateRoot(themeDir);
   const themesRoot = path.join(stateRoot, "themes");
@@ -665,6 +799,8 @@ async function removeFromSession(session) {
     document.getElementById('codex-qq-skin-style')?.remove();
     document.getElementById('codex-qq-skin-chrome')?.remove();
     document.getElementById('codex-qq-skin-companion')?.remove();
+    document.getElementById('codex-qq-skin-usage-panel')?.remove();
+    document.getElementById('codex-qq-skin-usage-toggle')?.remove();
     document.getElementById('codex-qq-skin-home-pet')?.remove();
     document.getElementById('codex-qq-skin-right-tray')?.remove();
     document.getElementById('codex-qq-skin-retro-shell')?.remove();
@@ -687,6 +823,8 @@ async function verifyRemovedSession(session) {
     !document.getElementById('codex-qq-skin-style') &&
     !document.getElementById('codex-qq-skin-chrome') &&
     !document.getElementById('codex-qq-skin-companion') &&
+    !document.getElementById('codex-qq-skin-usage-panel') &&
+    !document.getElementById('codex-qq-skin-usage-toggle') &&
     !document.getElementById('codex-qq-skin-home-pet') &&
     !document.getElementById('codex-qq-skin-right-tray') &&
     !document.getElementById('codex-qq-skin-retro-shell') &&
@@ -720,6 +858,8 @@ async function verifySession(session) {
     const composer = box(document.querySelector('.composer-surface-chrome'));
     const sidebar = box(document.querySelector('aside.app-shell-left-panel'));
     const chrome = document.getElementById('codex-qq-skin-chrome');
+    const usagePanelNode = document.getElementById('codex-qq-skin-usage-panel');
+    const usageSnapshot = window.__CODEX_QQ_SKIN_USAGE_SNAPSHOT__;
     const result = {
       installed: document.documentElement.classList.contains('codex-qq-skin') ||
         document.documentElement.classList.contains('codex-dream-skin'),
@@ -737,6 +877,11 @@ async function verifySession(session) {
       shell,
       composer,
       sidebar,
+      usagePanel: box(usagePanelNode),
+      usageMode: document.documentElement.getAttribute('data-qq-usage-mode'),
+      usageStatus: usageSnapshot?.status ?? usagePanelNode?.dataset?.usageStatus ?? null,
+      usageLevel: usageSnapshot?.growth?.level ?? null,
+      usageToday: usageSnapshot?.totals?.today?.effectiveTokens ?? null,
       viewport: { width: innerWidth, height: innerHeight },
       documentOverflow: {
         x: document.documentElement.scrollWidth > document.documentElement.clientWidth,
@@ -916,6 +1061,9 @@ async function runWatch(options) {
   let current = await loadPayload(options.themeDir);
   const sessions = new Map();
   const rejected = new Set();
+  let usageSnapshot = sanitizeUsageSnapshot({ status: "loading", generatedAt: new Date().toISOString() });
+  let usageRefreshPromise = null;
+  let nextUsageRefreshAt = 0;
   let stopping = false;
   let reloadTimer = null;
   let reloadChain = Promise.resolve();
@@ -939,6 +1087,40 @@ async function runWatch(options) {
     await record.session.send("Page.removeScriptToEvaluateOnNewDocument", { identifier }).catch(() => {});
   };
 
+  const refreshUsage = async () => {
+    try {
+      usageSnapshot = await runUsageWorker(options.themeDir);
+      for (const record of sessions.values()) {
+        if (!record.session.closed) {
+          await pushUsageSnapshot(record.session, usageSnapshot).catch((error) => {
+            console.error(`[qq-skin] usage snapshot push failed: ${error.message}`);
+          });
+        }
+      }
+      console.log(`[qq-skin] refreshed local Codex usage (${usageSnapshot.status})`);
+    } catch (error) {
+      usageSnapshot = sanitizeUsageSnapshot({
+        ...usageSnapshot,
+        status: "error",
+        stale: Boolean(usageSnapshot.totals),
+        error: error.message,
+        generatedAt: new Date().toISOString(),
+      });
+      console.error(`[qq-skin] usage refresh failed: ${error.message}`);
+      for (const record of sessions.values()) {
+        if (!record.session.closed) await pushUsageSnapshot(record.session, usageSnapshot).catch(() => {});
+      }
+    } finally {
+      nextUsageRefreshAt = Date.now() + USAGE_REFRESH_INTERVAL_MS;
+    }
+  };
+
+  const queueUsageRefresh = (force = false) => {
+    if (usageRefreshPromise || (!force && Date.now() < nextUsageRefreshAt)) return usageRefreshPromise;
+    usageRefreshPromise = refreshUsage().finally(() => { usageRefreshPromise = null; });
+    return usageRefreshPromise;
+  };
+
   const refreshPayload = async () => {
     const next = await loadPayload(options.themeDir);
     if (next.revision === current.revision) return;
@@ -956,6 +1138,7 @@ async function runWatch(options) {
         record.earlyScriptId = nextIdentifier;
         record.needsLoadFallback = !nextIdentifier;
         await applyToSession(session, current.payload);
+        await pushUsageSnapshot(session, usageSnapshot);
       } catch (error) {
         record.needsLoadFallback = true;
         console.error(`[qq-skin] theme refresh failed: ${error.message}`);
@@ -976,6 +1159,29 @@ async function runWatch(options) {
   };
   const closePayloadWatchers = watchPayloadSources(options.themeDir, queuePayloadRefresh);
   let librarySwitchBusy = false;
+
+  const pollUsageRefreshRequests = async () => {
+    for (const record of sessions.values()) {
+      if (record.session.closed) continue;
+      let requested = false;
+      try {
+        requested = await record.session.evaluate(`(() => {
+          try {
+            const key = "codex-qq-skin-usage-refresh";
+            const value = window.localStorage?.getItem(key);
+            if (!value) return false;
+            window.localStorage.removeItem(key);
+            return true;
+          } catch { return false; }
+        })()`);
+      } catch {}
+      if (requested) {
+        nextUsageRefreshAt = 0;
+        queueUsageRefresh(true);
+        return;
+      }
+    }
+  };
 
   const pollLibrarySwitchRequests = async () => {
     if (librarySwitchBusy || process.platform === "win32" || !sessions.size) return;
@@ -1066,10 +1272,14 @@ async function runWatch(options) {
           }
           rejected.delete(target.id);
           session.on("Page.loadEventFired", () => {
-            if (!record.needsLoadFallback) return;
-            setTimeout(() => applyToSession(session, current.payload).catch((error) => {
-              console.error(`[qq-skin] fallback reinject failed: ${error.message}`);
-            }), 0);
+            setTimeout(async () => {
+              if (record.needsLoadFallback) {
+                await applyToSession(session, current.payload).catch((error) => {
+                  console.error(`[qq-skin] fallback reinject failed: ${error.message}`);
+                });
+              }
+              await pushUsageSnapshot(session, usageSnapshot).catch(() => {});
+            }, 0);
           });
           const earlyApplied = await session.evaluate(
             `window.__CODEX_QQ_SKIN_EARLY_APPLIED__ === ${JSON.stringify(current.revision)}`,
@@ -1080,7 +1290,9 @@ async function runWatch(options) {
             );
             await applyToSession(session, current.payload);
           }
+          await pushUsageSnapshot(session, usageSnapshot);
           sessions.set(target.id, record);
+          queueUsageRefresh(usageSnapshot.status === "loading");
           console.log(`[qq-skin] injected verified Codex target ${target.id} (${target.title || target.url})`);
         } catch (error) {
           if (record) await removeEarly(record);
@@ -1089,6 +1301,8 @@ async function runWatch(options) {
         }
       }
       await pollLibrarySwitchRequests();
+      await pollUsageRefreshRequests();
+      if (sessions.size) queueUsageRefresh(false);
       const pollDelay = sessions.size ? 800 : (targets.length ? 250 : 100);
       await new Promise((resolve) => setTimeout(resolve, pollDelay));
     }
@@ -1096,6 +1310,7 @@ async function runWatch(options) {
     if (reloadTimer) clearTimeout(reloadTimer);
     closePayloadWatchers();
     await reloadChain.catch(() => {});
+    await usageRefreshPromise?.catch(() => {});
     await Promise.all([...sessions.values()].map((record) => removeEarly(record)));
     for (const record of sessions.values()) record.session.close();
   }

@@ -17,6 +17,16 @@ assert.doesNotMatch(
 );
 assert.match(
   css,
+  /data-qq-usage-mode="stats"[\s\S]{0,120}thread-summary-panel[\s\S]{0,180}visibility:\s*hidden !important;/,
+  "The growth center should visually replace, but not delete, the native summary panel in stats mode.",
+);
+assert.match(
+  css,
+  /#codex-qq-skin-usage-panel\.is-available\.is-visible[\s\S]{0,180}pointer-events:\s*auto;/,
+  "The local usage panel must become interactive only when the real right panel exists.",
+);
+assert.match(
+  css,
   /data-dream-art-fit="contain"[\s\S]{0,180}\.qq-skin-home[\s\S]{0,180}background-size:\s*contain !important;/,
   "A conventional photo must remain fully visible in the QQ new-task build panel.",
 );
@@ -545,7 +555,24 @@ function createFixture(theme, {
         if (selector === "button[data-skin-library]") {
           return element.children.find((child) => child.dataset?.skinLibrary) ?? null;
         }
-        if (!childNodes.has(selector)) childNodes.set(selector, { textContent: "" });
+        if (!childNodes.has(selector)) {
+          const childAttributes = new Map();
+          const handlers = new Map();
+          childNodes.set(selector, {
+            textContent: "",
+            innerHTML: "",
+            dataset: {},
+            style: createStyleDeclaration(),
+            classList: createClassList(),
+            disabled: false,
+            setAttribute(name, value) { childAttributes.set(name, String(value)); },
+            getAttribute(name) { return childAttributes.get(name) ?? null; },
+            addEventListener(name, handler) { handlers.set(name, handler); },
+            click() {
+              handlers.get("click")?.({ preventDefault() {}, stopPropagation() {} });
+            },
+          });
+        }
         return childNodes.get(selector);
       },
       querySelectorAll(selector) {
@@ -846,6 +873,33 @@ assert.equal(
   true,
   "The blue right tray should appear behind Output/Source and the companion.",
 );
+assert.equal(threePane.attributes.get("data-qq-usage-mode"), "stats");
+assert.equal(
+  threePane.nodes.get("codex-qq-skin-usage-panel").classList.contains("is-available"),
+  true,
+  "The token growth center should occupy the upper-right panel by default.",
+);
+threePane.window.__CODEX_QQ_SKIN_STATE__.setUsageSnapshot({
+  schemaVersion: 1,
+  status: "ready",
+  generatedAt: "2026-07-22T04:00:00.000Z",
+  totals: {
+    today: { effectiveTokens: 125_000, cachedInputTokens: 875_000, totalTokens: 1_000_000 },
+    week: { effectiveTokens: 2_500_000, cachedInputTokens: 5_500_000, totalTokens: 8_000_000 },
+    lifetime: { effectiveTokens: 38_000_000, inputTokens: 30_000_000, outputTokens: 4_000_000, reasoningOutputTokens: 4_000_000, cachedInputTokens: 70_000_000 },
+  },
+  activity: { activeDays: 18, streakDays: 6, sessionCount: 40 },
+  growth: { level: 12, remaining: 34, percent: 72, icons: [{ kind: "moon", symbol: "☾" }] },
+  chart: [{ date: "2026-07-22", effectiveTokens: 125_000, totalTokens: 1_000_000 }],
+});
+const usagePanel = threePane.nodes.get("codex-qq-skin-usage-panel");
+assert.equal(usagePanel.querySelector('[data-usage-metric="today"]').textContent, "1.0M");
+assert.equal(usagePanel.querySelector(".qq-skin-usage-level-main b").textContent, "Lv.12");
+const netUsageToggle = usagePanel.querySelector('[data-usage-action="net"]');
+assert.equal(netUsageToggle.getAttribute("aria-checked"), "false");
+netUsageToggle.click();
+assert.equal(netUsageToggle.getAttribute("aria-checked"), "true");
+assert.equal(usagePanel.querySelector('[data-usage-metric="today"]').textContent, "125K");
 threePane.observers[0].callback([]);
 threePane.flushTimers(64);
 assert.equal(threePane.summaryButton.clickCount, 1, "Mutation passes must not toggle the native panel repeatedly.");
@@ -858,6 +912,13 @@ const notificationFixture = createFixture({
   sound: { enabled: true, volume: 0.48, completed: "cough", approval: "alert" },
 }, { notificationButtons, soundEvents });
 vm.runInNewContext(notificationFixture.payload, notificationFixture.context);
+const firstUsageToggle = notificationFixture.nodes.get("codex-qq-skin-usage-toggle");
+vm.runInNewContext(notificationFixture.payload, notificationFixture.context);
+assert.notEqual(
+  notificationFixture.nodes.get("codex-qq-skin-usage-toggle"),
+  firstUsageToggle,
+  "Usage controls must be rebuilt on reinjection so their click handlers never retain stale renderer closures.",
+);
 const stopButton = {
   disabled: false,
   textContent: "",
