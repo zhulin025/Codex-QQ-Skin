@@ -1229,6 +1229,43 @@ html.codex-qq-skin[data-dream-shell="light"][data-dream-three-pane="true"]
   color: #17395f !important;
 }
 
+/* Quick Chat is a body-level portal. Its native dropdown token can remain
+   transparent after QQ mode forces the renderer to light appearance, making
+   the conversation indistinguishable from the task underneath. */
+html.codex-qq-skin[data-dream-shell="light"]
+  section[role="dialog"][data-pip-obstacle="quick-chat"] {
+  background: #f8fcff !important;
+  color: #17395f !important;
+  color-scheme: light !important;
+  border: 1px solid #6ea4d6 !important;
+  box-shadow:
+    0 18px 48px rgb(24 65 105 / .30),
+    inset 0 1px rgb(255 255 255 / .94) !important;
+  backdrop-filter: none !important;
+}
+
+html.codex-qq-skin[data-dream-shell="light"]
+  section[role="dialog"][data-pip-obstacle="quick-chat"] > div[aria-hidden="false"] {
+  background: linear-gradient(180deg, #ffffff, #edf6fd) !important;
+}
+
+/* Quick Chat occupies the right side of the window. Hide QQ's right tray,
+   companion and the native task summary only while the chat is actually open;
+   removing/minimizing the portal makes them reappear automatically. */
+html.codex-qq-skin:has(
+  section[role="dialog"][data-pip-obstacle="quick-chat"][data-state="open"]
+) #codex-qq-skin-right-tray,
+html.codex-qq-skin:has(
+  section[role="dialog"][data-pip-obstacle="quick-chat"][data-state="open"]
+) #codex-qq-skin-companion,
+html.codex-qq-skin:has(
+  section[role="dialog"][data-pip-obstacle="quick-chat"][data-state="open"]
+) [data-pip-obstacle="thread-summary-panel"] {
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
 html.codex-qq-skin[data-dream-shell="light"][data-dream-three-pane="true"]
   main.main-surface:not(.qq-skin-home-shell),
 html.codex-qq-skin[data-dream-shell="light"][data-dream-three-pane="true"]

@@ -262,6 +262,16 @@ assert.match(css, /\.dream-retro-toolbar button[\s\S]{0,420}cursor:\s*pointer;/,
   "Retro toolbar entries must expose real button interaction styling.");
 assert.match(template, /data-retro-action="new-task"[\s\S]{0,500}data-retro-action="chat"/,
   "Retro toolbar must render actionable navigation buttons instead of decorative labels.");
+assert.match(template, /data-retro-action="plugins"[\s\S]{0,180}data-retro-action="skills"/,
+  "Retro toolbar must expose the native Skills page hidden below QQ chrome.");
+assert.match(template, /action === "skills"[\s\S]{0,900}findNativeRetroAction\("plugins"\)[\s\S]{0,900}setTimeout\(openSkills, 50\)/,
+  "Skills navigation must enter Plugins first and then dispatch a real native Skills click.");
+assert.match(template, /isPluginTab[\s\S]{0,1100}div\[role=\\?"group\\?"\] button[\s\S]{0,900}if \(nativeTab\) return nativeTab;/,
+  "Plugin and Skills actions must prefer their real page tabs over the sidebar route entry.");
+assert.match(css, /data-pip-obstacle="quick-chat"[\s\S]{0,320}background:\s*#f8fcff !important;/,
+  "QQ light mode must give the Quick Chat portal an opaque readable surface.");
+assert.match(css, /:has\([\s\S]{0,180}data-pip-obstacle="quick-chat"[\s\S]{0,100}data-state="open"[\s\S]{0,700}#codex-qq-skin-companion[\s\S]{0,700}thread-summary-panel[\s\S]{0,220}visibility:\s*hidden !important;/,
+  "An open Quick Chat must temporarily hide all overlapping right-side panels.");
 assert.match(template, /profileActionPattern[\s\S]{0,900}打开个人资料菜单/,
   "The retro profile must prefer the stable native profile-menu action.");
 assert.match(

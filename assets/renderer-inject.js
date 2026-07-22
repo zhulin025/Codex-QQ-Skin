@@ -1332,6 +1332,7 @@
           <button type="button" data-retro-action="new-task">📝 新建任务</button>
           <button type="button" data-retro-action="scheduled">🗓 已安排</button><i></i>
           <button type="button" data-retro-action="plugins">🧩 插件</button>
+          <button type="button" data-retro-action="skills">🛠 技能</button>
           <button type="button" data-retro-action="sites">🌐 站点</button>
           <button type="button" data-retro-action="pull-requests">↗ 拉取请求</button>
           <button type="button" data-retro-action="chat">💬 聊天</button>
@@ -1360,6 +1361,7 @@
     "new-task": { text: /^(新建任务|new task)$/i },
     scheduled: { text: /^(已安排|scheduled)$/i },
     plugins: { text: /^(插件|plugins?)$/i },
+    skills: { text: /^(技能|skills?)$/i },
     sites: { text: /^(站点|sites?)$/i },
     "pull-requests": { text: /^(拉取请求|pull requests?)$/i },
     chat: { text: /^(聊天|chat)$/i, aria: /^(quick chat|快速聊天|快捷聊天)$/i },
@@ -1367,9 +1369,26 @@
 
   const findNativeRetroAction = (action) => {
     const matcher = retroActionMatchers[action];
-    const sidebar = document.querySelector("aside.app-shell-left-panel");
-    if (!matcher || !sidebar) return null;
-    const candidates = [...sidebar.querySelectorAll("button, a")];
+    const isPluginTab = action === "plugins" || action === "skills";
+    if (isPluginTab && matcher) {
+      const tabs = [...document.querySelectorAll('div[role="group"] button')];
+      const nativeTab = tabs.find((candidate) => {
+        if (candidate.disabled || candidate.closest?.(`#${RETRO_SHELL_ID}`)) return false;
+        const groupText = String(candidate.parentElement?.textContent || "").replace(/\s+/g, "").toLowerCase();
+        const text = String(candidate.textContent || "").replace(/\s+/g, " ").trim();
+        const box = candidate.getBoundingClientRect?.();
+        return Boolean(
+          box && box.width >= 8 && box.height >= 8 &&
+          /插件|plugins?/.test(groupText) && /技能|skills?/.test(groupText) &&
+          matcher.text?.test(text)
+        );
+      });
+      if (nativeTab) return nativeTab;
+      if (action === "skills") return null;
+    }
+    const root = document.querySelector("aside.app-shell-left-panel");
+    if (!matcher || !root) return null;
+    const candidates = [...root.querySelectorAll("button, a")];
     return candidates.find((candidate) => {
       if (candidate.disabled || candidate.closest?.(`#${RETRO_SHELL_ID}`)) return false;
       const text = String(candidate.textContent || "").replace(/\s+/g, " ").trim();
@@ -1386,14 +1405,32 @@
     for (const button of toolbar.querySelectorAll("button[data-retro-action]")) {
       const action = button.dataset.retroAction;
       const target = findNativeRetroAction(action);
-      button.disabled = !target;
-      button.setAttribute("aria-disabled", target ? "false" : "true");
+      const fallback = action === "skills" ? findNativeRetroAction("plugins") : null;
+      button.disabled = !(target || fallback);
+      button.setAttribute("aria-disabled", target || fallback ? "false" : "true");
       if (button.dataset.retroActionBound === "true") continue;
       button.dataset.retroActionBound = "true";
       button.addEventListener("click", (event) => {
         event.preventDefault();
         event.stopPropagation();
-        findNativeRetroAction(action)?.click();
+        const current = findNativeRetroAction(action);
+        if (current) {
+          current.click();
+          return;
+        }
+        if (action !== "skills") return;
+        findNativeRetroAction("plugins")?.click();
+        let attempts = 0;
+        const openSkills = () => {
+          const skills = findNativeRetroAction("skills");
+          if (skills) {
+            skills.click();
+            return;
+          }
+          attempts += 1;
+          if (attempts < 20) setTimeout(openSkills, 50);
+        };
+        setTimeout(openSkills, 50);
       });
     }
   };
