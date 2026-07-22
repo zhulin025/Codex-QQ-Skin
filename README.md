@@ -5,11 +5,11 @@
 一套面向 Codex/ChatGPT 桌面端的内置复古 QQ 风格外观的皮肤生成器。  
 1、支持 Mac & Windows 系统：提供 macOS App 与原生 C# Windows 安装器。  
 2、支持自定义皮肤：既可选择任意图片生成背景皮肤，也可用 Codex 深度皮肤助手从一句主题关键词生成完整分层皮肤。
-3、皮肤库管理器
-4、Codex token 统计
-5、QQ 等级系统
-6、内置自动检测版本升级
-7、深度皮肤定制助手 skill
+3、皮肤库管理器  
+4、Codex token 统计  
+5、QQ 等级系统  
+6、内置自动检测版本升级  
+7、深度皮肤定制助手 skill  
 
 > 非 OpenAI、腾讯或 QQ 官方产品。本项目不会修改官方 `.app`、`app.asar`、代码签名、API Key 或 Base URL。
 
