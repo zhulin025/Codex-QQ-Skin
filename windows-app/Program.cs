@@ -68,7 +68,7 @@ namespace CodexQQSkinSetup
             Controls.Add(installButton);
             Controls.Add(imageButton);
 
-            skillButton = MakeButton("安装 Codex 深度皮肤助手", new Point(36, 184), Color.FromArgb(224, 164, 20));
+            skillButton = MakeButton("安装 Codex 深度皮肤助手 Skill", new Point(36, 184), Color.FromArgb(224, 164, 20));
             skillButton.Size = new Size(588, 50);
             skillButton.Click += async delegate { await InstallSkillAsync(); };
             Controls.Add(skillButton);
@@ -209,18 +209,18 @@ namespace CodexQQSkinSetup
             bool current = installed && BundledSkillMatches(skill);
             if (current)
             {
-                skillButton.Text = "✓ 已安装 Codex 深度皮肤助手";
-                skillStatusLabel.Text = "用法：在 Codex 输入“用深度皮肤助手生成钢铁侠主题皮肤”";
+                skillButton.Text = "✓ 已安装 Codex 深度皮肤助手 Skill";
+                skillStatusLabel.Text = "Skill 用法：在 Codex 输入“用深度皮肤助手生成钢铁侠主题皮肤”";
             }
             else if (installed)
             {
-                skillButton.Text = "更新 Codex 深度皮肤助手";
-                skillStatusLabel.Text = "检测到内置新版 Skill，可以安全更新";
+                skillButton.Text = "更新 Codex 深度皮肤助手 Skill";
+                skillStatusLabel.Text = "检测到已安装的 Skill 版本较旧，可以安全更新";
             }
             else
             {
-                skillButton.Text = "安装 Codex 深度皮肤助手";
-                skillStatusLabel.Text = "尚未安装 Codex 深度皮肤助手";
+                skillButton.Text = "安装 Codex 深度皮肤助手 Skill";
+                skillStatusLabel.Text = "尚未安装这个 Skill，安装后可在 Codex 内直接使用";
             }
             skillButton.Enabled = !current;
         }
@@ -249,12 +249,12 @@ namespace CodexQQSkinSetup
 
         private async Task InstallSkillAsync()
         {
-            await RunBusyAsync("正在安装 Codex 深度皮肤助手…", async delegate
+            await RunBusyAsync("正在安装 Codex 深度皮肤助手 Skill…", async delegate
             {
                 string root = await ExtractPayloadAsync();
                 await RunPowerShellAsync(Path.Combine(root, "scripts", "windows", "install-deep-skin-skill-windows.ps1"), "");
                 BeginInvoke((Action)RefreshSkillButton);
-                return "深度皮肤助手已安装。现在可在 Codex 中输入：用 Codex 深度皮肤助手生成一个钢铁侠主题皮肤";
+                return "深度皮肤助手 Skill 已安装。现在可在 Codex 中输入：用 Codex 深度皮肤助手生成一个钢铁侠主题皮肤";
             });
         }
 
@@ -278,7 +278,8 @@ namespace CodexQQSkinSetup
             finally
             {
                 progress.Visible = false;
-                installButton.Enabled = imageButton.Enabled = skillButton.Enabled = true;
+                installButton.Enabled = imageButton.Enabled = true;
+                RefreshSkillButton();
             }
         }
 

@@ -27,6 +27,21 @@ assert.match(
 );
 assert.match(
   css,
+  /thread-summary-panel[\s\S]{0,260}height:\s*420px !important;[\s\S]{0,140}max-height:\s*420px !important;/,
+  "The growth center host must keep a fixed desktop height instead of stretching with the viewport.",
+);
+assert.match(
+  css,
+  /grid-template-rows:\s*34px 64px 8px 58px 148px 22px 32px minmax\(0, 1fr\) 28px;/,
+  "The seven-day chart must render inside a fixed-height row.",
+);
+assert.match(
+  css,
+  /data-dream-three-pane="true"[\s\S]{0,100}main\.main-surface:not\(\.qq-skin-home-shell\)[\s\S]{0,120}--thread-content-max-width:\s*calc\(100cqw - 48px\) !important;/,
+  "Wide three-pane task content must expand with fixed 24px side gutters.",
+);
+assert.match(
+  css,
   /data-dream-art-fit="contain"[\s\S]{0,180}\.qq-skin-home[\s\S]{0,180}background-size:\s*contain !important;/,
   "A conventional photo must remain fully visible in the QQ new-task build panel.",
 );

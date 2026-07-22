@@ -31,6 +31,10 @@ assert.match(windows, /FileVersionInfo\.GetVersionInfo\(target\)[\s\S]{0,320}dow
   "Windows must verify the downloaded installer version");
 assert.match(windows, /bool current = installed && BundledSkillMatches\(skill\)[\s\S]{0,220}✓ 已安装 Codex 深度皮肤助手[\s\S]{0,180}用法：在 Codex 输入/,
   "Windows must display current skill state and usage independently from installation");
+assert.match(windows, /✓ 已安装 Codex 深度皮肤助手 Skill/,
+  "Windows installer must label the deep-skin assistant explicitly as a Skill");
+assert.match(windows, /finally[\s\S]{0,180}RefreshSkillButton\(\);/,
+  "Windows busy-state cleanup must preserve the detected Skill state");
 assert.match(windowsInstall, /\$installedVersion -gt \$bundledVersion[\s\S]{0,180}downgrade skipped/,
   "an older Windows installer must not downgrade a newer installed engine");
 assert.match(windowsInstall, /\$installedVersion -eq \$bundledVersion -and \$installedComplete[\s\S]{0,180}replacement skipped/,

@@ -266,7 +266,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTableViewDataSource,
         primaryButton.controlSize = .large
         stylePrimaryButton(primaryButton)
 
-        skillButton = NSButton(title: "安装 Codex 深度皮肤助手", target: self, action: #selector(installDeepSkinSkill))
+        skillButton = NSButton(title: "安装 Codex 深度皮肤助手 Skill", target: self, action: #selector(installDeepSkinSkill))
         skillButton.bezelStyle = .rounded
         skillButton.controlSize = .large
         skillButton.translatesAutoresizingMaskIntoConstraints = false
@@ -449,14 +449,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTableViewDataSource,
         let skillInstalled = FileManager.default.fileExists(atPath: installedSkill.path)
         let skillCurrent = skillInstalled && bundledSkillIsCurrent()
         if skillCurrent {
-            skillButton.title = "✓ 已安装 Codex 深度皮肤助手"
-            skillStatusLabel.stringValue = "用法：在 Codex 输入“用深度皮肤助手生成钢铁侠主题皮肤”"
+            skillButton.title = "✓ 已安装 Codex 深度皮肤助手 Skill"
+            skillStatusLabel.stringValue = "Skill 用法：在 Codex 输入“用深度皮肤助手生成钢铁侠主题皮肤”"
         } else if skillInstalled {
-            skillButton.title = "更新 Codex 深度皮肤助手"
-            skillStatusLabel.stringValue = "检测到内置新版 Skill，可以安全更新"
+            skillButton.title = "更新 Codex 深度皮肤助手 Skill"
+            skillStatusLabel.stringValue = "检测到已安装的 Skill 版本较旧，可以安全更新"
         } else {
-            skillButton.title = "安装 Codex 深度皮肤助手"
-            skillStatusLabel.stringValue = "尚未安装 Codex 深度皮肤助手"
+            skillButton.title = "安装 Codex 深度皮肤助手 Skill"
+            skillStatusLabel.stringValue = "尚未安装这个 Skill，安装后可在 Codex 内直接使用"
         }
         skillButton.isEnabled = !busy && !skillCurrent
         customizeButton.isEnabled = enabled
@@ -643,8 +643,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTableViewDataSource,
         run(
             script: script,
             arguments: ["install"],
-            progress: "正在安装 Codex 深度皮肤助手…",
-            success: "深度皮肤助手已安装。在 Codex 中输入：用 Codex 深度皮肤助手生成一个钢铁侠主题皮肤",
+            progress: "正在安装 Codex 深度皮肤助手 Skill…",
+            success: "深度皮肤助手 Skill 已安装。在 Codex 中输入：用 Codex 深度皮肤助手生成一个钢铁侠主题皮肤",
             onSuccess: { [weak self] in self?.refreshState() }
         )
     }

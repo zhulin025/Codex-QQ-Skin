@@ -1146,13 +1146,20 @@ html.codex-qq-skin[data-dream-three-pane="true"] main.main-surface > header.app-
   background: transparent !important;
 }
 
+/* Keep a fixed gutter around the conversation on wide three-pane displays.
+   Codex's native cap otherwise leaves an increasingly large empty band on
+   each side of the middle column as the window grows. */
+html.codex-qq-skin[data-dream-three-pane="true"] main.main-surface:not(.qq-skin-home-shell) {
+  --thread-content-max-width: calc(100cqw - 48px) !important;
+}
+
 html.codex-qq-skin[data-dream-three-pane="true"] [data-pip-obstacle="thread-summary-panel"] {
   position: relative !important;
   z-index: 4 !important;
   isolation: isolate !important;
-  height: calc(100vh - clamp(250px, 36vh, 318px) - 132px) !important;
-  max-height: calc(100vh - clamp(250px, 36vh, 318px) - 132px) !important;
-  min-height: 220px !important;
+  height: 420px !important;
+  max-height: 420px !important;
+  min-height: 420px !important;
   align-self: flex-start !important;
   margin-top: 8px !important;
   margin-right: 7px !important;
@@ -1178,7 +1185,7 @@ html.codex-qq-skin[data-dream-three-pane="true"][data-qq-usage-mode="stats"]
   position: fixed;
   z-index: 43;
   display: grid;
-  grid-template-rows: 34px 64px 8px 58px minmax(44px, 1fr) 22px 32px auto 28px;
+  grid-template-rows: 34px 64px 8px 58px 148px 22px 32px minmax(0, 1fr) 28px;
   overflow: hidden;
   border: 1px solid rgb(64 122 187 / .66);
   border-radius: 8px;
@@ -1511,7 +1518,12 @@ html.codex-qq-skin:is(
 }
 
 @media (max-height: 760px) {
-  #codex-qq-skin-usage-panel { grid-template-rows: 34px 58px 8px 54px minmax(34px, 1fr) 20px 0 auto 26px; }
+  html.codex-qq-skin[data-dream-three-pane="true"] [data-pip-obstacle="thread-summary-panel"] {
+    height: 330px !important;
+    max-height: 330px !important;
+    min-height: 330px !important;
+  }
+  #codex-qq-skin-usage-panel { grid-template-rows: 34px 58px 8px 54px 106px 20px 0 minmax(0, 1fr) 26px; }
   .qq-skin-usage-breakdown { visibility: hidden; padding: 0; }
 }
 
