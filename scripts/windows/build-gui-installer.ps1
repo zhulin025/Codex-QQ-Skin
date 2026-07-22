@@ -83,7 +83,7 @@ try {
   $csc = 'C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe'
   if (-not (Test-Path $csc)) { $csc = 'C:\Windows\Microsoft.NET\Framework\v4.0.30319\csc.exe' }
   if (-not (Test-Path $csc)) { throw 'The Windows C# compiler was not found.' }
-  & $csc /nologo /target:winexe /optimize+ /platform:x64 /win32icon:$windowsIcon /out:$compiledOutput /resource:"$payloadZip,CodexQQSkin.payload.zip" /reference:System.dll /reference:System.Drawing.dll /reference:System.Windows.Forms.dll /reference:System.IO.Compression.dll /reference:System.IO.Compression.FileSystem.dll (Join-Path $root 'windows-app\Program.cs')
+  & $csc /nologo /target:winexe /optimize+ /platform:x64 /win32icon:$windowsIcon /out:$compiledOutput /resource:"$payloadZip,CodexQQSkin.payload.zip" /reference:System.dll /reference:System.Drawing.dll /reference:System.Windows.Forms.dll /reference:System.Web.Extensions.dll /reference:System.IO.Compression.dll /reference:System.IO.Compression.FileSystem.dll (Join-Path $root 'windows-app\Program.cs')
   if ($LASTEXITCODE -ne 0) { throw 'C# compilation failed.' }
   Copy-Item -LiteralPath $compiledOutput -Destination $output -Force
   $hash = (Get-FileHash -LiteralPath $output -Algorithm SHA256).Hash.ToLowerInvariant()

@@ -1,6 +1,20 @@
 import AppKit
+import CryptoKit
 import Foundation
 import UniformTypeIdentifiers
+
+private let releaseAPI = URL(string: "https://api.github.com/repos/zhulin025/Codex-QQ-Skin/releases/latest")!
+
+private struct GitHubRelease: Decodable {
+    struct Asset: Decodable {
+        let name: String
+        let browser_download_url: URL
+    }
+    let tag_name: String
+    let html_url: URL
+    let body: String?
+    let assets: [Asset]
+}
 
 struct ThemeLibraryItem {
     let id: String
@@ -39,6 +53,123 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTableViewDataSource,
         reloadThemeLibrary()
         window.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
+        checkForUpdates()
+    }
+
+    private var appVersion: String {
+        Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0.0.0"
+    }
+
+    private func isNewer(_ candidate: String, than current: String) -> Bool {
+        let lhs = candidate.trimmingCharacters(in: CharacterSet(charactersIn: "vV")).split(separator: ".").map { Int($0) ?? 0 }
+        let rhs = current.trimmingCharacters(in: CharacterSet(charactersIn: "vV")).split(separator: ".").map { Int($0) ?? 0 }
+        for index in 0..<max(lhs.count, rhs.count) {
+            let a = index < lhs.count ? lhs[index] : 0
+            let b = index < rhs.count ? rhs[index] : 0
+            if a != b { return a > b }
+        }
+        return false
+    }
+
+    private func checkForUpdates() {
+        var request = URLRequest(url: releaseAPI)
+        request.timeoutInterval = 12
+        request.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")
+        request.setValue("Codex-QQ-Skin/\(appVersion)", forHTTPHeaderField: "User-Agent")
+        URLSession.shared.dataTask(with: request) { [weak self] data, _, _ in
+            guard let self, let data,
+                  let release = try? JSONDecoder().decode(GitHubRelease.self, from: data),
+                  self.isNewer(release.tag_name, than: self.appVersion) else { return }
+            DispatchQueue.main.async { self.offerUpdate(release) }
+        }.resume()
+    }
+
+    private func offerUpdate(_ release: GitHubRelease) {
+        guard !busy else { return }
+        let alert = NSAlert()
+        alert.messageText = "发现新版本 \(release.tag_name)"
+        let notes = (release.body ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        alert.informativeText = "当前版本：\(appVersion)\n\n\(notes.isEmpty ? "建议升级到最新版本。" : String(notes.prefix(700)))"
+        alert.addButton(withTitle: "下载并安装")
+        alert.addButton(withTitle: "稍后")
+        alert.addButton(withTitle: "查看更新说明")
+        switch alert.runModal() {
+        case .alertFirstButtonReturn: downloadAndInstall(release)
+        case .alertThirdButtonReturn: NSWorkspace.shared.open(release.html_url)
+        default: break
+        }
+    }
+
+    private func downloadAndInstall(_ release: GitHubRelease) {
+        let current = Bundle.main.bundleURL
+        let parent = current.deletingLastPathComponent()
+        guard !current.path.contains("/AppTranslocation/"), FileManager.default.isWritableFile(atPath: parent.path) else {
+            showError("当前应用所在位置无法自动替换。请先把 Codex QQ Skin.app 拖到“应用程序”文件夹，再重新打开并升级。")
+            return
+        }
+        guard let archive = release.assets.first(where: { $0.name.lowercased().hasSuffix(".app.zip") }),
+              let checksum = release.assets.first(where: { $0.name == archive.name + ".sha256" }) else {
+            showError("这个 Release 缺少 macOS 安装包或 SHA-256 校验文件。")
+            return
+        }
+        setBusy(true, message: "正在下载 \(release.tag_name)…")
+        URLSession.shared.downloadTask(with: archive.browser_download_url) { [weak self] temporary, _, error in
+            guard let self, let temporary, error == nil else {
+                DispatchQueue.main.async { self?.setBusy(false, message: "更新下载失败"); self?.showError("无法下载安装包，请检查网络后重试。") }
+                return
+            }
+            let work = FileManager.default.temporaryDirectory.appendingPathComponent("codex-qq-skin-update-\(UUID().uuidString)")
+            do {
+                try FileManager.default.createDirectory(at: work, withIntermediateDirectories: true)
+                let zip = work.appendingPathComponent(archive.name)
+                try FileManager.default.moveItem(at: temporary, to: zip)
+                let expected = try String(contentsOf: checksum.browser_download_url, encoding: .utf8)
+                    .split(whereSeparator: { $0 == " " || $0 == "\t" || $0 == "\n" }).first.map(String.init)?.lowercased() ?? ""
+                let actual = SHA256.hash(data: try Data(contentsOf: zip)).map { String(format: "%02x", $0) }.joined()
+                guard expected.count == 64, expected == actual else { throw NSError(domain: "Updater", code: 2, userInfo: [NSLocalizedDescriptionKey: "安装包校验失败，已取消更新。"] ) }
+                let expanded = work.appendingPathComponent("expanded")
+                try FileManager.default.createDirectory(at: expanded, withIntermediateDirectories: true)
+                let unzip = Process()
+                unzip.executableURL = URL(fileURLWithPath: "/usr/bin/ditto")
+                unzip.arguments = ["-x", "-k", zip.path, expanded.path]
+                try unzip.run(); unzip.waitUntilExit()
+                guard unzip.terminationStatus == 0,
+                      let staged = FileManager.default.enumerator(at: expanded, includingPropertiesForKeys: nil)?.compactMap({ $0 as? URL }).first(where: { $0.pathExtension == "app" && $0.lastPathComponent == "Codex QQ Skin.app" }) else {
+                    throw NSError(domain: "Updater", code: 3, userInfo: [NSLocalizedDescriptionKey: "无法解压新的应用。"])
+                }
+                try self.launchUpdater(stagedApp: staged, work: work)
+            } catch {
+                try? FileManager.default.removeItem(at: work)
+                DispatchQueue.main.async { self.setBusy(false, message: "更新失败"); self.showError(error.localizedDescription) }
+            }
+        }.resume()
+    }
+
+    private func launchUpdater(stagedApp: URL, work: URL) throws {
+        let current = Bundle.main.bundleURL
+        let script = work.appendingPathComponent("install-update.sh")
+        let q: (String) -> String = { "'" + $0.replacingOccurrences(of: "'", with: "'\\''") + "'" }
+        let text = """
+        #!/bin/bash
+        while /bin/kill -0 \(ProcessInfo.processInfo.processIdentifier) 2>/dev/null; do /bin/sleep 0.2; done
+        BACKUP=\(q(current.path + ".update-backup"))
+        /bin/rm -rf "$BACKUP"
+        /bin/mv \(q(current.path)) "$BACKUP" || exit 1
+        if ! /usr/bin/ditto \(q(stagedApp.path)) \(q(current.path)); then
+          /bin/mv "$BACKUP" \(q(current.path))
+          exit 1
+        fi
+        /bin/rm -rf "$BACKUP"
+        /usr/bin/open \(q(current.path))
+        /bin/rm -rf \(q(work.path))
+        """
+        try text.write(to: script, atomically: true, encoding: .utf8)
+        try FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: script.path)
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/bin/bash")
+        process.arguments = [script.path]
+        try process.run()
+        DispatchQueue.main.async { NSApp.terminate(nil) }
     }
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { true }

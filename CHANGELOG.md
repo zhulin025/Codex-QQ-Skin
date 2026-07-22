@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.3.0 — 2026-07-22
+
+- macOS 与 Windows 原生应用启动后自动检查 GitHub 最新 Release；仅在发现更高版本时提示，由用户决定是否升级。
+- 用户确认后在应用内下载安装包，并强制核对同一 Release 的 SHA-256 校验文件；校验失败不会运行或替换应用。
+- macOS 自动解压、安全替换并重新打开 App，失败时保留旧 App 回滚；Windows 校验后启动新版安装程序。
+- macOS 构建现在同步生成 `Codex.QQ.Skin.app.zip` 与 `.sha256`，与自动更新器的 Release 资产约定保持一致。
+
 ## 2.2.2 — 2026-07-22
 
 - QQ 模式强制使用 Codex `electron-light` 完整浅色外观，并在离开 QQ / 卸载皮肤时原样恢复用户先前的原生配色。

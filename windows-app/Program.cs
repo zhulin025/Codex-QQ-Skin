@@ -3,28 +3,31 @@ using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.IO.Compression;
+using System.Net;
 using System.Reflection;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using System.Web.Script.Serialization;
 
 [assembly: AssemblyTitle("ChatGPT QQ Skin Setup")]
 [assembly: AssemblyDescription("ChatGPT QQ Skin native Windows installer")]
 [assembly: AssemblyCompany("Codex QQ Skin")]
 [assembly: AssemblyProduct("ChatGPT QQ Skin")]
-[assembly: AssemblyVersion("2.1.0.0")]
-[assembly: AssemblyFileVersion("2.1.0.0")]
+[assembly: AssemblyVersion("2.3.0.0")]
+[assembly: AssemblyFileVersion("2.3.0.0")]
 
 namespace CodexQQSkinSetup
 {
     internal static class Program
     {
         [STAThread]
-        private static void Main()
+        private static void Main(string[] args)
         {
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-            Application.Run(new MainForm());
+            Application.Run(new MainForm(args));
         }
     }
 
@@ -36,7 +39,10 @@ namespace CodexQQSkinSetup
         private readonly ProgressBar progress;
         private readonly TextBox log;
 
-        public MainForm()
+        private const string CurrentVersion = "2.3.0";
+        private const string LatestReleaseApi = "https://api.github.com/repos/zhulin025/Codex-QQ-Skin/releases/latest";
+
+        public MainForm(string[] args)
         {
             Text = "ChatGPT QQ Skin";
             Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath);
@@ -65,7 +71,67 @@ namespace CodexQQSkinSetup
             Controls.Add(progress);
             Controls.Add(statusLabel);
             Controls.Add(log);
+            Shown += async delegate { if (Array.IndexOf(args, "--updated") < 0) await CheckForUpdatesAsync(); };
         }
+
+        private async Task CheckForUpdatesAsync()
+        {
+            try
+            {
+                ReleaseInfo release = await DownloadReleaseInfoAsync();
+                Version latest, current;
+                if (!Version.TryParse(release.tag_name.TrimStart('v', 'V'), out latest) || !Version.TryParse(CurrentVersion, out current) || latest <= current) return;
+                DialogResult choice = MessageBox.Show(this, "发现新版本 " + release.tag_name + "。\r\n\r\n当前版本：" + CurrentVersion + "\r\n\r\n是否现在下载并安装？", "ChatGPT QQ Skin 更新", MessageBoxButtons.YesNo, MessageBoxIcon.Information);
+                if (choice == DialogResult.Yes) await InstallUpdateAsync(release);
+            }
+            catch (Exception ex) { AppendLog("检查更新失败（不影响使用）：" + ex.Message); }
+        }
+
+        private async Task<ReleaseInfo> DownloadReleaseInfoAsync()
+        {
+            using (WebClient client = NewWebClient())
+            {
+                string json = await client.DownloadStringTaskAsync(LatestReleaseApi);
+                return new JavaScriptSerializer().Deserialize<ReleaseInfo>(json);
+            }
+        }
+
+        private async Task InstallUpdateAsync(ReleaseInfo release)
+        {
+            ReleaseAsset installer = Array.Find(release.assets, delegate(ReleaseAsset a) { return a.name.EndsWith(".exe", StringComparison.OrdinalIgnoreCase); });
+            ReleaseAsset checksum = installer == null ? null : Array.Find(release.assets, delegate(ReleaseAsset a) { return a.name == installer.name + ".sha256"; });
+            if (installer == null || checksum == null) throw new InvalidOperationException("最新 Release 缺少 Windows 安装包或 SHA-256 校验文件。");
+            await RunBusyAsync("正在下载 " + release.tag_name + "…", async delegate
+            {
+                string folder = Path.Combine(Path.GetTempPath(), "CodexQQSkinUpdate", release.tag_name);
+                Directory.CreateDirectory(folder);
+                string target = Path.Combine(folder, installer.name);
+                string expected;
+                using (WebClient client = NewWebClient())
+                {
+                    await client.DownloadFileTaskAsync(installer.browser_download_url, target);
+                    expected = (await client.DownloadStringTaskAsync(checksum.browser_download_url)).Split((char[])null, StringSplitOptions.RemoveEmptyEntries)[0].ToLowerInvariant();
+                }
+                string actual;
+                using (SHA256 sha = SHA256.Create()) using (FileStream stream = File.OpenRead(target)) actual = BitConverter.ToString(sha.ComputeHash(stream)).Replace("-", "").ToLowerInvariant();
+                if (expected.Length != 64 || expected != actual) { File.Delete(target); throw new InvalidDataException("安装包校验失败，已取消更新。"); }
+                Process.Start(new ProcessStartInfo(target, "--updated") { UseShellExecute = true });
+                BeginInvoke((Action)(delegate { Close(); }));
+                return "新版本安装程序已启动。";
+            });
+        }
+
+        private static WebClient NewWebClient()
+        {
+            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
+            WebClient client = new WebClient();
+            client.Headers[HttpRequestHeader.Accept] = "application/vnd.github+json";
+            client.Headers[HttpRequestHeader.UserAgent] = "Codex-QQ-Skin/" + CurrentVersion;
+            return client;
+        }
+
+        private sealed class ReleaseInfo { public string tag_name { get; set; } public ReleaseAsset[] assets { get; set; } }
+        private sealed class ReleaseAsset { public string name { get; set; } public string browser_download_url { get; set; } }
 
         private Button MakeButton(string text, Point location, Color color)
         {
@@ -131,7 +197,7 @@ namespace CodexQQSkinSetup
 
         private async Task<string> ExtractPayloadAsync()
         {
-            string target = Path.Combine(Path.GetTempPath(), "CodexQQSkinSetup", "2.1.0");
+            string target = Path.Combine(Path.GetTempPath(), "CodexQQSkinSetup", CurrentVersion);
             string marker = Path.Combine(target, ".complete");
             if (File.Exists(marker)) return target;
             return await Task.Run(delegate

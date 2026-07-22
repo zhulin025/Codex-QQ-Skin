@@ -73,3 +73,10 @@ else
 fi
 
 printf '%s\n' "$APP"
+
+ARCHIVE="$OUTPUT_DIR/Codex.QQ.Skin.app.zip"
+/bin/rm -f "$ARCHIVE" "$ARCHIVE.sha256"
+/usr/bin/ditto -c -k --keepParent "$APP" "$ARCHIVE"
+HASH="$(/usr/bin/shasum -a 256 "$ARCHIVE" | /usr/bin/awk '{print $1}')"
+printf '%s  %s\n' "$HASH" "$(/usr/bin/basename "$ARCHIVE")" > "$ARCHIVE.sha256"
+printf '%s\n' "$ARCHIVE"

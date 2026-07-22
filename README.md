@@ -9,14 +9,15 @@
 
 > 非 OpenAI、腾讯或 QQ 官方产品。本项目不会修改官方 `.app`、`app.asar`、代码签名、API Key 或 Base URL。
 
-## 最新版本 2.2.2
+## 最新版本 2.3.0
 
+- **内置自动升级：** macOS / Windows 应用启动时静默检查 GitHub Release；发现新版后由用户选择是否下载安装，并在安装前核对 SHA-256。
 - **QQ 浅色强制：** 进入 QQ 模式时切换到 Codex 完整浅色外观，离开后恢复用户原先的原生深/浅色。
 - 修复 QQ 标题栏蓝色条在模式切换器处被截断；摘要面板在系统深色下保持浅色可读。
 - **自定义背景：** 保留更清晰的原图细节（轻柔化 + 淡遮罩），并适配 Codex 2026.7 首页垂直居中空隙。
 - 继续包含 2.2.1：App 皮肤库双 Tab、行内管理、启动无确认弹框。
 
-Windows 用户请从 [GitHub Releases](https://github.com/zhulin025/Codex-QQ-Skin/releases) 下载 `ChatGPT QQ Skin Setup 2.2.2.exe`。
+Windows 用户请从 [GitHub Releases](https://github.com/zhulin025/Codex-QQ-Skin/releases) 下载 `ChatGPT QQ Skin Setup 2.3.0.exe`。
 
 ## 效果预览
 

@@ -827,7 +827,7 @@ CRLF_BACKUP="$TMP/config-crlf-backup.json"
 "$NODE" "$ROOT/scripts/theme-config.mjs" restore "$CRLF_CONFIG" "$CRLF_BACKUP" >/dev/null
 /usr/bin/cmp -s "$CRLF_CONFIG" "$TMP/original-crlf.toml"
 
-/usr/bin/env -u HOME /bin/bash -c '. "$1/scripts/common-macos.sh"; [ -n "$HOME" ] && [ "$SKIN_VERSION" = "2.2.2" ]' _ "$ROOT"
+/usr/bin/env -u HOME /bin/bash -c '. "$1/scripts/common-macos.sh"; [ -n "$HOME" ] && [ "$SKIN_VERSION" = "2.3.0" ]' _ "$ROOT"
 DOCTOR_HOME="$TMP/doctor-home"
 /bin/mkdir -p "$DOCTOR_HOME/.codex" "$DOCTOR_HOME/Library/Application Support/CodexQQSkin/theme"
 /usr/bin/printf '%s\n' 'model = "gpt-5"' > "$DOCTOR_HOME/.codex/config.toml"
