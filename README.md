@@ -6,6 +6,9 @@
 1、支持 Mac & Windows 系统：提供 macOS App 与原生 C# Windows 安装器。  
 2、支持自定义皮肤：选择任意图片，在本机生成铺满新建任务、任务详情和左侧栏的完整自定义皮肤。    
 3、皮肤库管理器
+4、Codex token 统计
+5、QQ 等级系统
+6、内置自动检测版本升级
 
 > 非 OpenAI、腾讯或 QQ 官方产品。本项目不会修改官方 `.app`、`app.asar`、代码签名、API Key 或 Base URL。
 
