@@ -201,6 +201,9 @@ fi
 [ -z "$(/usr/bin/find "$SWITCH_STATE" -maxdepth 1 -name '.theme-switch.*' -print -quit)" ]
 
 LIST_JSON_FILE="$TMP/list-themes.json"
+/usr/bin/printf '%s\n' \
+  '{"schemaVersion":1,"mode":"custom","themeId":"preset-switch-fixture"}' \
+  > "$SWITCH_STATE/active-skin.json"
 /usr/bin/env HOME="$SWITCH_HOME" NODE="$NODE" \
   "$ROOT/scripts/list-themes-macos.sh" --json --limit 5 > "$LIST_JSON_FILE"
 "$NODE" -e '
@@ -209,6 +212,16 @@ LIST_JSON_FILE="$TMP/list-themes.json"
     process.exit(1);
   }
   if (payload.activeLibraryId !== "preset-switch-fixture") process.exit(1);
+  if (payload.activeMode !== "custom") process.exit(1);
+' "$LIST_JSON_FILE"
+/usr/bin/printf '%s\n' '{"schemaVersion":1,"mode":"qq","themeId":null}' \
+  > "$SWITCH_STATE/active-skin.json"
+/usr/bin/env HOME="$SWITCH_HOME" NODE="$NODE" \
+  "$ROOT/scripts/list-themes-macos.sh" --json --limit 5 > "$LIST_JSON_FILE"
+"$NODE" -e '
+  const payload = JSON.parse(require("fs").readFileSync(process.argv[1], "utf8"));
+  if (payload.activeMode !== "qq" || payload.activeLibraryId !== null) process.exit(1);
+  if (payload.themes.some((item) => item.active)) process.exit(1);
 ' "$LIST_JSON_FILE"
 if /usr/bin/env HOME="$SWITCH_HOME" NODE="$NODE" \
   "$ROOT/scripts/remove-theme-macos.sh" --id preset-switch-fixture >/dev/null 2>&1; then
@@ -844,7 +857,7 @@ CRLF_BACKUP="$TMP/config-crlf-backup.json"
 "$NODE" "$ROOT/scripts/theme-config.mjs" restore "$CRLF_CONFIG" "$CRLF_BACKUP" >/dev/null
 /usr/bin/cmp -s "$CRLF_CONFIG" "$TMP/original-crlf.toml"
 
-/usr/bin/env -u HOME /bin/bash -c '. "$1/scripts/common-macos.sh"; [ -n "$HOME" ] && [ "$SKIN_VERSION" = "2.5.0" ]' _ "$ROOT"
+/usr/bin/env -u HOME /bin/bash -c '. "$1/scripts/common-macos.sh"; [ -n "$HOME" ] && [ "$SKIN_VERSION" = "2.5.1" ]' _ "$ROOT"
 DOCTOR_HOME="$TMP/doctor-home"
 /bin/mkdir -p "$DOCTOR_HOME/.codex" "$DOCTOR_HOME/Library/Application Support/CodexQQSkin/theme"
 /usr/bin/printf '%s\n' 'model = "gpt-5"' > "$DOCTOR_HOME/.codex/config.toml"

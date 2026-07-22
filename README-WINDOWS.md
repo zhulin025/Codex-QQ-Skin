@@ -1,4 +1,4 @@
-# ChatGPT QQ Skin for Windows 2.5.0
+# ChatGPT QQ Skin for Windows 2.5.1
 
 Windows 10/11 x64 原生 C# GUI 版本。安装器提供“一键安装并启动”“上传图片生成皮肤”和“安装 Codex 深度皮肤助手”入口，并内置运行引擎与 Node.js，无需用户另外安装依赖。
 
@@ -9,8 +9,8 @@ Windows 10/11 x64 原生 C# GUI 版本。安装器提供“一键安装并启动
 从 [GitHub Releases](https://github.com/zhulin025/Codex-QQ-Skin/releases) 下载：
 
 ```text
-ChatGPT QQ Skin Setup 2.5.0.exe
-ChatGPT QQ Skin Setup 2.5.0.exe.sha256
+ChatGPT QQ Skin Setup 2.5.1.exe
+ChatGPT QQ Skin Setup 2.5.1.exe.sha256
 ```
 
 当前 EXE 尚未使用商业代码签名，Windows SmartScreen 可能在首次运行时显示提示。请只从本项目正式 Release 下载，并核对 SHA-256。
@@ -24,7 +24,7 @@ ChatGPT QQ Skin Setup 2.5.0.exe.sha256
 
 ## 安装与使用
 
-1. 双击 `ChatGPT QQ Skin Setup 2.5.0.exe`。
+1. 双击 `ChatGPT QQ Skin Setup 2.5.1.exe`。
 2. 点击“一键安装并启动”。安装器会安装或升级引擎、启动 ChatGPT、注入并验证皮肤。
 3. 深度皮肤助手区域会明确显示“安装”“更新”或“已安装”；按提示完成后，在 Codex 输入一句主题关键词即可生成完整分层皮肤。
 4. 点击“上传图片生成皮肤”，仍可选择 PNG、JPEG 或 WebP 图片生成单背景自定义皮肤。
@@ -37,6 +37,12 @@ ChatGPT QQ Skin Setup 2.5.0.exe.sha256
 QQ 模式右侧上方可显示本机 Codex 的今日、近 7 天、历史累计 token、七日趋势、活跃天数和 QQ 风格等级。点击“资料”可以随时切回原生输出/来源面板。
 
 统计只读取当前 Windows 用户目录下的 Codex 本地 session 日志，增量缓存保存在 `%APPDATA%\CodexQQSkin\usage`。默认统计包含缓存 Token，可在成长中心开启“净用量”排除缓存。不需要额外登录，不读取 API Key，也不会上传 prompt 或 token 数据。统计是本机口径，不是 OpenAI 官方账单或账号云端等级。
+
+## 2.5.1 更新
+
+- 修复皮肤模式切换按钮偶发无响应。
+- QQ / 原生模式不再错误选中上次使用的自定义皮肤，Codex 与安装器皮肤库选中态保持一致。
+- 深度自定义皮肤现在可以从标题栏正常切换。
 
 ## 2.5.0 更新
 
@@ -89,12 +95,12 @@ $env:CODEX_EXE = 'C:\完整路径\ChatGPT.exe'
 需要 **Windows 10/11** 或 GitHub Actions `windows-2022`。macOS 无法直接生成本安装器 `.exe`。
 
 ```powershell
-.\scripts\windows\build-gui-installer.ps1 -UseInstalledNode -OutputFileName 'ChatGPT QQ Skin Setup 2.5.0.exe'
+.\scripts\windows\build-gui-installer.ps1 -UseInstalledNode -OutputFileName 'ChatGPT QQ Skin Setup 2.5.1.exe'
 ```
 
 不使用 `-UseInstalledNode` 时，构建脚本会下载官方 Node.js 运行时并校验 SHA-256。输出文件保存在 `release` 目录。
 
-发布时也可在仓库 Actions 中运行 `Publish release assets`，输入已有 draft tag（如 `v2.5.0`），由 CI 构建并上传 EXE。
+发布时也可在仓库 Actions 中运行 `Publish release assets`，输入已有 draft tag（如 `v2.5.1`），由 CI 构建并上传 EXE。
 
 ## 安全说明
 

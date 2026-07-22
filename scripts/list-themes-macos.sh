@@ -23,6 +23,13 @@ ensure_node_runtime
 ACTIVE_NAME=""
 ACTIVE_KIND=""
 ACTIVE_LIBRARY_ID=""
+ACTIVE_MODE=""
+ACTIVE_MODE_THEME_ID=""
+ACTIVE_MODE_FILE="$STATE_ROOT/active-skin.json"
+if [ -f "$ACTIVE_MODE_FILE" ]; then
+  ACTIVE_MODE="$("$NODE" -e 'try{const s=JSON.parse(require("fs").readFileSync(process.argv[1],"utf8"));if(["native","qq","custom"].includes(s.mode))process.stdout.write(s.mode)}catch{}' "$ACTIVE_MODE_FILE" 2>/dev/null || true)"
+  ACTIVE_MODE_THEME_ID="$("$NODE" -e 'try{const s=JSON.parse(require("fs").readFileSync(process.argv[1],"utf8"));if(typeof s.themeId==="string")process.stdout.write(s.themeId)}catch{}' "$ACTIVE_MODE_FILE" 2>/dev/null || true)"
+fi
 if [ -f "$THEME_DIR/theme.json" ]; then
   ACTIVE_NAME="$("$NODE" -e 'try{const t=JSON.parse(require("fs").readFileSync(process.argv[1],"utf8"));process.stdout.write(t.name||"")}catch{}' "$THEME_DIR/theme.json" 2>/dev/null || true)"
   ACTIVE_KIND="$("$NODE" -e 'try{const t=JSON.parse(require("fs").readFileSync(process.argv[1],"utf8"));process.stdout.write(t.kind||"")}catch{}' "$THEME_DIR/theme.json" 2>/dev/null || true)"
@@ -35,7 +42,7 @@ if [ -f "$THEME_DIR/theme.json" ]; then
   ACTIVE_HASH="$(/usr/bin/shasum -a 256 "$THEME_DIR/theme.json" 2>/dev/null | /usr/bin/awk '{print $1}')"
 fi
 
-export STATE_ROOT THEMES_ROOT IMAGES_DIR THEME_DIR ACTIVE_NAME ACTIVE_KIND ACTIVE_HASH LIMIT
+export STATE_ROOT THEMES_ROOT IMAGES_DIR THEME_DIR ACTIVE_NAME ACTIVE_KIND ACTIVE_HASH ACTIVE_MODE ACTIVE_MODE_THEME_ID LIMIT
 "$NODE" <<'NODE'
 const fs = require("fs");
 const path = require("path");
@@ -46,6 +53,8 @@ const themeDir = process.env.THEME_DIR;
 const activeName = process.env.ACTIVE_NAME || "";
 const activeKind = process.env.ACTIVE_KIND || "";
 const activeHash = process.env.ACTIVE_HASH || "";
+const activeMode = process.env.ACTIVE_MODE || "";
+const activeModeThemeId = process.env.ACTIVE_MODE_THEME_ID || "";
 const limit = Number(process.env.LIMIT || 0);
 
 function safeId(name) {
@@ -95,6 +104,9 @@ if (!activeLibraryId && activeName) {
   const hit = themes.find((item) => item.name === activeName);
   if (hit) activeLibraryId = hit.id;
 }
+if (activeMode === "custom" && activeModeThemeId && themes.some((item) => item.id === activeModeThemeId)) {
+  activeLibraryId = activeModeThemeId;
+}
 
 const images = [];
 if (fs.existsSync(imagesDir)) {
@@ -114,7 +126,8 @@ const listed = limit > 0 ? themes.slice(0, limit) : themes;
 const payload = {
   activeThemeName: activeName,
   activeThemeKind: activeKind || null,
-  activeLibraryId: activeLibraryId || null,
+  activeMode: activeMode || null,
+  activeLibraryId: activeMode === "custom" ? (activeLibraryId || null) : null,
   activeThemeDir: themeDir,
   themesRoot,
   imagesDir,
@@ -124,7 +137,7 @@ const payload = {
     kind,
     image,
     mtimeMs,
-    active: id === activeLibraryId,
+    active: activeMode === "custom" && id === activeLibraryId,
   })),
   images,
 };

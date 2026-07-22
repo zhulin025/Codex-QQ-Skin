@@ -1971,6 +1971,13 @@
     });
     const taskRoute = !home && !settingsRoute && Boolean(shellMain);
     setAttribute(root, "data-dream-task-route", taskRoute ? "true" : "false");
+    const visibleThreadFooters = [...document.querySelectorAll(
+      'main.main-surface [data-pip-obstacle="thread-footer"]',
+    )].filter((footer) => {
+      const box = footer.getBoundingClientRect?.();
+      return box && box.width > 8 && box.height > 8;
+    });
+    setAttribute(root, "data-dream-side-task", visibleThreadFooters.length >= 2 ? "open" : "closed");
     const layoutBaseEligible = layoutMode === "classic-three-pane" &&
       !home && taskRoute && wideEnough;
     if (
@@ -2137,7 +2144,7 @@
   const syncToggleButton = (control) => {
     for (const button of control.querySelectorAll("button[data-skin-mode]")) {
       const selected = button.dataset.skinMode === skinMode;
-      const unavailable = button.dataset.skinMode === "custom" && CUSTOM_THEME.kind !== "custom-native";
+      const unavailable = button.dataset.skinMode === "custom" && !CUSTOM_THEME_KINDS.has(CUSTOM_THEME.kind);
       button.disabled = unavailable;
       button.setAttribute("aria-pressed", selected ? "true" : "false");
       button.style.opacity = unavailable ? ".45" : "1";
@@ -2149,7 +2156,7 @@
     }
     const libraryButton = control.querySelector("button[data-skin-library]");
     if (libraryButton) {
-      const unavailable = CUSTOM_THEME.kind !== "custom-native" && LIBRARY_THEMES.length === 0;
+      const unavailable = !CUSTOM_THEME_KINDS.has(CUSTOM_THEME.kind) && LIBRARY_THEMES.length === 0;
       libraryButton.disabled = unavailable;
       libraryButton.style.opacity = unavailable ? ".45" : "1";
       libraryButton.style.color = skinMode === "custom" ? "#fff" : "#3b3f45";
@@ -2200,7 +2207,7 @@
       option.setAttribute("role", "menuitem");
       option.dataset.themeId = item.id;
       const label = typeof item.name === "string" && item.name.trim() ? item.name.trim() : item.id;
-      option.textContent = item.active ? `✓ ${label}` : label;
+      option.textContent = skinMode === "custom" && item.active ? `✓ ${label}` : label;
       option.title = item.id;
       option.style.cssText = [
         "display:block", "width:100%", "text-align:left", "height:28px", "padding:0 10px",
@@ -2235,7 +2242,7 @@
 
   const selectSkinMode = (mode) => {
     if (!["native", "qq", "custom"].includes(mode)) return;
-    if (mode === "custom" && CUSTOM_THEME.kind !== "custom-native") return;
+    if (mode === "custom" && !CUSTOM_THEME_KINDS.has(CUSTOM_THEME.kind)) return;
     skinMode = mode;
     if (skinMode === "qq") forceNativeLightForQQ();
     else restoreNativeAppearance();
@@ -2299,11 +2306,17 @@
           "font:650 11px/22px -apple-system,BlinkMacSystemFont,\"PingFang SC\",sans-serif",
           "cursor:pointer", "user-select:none", "transition:background .16s ease,color .16s ease",
         ].join(";");
-        button.addEventListener?.("click", (event) => {
+        const activateMode = (event) => {
           event.preventDefault();
           event.stopPropagation();
           selectSkinMode(mode);
-        });
+        };
+        // Electron can occasionally consume the synthesized click while the
+        // title bar is being rebuilt. Pointer-up arrives before that drag-region
+        // reconciliation, so handle it as the primary activation path and keep
+        // click as the keyboard/accessibility fallback.
+        button.addEventListener?.("pointerup", activateMode);
+        button.addEventListener?.("click", activateMode);
         control.appendChild(button);
       }
       if (needsLibrary) {

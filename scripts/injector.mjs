@@ -11,13 +11,32 @@ import { loadDeepThemeDirectory, mimeForExtension } from "./deep-theme-core.mjs"
 const scriptPath = fileURLToPath(import.meta.url);
 const here = path.dirname(scriptPath);
 const root = path.resolve(here, "..");
-const SKIN_VERSION = "2.5.0";
+const SKIN_VERSION = "2.5.1";
 const LOOPBACK_HOSTS = new Set(["127.0.0.1", "localhost", "[::1]"]);
 const CDP_ID_PATTERN = /^[A-Za-z0-9._-]{1,200}$/;
 const MAX_ART_BYTES = 16 * 1024 * 1024;
 const MAX_USAGE_SNAPSHOT_BYTES = 256 * 1024;
 const USAGE_REFRESH_INTERVAL_MS = 60_000;
 let staticPayloadAssets = null;
+
+async function persistActiveMode(themeDir, mode, themeId = null) {
+  if (!themeDir || !["native", "qq", "custom"].includes(mode)) return;
+  const file = path.join(resolveStateRoot(themeDir), "active-skin.json");
+  const temporary = `${file}.${process.pid}.${Date.now()}.tmp`;
+  const payload = `${JSON.stringify({
+    schemaVersion: 1,
+    mode,
+    themeId: mode === "custom" && typeof themeId === "string" ? themeId : null,
+    updatedAt: new Date().toISOString(),
+  }, null, 2)}\n`;
+  try {
+    await fs.mkdir(path.dirname(file), { recursive: true, mode: 0o700 });
+    await fs.writeFile(temporary, payload, { flag: "wx", mode: 0o600 });
+    await fs.rename(temporary, file);
+  } finally {
+    await fs.rm(temporary, { force: true }).catch(() => {});
+  }
+}
 
 function parseArgs(argv) {
   const options = {
@@ -1103,6 +1122,7 @@ async function runWatch(options) {
   let stopping = false;
   let reloadTimer = null;
   let reloadChain = Promise.resolve();
+  let persistedModeKey = "";
   let discoveryDelayMs = 100;
   let lastListErrorAt = 0;
   const stop = () => { stopping = true; };
@@ -1338,6 +1358,21 @@ async function runWatch(options) {
       }
       await pollLibrarySwitchRequests();
       await pollUsageRefreshRequests();
+      for (const record of sessions.values()) {
+        if (record.session.closed) continue;
+        try {
+          const active = await record.session.evaluate(`(() => ({
+            mode: window.__CODEX_QQ_SKIN_STATE__?.skinMode ?? null,
+            themeId: window.__CODEX_QQ_SKIN_STATE__?.themeId ?? null
+          }))()`);
+          const key = `${active?.mode || ""}:${active?.themeId || ""}`;
+          if (key !== persistedModeKey) {
+            await persistActiveMode(options.themeDir, active?.mode, active?.themeId);
+            persistedModeKey = key;
+          }
+          break;
+        } catch {}
+      }
       if (sessions.size) queueUsageRefresh(false);
       const pollDelay = sessions.size ? 800 : (targets.length ? 250 : 100);
       await new Promise((resolve) => setTimeout(resolve, pollDelay));

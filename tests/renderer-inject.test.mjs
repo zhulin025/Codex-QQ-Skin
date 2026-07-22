@@ -37,8 +37,33 @@ assert.match(
 );
 assert.match(
   css,
-  /data-dream-three-pane="true"[\s\S]{0,100}main\.main-surface:not\(\.qq-skin-home-shell\)[\s\S]{0,120}--thread-content-max-width:\s*calc\(100cqw - 48px\) !important;/,
-  "Wide three-pane task content must expand with fixed 24px side gutters.",
+  /data-dream-three-pane="true"[\s\S]{0,100}main\.main-surface:not\(\.qq-skin-home-shell\)[\s\S]{0,280}--thread-content-max-width:\s*calc\([\s\S]{0,120}100cqw - var\(--dream-summary-panel-width, var\(--dream-right-panel-width, 300px\)\) \+ 22px[\s\S]{0,40}\) !important;/,
+  "Wide three-pane task content must subtract the summary column so it cannot slide underneath the right panel.",
+);
+assert.match(
+  css,
+  /data-dream-task-route="true"\]\[data-dream-three-pane="false"\][\s\S]{0,120}main\.main-surface:not\(\.qq-skin-home-shell\)[\s\S]{0,140}--thread-content-max-width:\s*min\(1360px, calc\(\(300cqw \+ 48rem\) \/ 4\)\) !important;/,
+  "A normal task must halve the previous QQ whitespace again without becoming unbounded on wide displays.",
+);
+assert.match(
+  template,
+  /visibleThreadFooters[\s\S]{0,420}data-dream-side-task[\s\S]{0,100}visibleThreadFooters\.length >= 2/,
+  "The renderer must distinguish a real split side task from the body-level floating chat portal.",
+);
+assert.match(
+  css,
+  /data-dream-task-route="true"\]\[data-dream-side-task="open"\][\s\S]{0,180}main\.main-surface:not\(\.qq-skin-home-shell\)[\s\S]{0,180}--thread-content-max-width:\s*calc\(100cqw \+ 28px\) !important;/,
+  "Both real side-task threads must use their own container widths without subtracting the summary twice.",
+);
+assert.match(
+  css,
+  /data-dream-side-task="open"[\s\S]{0,140}thread-scroll-container[\s\S]{0,140}scrollbar-gutter:\s*auto !important;[\s\S]{0,80}scrollbar-width:\s*none !important;/,
+  "Split side-task threads must not reserve a hidden 15px scrollbar gutter on both sides.",
+);
+assert.match(
+  css,
+  /data-dream-side-task="open"[\s\S]{0,180}thread-scroll-container::\-webkit-scrollbar[\s\S]{0,100}width:\s*0 !important;/,
+  "A visible split-pane scrollbar must not make the right gutter wider than the left.",
 );
 assert.match(
   css,
@@ -334,6 +359,10 @@ assert.match(template, /LIBRARY_SWITCH_KEY = "codex-qq-skin-library-switch"/,
   "Codex must request library switches through a dedicated localStorage channel.");
 assert.match(template, /dataset\.skinLibrary = "recent"/,
   "The custom segment must expose a lightweight recent-skin chevron when a library exists.");
+assert.match(template, /skinMode === "custom" && item\.active \? `✓ \$\{label\}` : label/,
+  "The recent custom-skin menu must not show a selected theme while QQ or native mode is active.");
+assert.match(template, /addEventListener\?\.\("pointerup", activateMode\)/,
+  "Skin mode buttons must survive Electron title-bar click loss by handling pointer-up directly.");
 assert.match(template, /完整管理请打开 App/,
   "The lightweight picker must defer full library management to the macOS App.");
 assert.match(template, /"right:210px"[\s\S]{0,500}"display:flex"/,

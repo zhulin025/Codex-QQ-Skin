@@ -22,16 +22,14 @@
 - 默认按“总用量”展示并让缓存输入参与成长，等级行右侧可开启“净用量”开关查看排除缓存后的数据；fork、子 Agent 继承历史和重复 token 事件会去重。
 - 当前日志没有稳定账号 ID，因此这里明确显示“本机统计 / 本机 Codex 等级”，不是 OpenAI 官方账单或账号云端等级。
 
-## 最新版本 2.5.0
+## 最新版本 2.5.1
 
-- **一句话深度定制：** 安装“Codex 深度皮肤助手”后，输入“生成一个钢铁侠主题皮肤”即可自动完成参考方案、分层素材、打包、应用和验收。
-- **参考图可选：** 没有参考图时，Skill 会先自动生成首页和任务页两张内部视觉参考，不再要求用户预先准备素材。
-- **V2 深度主题：** 背景、右侧人物、侧栏幽灵、水印、品牌徽标、头像、颜色与布局均可独立控制，不再只是替换背景。
-- **安全主题包：** 新增可导入导出的 `.codexskin` 格式，安装前检查路径、文件类型、图片有效性与容量，全流程保留在本机。
-- **更新不降级：** 安装器只在服务器版本严格高于本地版本时提示自动更新；版本相同不重复安装，本地版本更高时不会被服务器旧版本覆盖。
-- **Skill 状态可见：** 深度皮肤助手会始终显示安装状态；未安装时可一键安装，内置版本更新时可升级，已是当前版本时显示“已安装”和一句话用法。
+- **切换更可靠：** 修复标题栏偶发吞掉“原生 / QQ / 自定义”点击的问题。
+- **选中态同步：** Codex 与安装器皮肤库现在共享当前模式；QQ 或原生模式下不会继续勾选旧的自定义皮肤。
+- **深度皮肤可切换：** `deep-custom` 主题与普通自定义主题使用同一套可用性判断。
+- **任务布局修复：** 普通任务、三栏摘要和分屏侧任务使用各自正确的阅读宽度，不再出现过宽留白或内容压缩偏移。
 
-Windows 用户请从 [GitHub Releases](https://github.com/zhulin025/Codex-QQ-Skin/releases) 下载 `ChatGPT QQ Skin Setup 2.5.0.exe`。
+Windows 用户请从 [GitHub Releases](https://github.com/zhulin025/Codex-QQ-Skin/releases) 下载 `ChatGPT QQ Skin Setup 2.5.1.exe`。
 
 ## 效果预览
 
@@ -47,13 +45,13 @@ Codex QQ Skin 新建任务界面
 
 ## 安装
 
-> Windows 用户请查看 [README-WINDOWS.md](./README-WINDOWS.md)，并从 [GitHub Releases](https://github.com/zhulin025/Codex-QQ-Skin/releases) 下载 `ChatGPT QQ Skin Setup 2.5.0.exe`。安装器已经内置运行引擎与 Node.js。
+> Windows 用户请查看 [README-WINDOWS.md](./README-WINDOWS.md)，并从 [GitHub Releases](https://github.com/zhulin025/Codex-QQ-Skin/releases) 下载 `ChatGPT QQ Skin Setup 2.5.1.exe`。安装器已经内置运行引擎与 Node.js。
 
 安装前请确保官方 Codex/ChatGPT 桌面端至少成功启动过一次，并完全退出 Codex。项目不要求另行安装 Node.js。
 
 ### Windows：原生安装器（推荐）
 
-1. 从 [GitHub Releases](https://github.com/zhulin025/Codex-QQ-Skin/releases) 下载 `ChatGPT QQ Skin Setup 2.5.0.exe`。
+1. 从 [GitHub Releases](https://github.com/zhulin025/Codex-QQ-Skin/releases) 下载 `ChatGPT QQ Skin Setup 2.5.1.exe`。
 2. 双击运行，点击“一键安装并启动”。
 3. 深度皮肤助手区域会显示“安装”“更新”或“已安装”；按提示完成后，直接在 Codex 中用一句主题关键词生成深度皮肤。
 4. 如只需自定义背景，仍可点击“上传图片生成皮肤”，选择 PNG、JPEG 或 WebP 图片。
@@ -238,7 +236,7 @@ npm run build:app
 `npm run build:app` 会在 `release/` 生成同时支持 Apple Silicon 与 Intel 的 `Codex QQ Skin.app`。正式 Release 同时提供：
 
 - macOS：`Codex QQ Skin.app.zip`（可在本机 Mac 用 `npm run build:app` 生成）
-- Windows：`ChatGPT QQ Skin Setup 2.5.0.exe`（需 Windows CI / Windows 电脑构建，Mac 无法直接生成）
+- Windows：`ChatGPT QQ Skin Setup 2.5.1.exe`（需 Windows CI / Windows 电脑构建，Mac 无法直接生成）
 
 请只从本仓库的 [GitHub Releases](https://github.com/zhulin025/Codex-QQ-Skin/releases) 下载。设置 `DEVELOPER_ID_APPLICATION` 环境变量后会使用对应证书签名；公开分发前还需使用 Apple 公证服务处理最终 ZIP/DMG。
 

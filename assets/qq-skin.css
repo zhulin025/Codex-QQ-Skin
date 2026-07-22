@@ -1146,11 +1146,42 @@ html.codex-qq-skin[data-dream-three-pane="true"] main.main-surface > header.app-
   background: transparent !important;
 }
 
+/* On a normal task without the pinned summary, keep only one quarter of the
+   native 48rem reading-column whitespace. This is a second halving relative
+   to the previous QQ layout, capped on very wide displays. */
+html.codex-qq-skin[data-dream-task-route="true"][data-dream-three-pane="false"]
+  main.main-surface:not(.qq-skin-home-shell) {
+  --thread-content-max-width: min(1360px, calc((300cqw + 48rem) / 4)) !important;
+}
+
 /* Keep a fixed gutter around the conversation on wide three-pane displays.
-   Codex's native cap otherwise leaves an increasingly large empty band on
-   each side of the middle column as the window grows. */
+   The main-surface container includes the pinned summary column. Subtract it
+   explicitly so the conversation cannot slide underneath the summary. */
 html.codex-qq-skin[data-dream-three-pane="true"] main.main-surface:not(.qq-skin-home-shell) {
-  --thread-content-max-width: calc(100cqw - 48px) !important;
+  --thread-content-max-width: calc(
+    100cqw - var(--dream-summary-panel-width, var(--dream-right-panel-width, 300px)) + 22px
+  ) !important;
+}
+
+/* A selected-text side task creates two real thread panes inside main. Each
+   pane is already its own inline-size container, so subtracting the summary
+   width again makes both the primary and side composers unusably narrow. */
+html.codex-qq-skin[data-dream-task-route="true"][data-dream-side-task="open"]
+  main.main-surface:not(.qq-skin-home-shell) {
+  /* 100cqw excludes Codex's split-pane scrollbar reservation (~30px). */
+  --thread-content-max-width: calc(100cqw + 28px) !important;
+}
+
+html.codex-qq-skin[data-dream-task-route="true"][data-dream-side-task="open"]
+  main.main-surface:not(.qq-skin-home-shell) .thread-scroll-container {
+  scrollbar-gutter: auto !important;
+  scrollbar-width: none !important;
+}
+
+html.codex-qq-skin[data-dream-task-route="true"][data-dream-side-task="open"]
+  main.main-surface:not(.qq-skin-home-shell) .thread-scroll-container::-webkit-scrollbar {
+  width: 0 !important;
+  height: 0 !important;
 }
 
 html.codex-qq-skin[data-dream-three-pane="true"] [data-pip-obstacle="thread-summary-panel"] {
