@@ -1,8 +1,8 @@
 
 
-# Codex QQ Skin
+# Codex 皮肤生成器
 
-一套面向 Codex/ChatGPT 桌面端的内置复古 QQ 风格外观的皮肤生成器。  
+一套面向 Codex/ChatGPT 桌面端皮肤生成器（内置QQ皮肤）。  
 1、支持 Mac & Windows 系统：提供 macOS App 与原生 C# Windows 安装器。  
 2、支持自定义皮肤：既可选择任意图片生成背景皮肤，也可用 Codex 深度皮肤助手从一句主题关键词生成完整分层皮肤。
 3、皮肤库管理器  
