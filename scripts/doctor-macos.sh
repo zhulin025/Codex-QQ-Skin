@@ -23,6 +23,7 @@ for required in \
   "$PROJECT_ROOT/assets/theme.json" \
   "$PROJECT_ROOT/scripts/injector.mjs" \
   "$PROJECT_ROOT/scripts/usage/codex-usage-worker.mjs" \
+  "$PROJECT_ROOT/scripts/companion/companion-feed-worker.mjs" \
   "$PROJECT_ROOT/scripts/usage/aggregate-usage.mjs" \
   "$PROJECT_ROOT/scripts/usage/level-rules.mjs" \
   "$PROJECT_ROOT/scripts/usage/vendor/codex.js"; do

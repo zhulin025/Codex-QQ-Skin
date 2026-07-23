@@ -11,12 +11,14 @@ import { loadDeepThemeDirectory, mimeForExtension } from "./deep-theme-core.mjs"
 const scriptPath = fileURLToPath(import.meta.url);
 const here = path.dirname(scriptPath);
 const root = path.resolve(here, "..");
-const SKIN_VERSION = "2.5.3";
+const SKIN_VERSION = "2.6.0";
 const LOOPBACK_HOSTS = new Set(["127.0.0.1", "localhost", "[::1]"]);
 const CDP_ID_PATTERN = /^[A-Za-z0-9._-]{1,200}$/;
 const MAX_ART_BYTES = 16 * 1024 * 1024;
 const MAX_USAGE_SNAPSHOT_BYTES = 256 * 1024;
+const MAX_COMPANION_SNAPSHOT_BYTES = 192 * 1024;
 const USAGE_REFRESH_INTERVAL_MS = 60_000;
+const COMPANION_REFRESH_INTERVAL_MS = 6 * 60 * 60 * 1000;
 let staticPayloadAssets = null;
 
 async function persistActiveMode(themeDir, mode, themeId = null) {
@@ -685,6 +687,99 @@ async function pushUsageSnapshot(session, snapshot) {
   })()`);
 }
 
+function safeText(value, limit) {
+  return String(value || "").replace(/[\r\n\t]+/g, " ").replace(/\s+/g, " ").trim().slice(0, limit);
+}
+
+function safeHttpUrl(value, { githubOnly = false } = {}) {
+  try {
+    const url = new URL(String(value || ""));
+    if (!["http:", "https:"].includes(url.protocol)) return "";
+    if (githubOnly && url.hostname !== "github.com") return "";
+    return url.href.slice(0, 500);
+  } catch {
+    return "";
+  }
+}
+
+export function sanitizeCompanionSnapshot(value) {
+  const snapshot = {
+    schemaVersion: 1,
+    status: value?.status === "ready" ? "ready" : value?.status === "loading" ? "loading" : "error",
+    generatedAt: typeof value?.generatedAt === "string" && !Number.isNaN(Date.parse(value.generatedAt))
+      ? value.generatedAt : new Date().toISOString(),
+    github: [],
+  };
+  if (value?.stale === true) snapshot.stale = true;
+  if (value?.partial === true) snapshot.partial = true;
+  if (value?.cacheHit === true) snapshot.cacheHit = true;
+  if (value?.error) snapshot.error = safeText(value.error, 160);
+  snapshot.github = (Array.isArray(value?.github) ? value.github : []).slice(0, 12).map((repo) => ({
+    id: finiteCount(repo?.id),
+    name: safeText(repo?.name, 80),
+    description: safeText(repo?.description, 160),
+    descriptionZh: safeText(repo?.descriptionZh, 220),
+    url: safeHttpUrl(repo?.url, { githubOnly: true }),
+    language: safeText(repo?.language || "Other", 24),
+    stars: finiteCount(repo?.stars, 1_000_000_000),
+    forks: finiteCount(repo?.forks, 1_000_000_000),
+  })).filter((repo) => repo.id && repo.name && repo.url);
+  return snapshot;
+}
+
+function runCompanionWorker(themeDir, { force = false } = {}) {
+  const workerPath = path.join(root, "scripts", "companion", "companion-feed-worker.mjs");
+  const companionDir = path.join(resolveStateRoot(themeDir), "companion");
+  const args = [workerPath, "--state-dir", companionDir];
+  if (force) args.push("--force");
+  return new Promise((resolve, reject) => {
+    const child = spawn(process.execPath, args, {
+      stdio: ["ignore", "pipe", "pipe"],
+      env: process.env,
+      windowsHide: true,
+    });
+    let stdout = "";
+    let stderr = "";
+    let settled = false;
+    const finish = (error, result) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timeout);
+      if (error) reject(error);
+      else resolve(result);
+    };
+    const timeout = setTimeout(() => {
+      try { child.kill("SIGTERM"); } catch {}
+      finish(new Error("Companion feed worker timed out"));
+    }, 25_000);
+    child.stdout.on("data", (chunk) => {
+      if (stdout.length <= MAX_COMPANION_SNAPSHOT_BYTES) stdout += String(chunk);
+    });
+    child.stderr.on("data", (chunk) => {
+      if (stderr.length < 16_384) stderr += String(chunk);
+    });
+    child.on("error", (error) => finish(error));
+    child.on("close", () => {
+      if (stdout.length > MAX_COMPANION_SNAPSHOT_BYTES) {
+        finish(new Error("Companion worker returned an oversized snapshot"));
+        return;
+      }
+      try { finish(null, sanitizeCompanionSnapshot(JSON.parse(stdout))); }
+      catch (error) { finish(new Error(stderr.trim() || error.message)); }
+    });
+  });
+}
+
+async function pushCompanionSnapshot(session, snapshot) {
+  const safe = sanitizeCompanionSnapshot(snapshot);
+  return session.evaluate(`(() => {
+    const snapshot = ${JSON.stringify(safe)};
+    window.__CODEX_QQ_SKIN_COMPANION_SNAPSHOT__ = snapshot;
+    window.__CODEX_QQ_SKIN_STATE__?.setCompanionSnapshot?.(snapshot);
+    return true;
+  })()`);
+}
+
 function listThemeLibrary(themeDir, { limit = 12, customOnly = false } = {}) {
   const stateRoot = resolveStateRoot(themeDir);
   const themesRoot = path.join(stateRoot, "themes");
@@ -1007,6 +1102,21 @@ async function runOneShot(options) {
   const connected = await connectCodexTargets(options.port, options.timeoutMs);
   const loaded = (options.mode === "once" || options.reload) ? await loadPayload(options.themeDir) : null;
   const payload = loaded?.payload ?? null;
+  const shouldPushCompanion = options.mode === "once" || options.reload;
+  let companionSnapshot = null;
+  if (shouldPushCompanion) {
+    try {
+      // A hot apply must be self-contained. The background watcher may not
+      // survive a terminal/session boundary, while the on-disk cache does.
+      companionSnapshot = await runCompanionWorker(options.themeDir);
+    } catch (error) {
+      companionSnapshot = sanitizeCompanionSnapshot({
+        status: "error",
+        generatedAt: new Date().toISOString(),
+        error: error.message,
+      });
+    }
+  }
   const results = [];
   let screenshotCaptured = false;
 
@@ -1024,6 +1134,8 @@ async function runOneShot(options) {
           await applyToSession(session, payload, { enableSkin: options.enableSkin, skinMode: options.skinMode });
         }
       }
+
+      if (companionSnapshot) await pushCompanionSnapshot(session, companionSnapshot);
 
       const result = options.mode === "remove"
         ? await verifyRemovedSession(session)
@@ -1117,8 +1229,11 @@ async function runWatch(options) {
   const sessions = new Map();
   const rejected = new Set();
   let usageSnapshot = sanitizeUsageSnapshot({ status: "loading", generatedAt: new Date().toISOString() });
+  let companionSnapshot = sanitizeCompanionSnapshot({ status: "loading", generatedAt: new Date().toISOString() });
   let usageRefreshPromise = null;
+  let companionRefreshPromise = null;
   let nextUsageRefreshAt = 0;
+  let nextCompanionRefreshAt = 0;
   let stopping = false;
   let reloadTimer = null;
   let reloadChain = Promise.resolve();
@@ -1177,6 +1292,34 @@ async function runWatch(options) {
     return usageRefreshPromise;
   };
 
+  const refreshCompanion = async (force = false) => {
+    try {
+      companionSnapshot = await runCompanionWorker(options.themeDir, { force });
+      for (const record of sessions.values()) {
+        if (!record.session.closed) await pushCompanionSnapshot(record.session, companionSnapshot).catch(() => {});
+      }
+      console.log(`[qq-skin] refreshed companion feeds (${companionSnapshot.status})`);
+    } catch (error) {
+      companionSnapshot = sanitizeCompanionSnapshot({
+        ...companionSnapshot,
+        status: "error",
+        stale: Boolean(companionSnapshot.github?.length || companionSnapshot.news?.length),
+        error: error.message,
+      });
+      for (const record of sessions.values()) {
+        if (!record.session.closed) await pushCompanionSnapshot(record.session, companionSnapshot).catch(() => {});
+      }
+    } finally {
+      nextCompanionRefreshAt = Date.now() + COMPANION_REFRESH_INTERVAL_MS;
+    }
+  };
+
+  const queueCompanionRefresh = (force = false) => {
+    if (companionRefreshPromise || (!force && Date.now() < nextCompanionRefreshAt)) return companionRefreshPromise;
+    companionRefreshPromise = refreshCompanion(force).finally(() => { companionRefreshPromise = null; });
+    return companionRefreshPromise;
+  };
+
   const refreshPayload = async () => {
     const next = await loadPayload(options.themeDir);
     if (next.revision === current.revision) return;
@@ -1195,6 +1338,7 @@ async function runWatch(options) {
         record.needsLoadFallback = !nextIdentifier;
         await applyToSession(session, current.payload);
         await pushUsageSnapshot(session, usageSnapshot);
+        await pushCompanionSnapshot(session, companionSnapshot);
       } catch (error) {
         record.needsLoadFallback = true;
         console.error(`[qq-skin] theme refresh failed: ${error.message}`);
@@ -1335,6 +1479,7 @@ async function runWatch(options) {
                 });
               }
               await pushUsageSnapshot(session, usageSnapshot).catch(() => {});
+              await pushCompanionSnapshot(session, companionSnapshot).catch(() => {});
             }, 0);
           });
           const earlyApplied = await session.evaluate(
@@ -1347,8 +1492,10 @@ async function runWatch(options) {
             await applyToSession(session, current.payload);
           }
           await pushUsageSnapshot(session, usageSnapshot);
+          await pushCompanionSnapshot(session, companionSnapshot);
           sessions.set(target.id, record);
           queueUsageRefresh(usageSnapshot.status === "loading");
+          queueCompanionRefresh(companionSnapshot.status === "loading");
           console.log(`[qq-skin] injected verified Codex target ${target.id} (${target.title || target.url})`);
         } catch (error) {
           if (record) await removeEarly(record);

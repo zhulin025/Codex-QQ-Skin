@@ -348,6 +348,34 @@ assert.match(template, /statusLabels[\s\S]{0,500}approval:\s*"需要你的确认
   "The companion must reflect live running, approval, completion, and connectivity states.");
 assert.match(template, /data-companion-action="pet"[\s\S]{0,300}data-companion-action="terminal"[\s\S]{0,300}data-companion-action="sound"/,
   "The companion must expose exactly the requested pet, terminal, and sound shortcuts.");
+assert.match(template, /companionRoomPhase[\s\S]*qq-skin-room-window[\s\S]*qq-skin-room-monitor[\s\S]*qq-skin-room-desk/,
+  "The companion must render a time-aware miniature Codex studio rather than a standalone portrait.");
+assert.match(template, /qq-skin-room-approval-sign[\s\S]*qq-skin-room-confetti[\s\S]*qq-skin-room-offline/,
+  "The miniature studio must include dedicated approval, completion, and offline scene feedback.");
+assert.equal((template.match(/data-room-action="blindbox"/g) || []).length, 4,
+  "The monitor, shelf, lamp, and plant must all open the same project blind box.");
+assert.match(template, /setCompanionSnapshot[\s\S]*__CODEX_QQ_SKIN_COMPANION_SNAPSHOT__/,
+  "The renderer must accept sanitized companion feed snapshots from the local worker.");
+assert.match(template, /const openRoomExternal[\s\S]*window\.open\(url, "_blank", "noopener,noreferrer"\)/,
+  "The blind box must explicitly hand safe GitHub links to the desktop browser.");
+assert.match(template, /GitHub 热门项目盲盒[\s\S]*project\.name[\s\S]*project\.description[\s\S]*data-room-action="favorite"[\s\S]*data-room-action="open-project"[\s\S]*data-room-action="next-project"[\s\S]*data-room-action="less-like-this"/,
+  "Each blind-box card must show the project name, description, and four requested decisions.");
+assert.doesNotMatch(template, /qq-skin-blind-box-book|它解决了什么/,
+  "The revealed card must not retain the oversized book or old problem label.");
+assert.match(template, /bindBlindBoxButtons[\s\S]*addEventListener\?\.\("pointerup"[\s\S]*addEventListener\?\.\("click"/,
+  "Blind-box decisions must bind direct pointer-up and click handlers for Electron reliability.");
+assert.match(template, /project\.descriptionZh/,
+  "The revealed project card must use the cached Chinese description.");
+assert.match(template, /discoveries % 5 === 0[\s\S]*BLIND_BOX_DECOR\.find[\s\S]*新摆件已解锁/,
+  "Every five project discoveries must unlock a new room decoration.");
+assert.match(template, /dataset\.roomDrawing = "true"[\s\S]*qq-skin-room-drawn-book/,
+  "Opening a blind box must make the robot draw a book from the shelf.");
+assert.doesNotMatch(template, /youtube\.com|Hacker News|摸鱼电视|今日情报|GitHub 花园|data-room-video/,
+  "The retired television, news, and GitHub garden experiences must be removed.");
+assert.match(css, /data-status="running"[\s\S]{0,600}qq-skin-room-working[\s\S]{0,1800}data-status="approval"[\s\S]{0,500}qq-skin-room-approval-sign/,
+  "The studio character and room must visibly react to active work and approval states.");
+assert.match(css, /data-status="completed"[\s\S]{0,600}qq-skin-room-confetti[\s\S]{0,1600}data-status="offline"[\s\S]{0,700}qq-skin-room-offline/,
+  "The studio must celebrate completion and visibly enter an offline state.");
 assert.match(customCss, /html\.codex-dream-skin body::before[\s\S]{0,800}filter:\s*blur\(1px\) saturate\(103%\)/,
   "Custom wallpapers should retain recognizable faces and object detail.");
 assert.match(customCss, /html\.codex-dream-skin body::after[\s\S]{0,300}rgb\(var\(--ds-bg-rgb\) \/ \.18\) 48%/,

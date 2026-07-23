@@ -1,4 +1,4 @@
-# ChatGPT QQ Skin for Windows 2.5.3
+# ChatGPT QQ Skin for Windows 2.6.0
 
 Windows 10/11 x64 原生 C# GUI 版本。安装器提供“一键安装并启动”“上传图片生成皮肤”“应用内置大黄蜂皮肤”和“安装 Codex 深度皮肤助手”入口，并内置运行引擎与 Node.js，无需用户另外安装依赖。
 
@@ -9,8 +9,8 @@ Windows 10/11 x64 原生 C# GUI 版本。安装器提供“一键安装并启动
 从 [GitHub Releases](https://github.com/zhulin025/Codex-QQ-Skin/releases) 下载：
 
 ```text
-ChatGPT QQ Skin Setup 2.5.3.exe
-ChatGPT QQ Skin Setup 2.5.3.exe.sha256
+ChatGPT QQ Skin Setup 2.6.0.exe
+ChatGPT QQ Skin Setup 2.6.0.exe.sha256
 ```
 
 当前 EXE 尚未使用商业代码签名，Windows SmartScreen 可能在首次运行时显示提示。请只从本项目正式 Release 下载，并核对 SHA-256。
@@ -24,7 +24,7 @@ ChatGPT QQ Skin Setup 2.5.3.exe.sha256
 
 ## 安装与使用
 
-1. 双击 `ChatGPT QQ Skin Setup 2.5.3.exe`。
+1. 双击 `ChatGPT QQ Skin Setup 2.6.0.exe`。
 2. 点击“一键安装并启动”。安装器会安装或升级引擎、启动 ChatGPT、注入并验证皮肤。
 3. 点击“应用内置大黄蜂皮肤”可从安装器离线预设中直接安装并切换。
 4. 深度皮肤助手区域会明确显示“安装”“更新”或“已安装”；按提示完成后，在 Codex 输入一句主题关键词即可生成完整分层皮肤。
@@ -39,11 +39,12 @@ QQ 模式右侧上方可显示本机 Codex 的今日、近 7 天、历史累计 
 
 统计只读取当前 Windows 用户目录下的 Codex 本地 session 日志，增量缓存保存在 `%APPDATA%\CodexQQSkin\usage`。默认统计包含缓存 Token，可在成长中心开启“净用量”排除缓存。不需要额外登录，不读取 API Key，也不会上传 prompt 或 token 数据。统计是本机口径，不是 OpenAI 官方账单或账号云端等级。
 
-## 2.5.3 更新
+## 2.6.0 更新
 
-- 修复右侧栏打开后中间阅读列被缩窄的问题；打开前后保持相同宽度，窄窗口左右各保留 12px。
-- 应用内更新显示安装包总大小、已下载大小和百分比；下载较慢或失败时可直接前往 GitHub Release 手动下载。
-- 大黄蜂深度皮肤继续内置，标题栏“自定义”入口保持可用。
+- Codex 伙伴升级为交互式桌面房间，电脑、书架、台灯和盆栽统一打开 GitHub 热门项目盲盒。
+- 盲盒展示热门仓库名称与中文简介，并提供收藏、打开 GitHub、换一本和减少同类推荐。
+- 连续发现 5 个项目会解锁一件房间摆件；收藏、偏好和进度只保存在本机。
+- 盲盒按钮使用独立指针事件绑定，修复 Electron 中点击无响应的问题。
 
 ## 2.5.2 更新
 
@@ -107,12 +108,12 @@ $env:CODEX_EXE = 'C:\完整路径\ChatGPT.exe'
 需要 **Windows 10/11** 或 GitHub Actions `windows-2022`。macOS 无法直接生成本安装器 `.exe`。
 
 ```powershell
-.\scripts\windows\build-gui-installer.ps1 -UseInstalledNode -OutputFileName 'ChatGPT QQ Skin Setup 2.5.3.exe'
+.\scripts\windows\build-gui-installer.ps1 -UseInstalledNode -OutputFileName 'ChatGPT QQ Skin Setup 2.6.0.exe'
 ```
 
 不使用 `-UseInstalledNode` 时，构建脚本会下载官方 Node.js 运行时并校验 SHA-256。输出文件保存在 `release` 目录。
 
-发布时也可在仓库 Actions 中运行 `Publish release assets`，输入已有 draft tag（如 `v2.5.3`），由 CI 构建并上传 EXE。
+发布时也可在仓库 Actions 中运行 `Publish release assets`，输入已有 draft tag（如 `v2.6.0`），由 CI 构建并上传 EXE。
 
 ## 安全说明
 

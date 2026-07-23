@@ -31,7 +31,7 @@ $guiBuilder = Get-Content -LiteralPath (Join-Path $root 'scripts\windows\build-g
 if ($guiBuilder -notmatch "foreach \(\`$directory in @\('assets','presets','scripts','skills'\)\)") {
   throw 'Windows GUI installer must embed the bundled presets directory.'
 }
-foreach ($test in @('image-metadata.test.mjs','injector-bootstrap.test.mjs','renderer-inject.test.mjs','deep-theme.test.mjs','skill-install.test.mjs','theme-stage.test.mjs','usage-level.test.mjs')) {
+foreach ($test in @('image-metadata.test.mjs','injector-bootstrap.test.mjs','renderer-inject.test.mjs','deep-theme.test.mjs','skill-install.test.mjs','theme-stage.test.mjs','usage-level.test.mjs','companion-feed.test.mjs')) {
   & $node (Join-Path $root "tests\$test")
   if ($LASTEXITCODE -ne 0) { throw "$test failed." }
 }

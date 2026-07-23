@@ -139,6 +139,7 @@
   previous?.soundMonitor?.cleanup?.();
   document.getElementById(TOGGLE_ID)?.remove();
   document.getElementById(LIBRARY_MENU_ID)?.remove();
+  document.getElementById(COMPANION_ID)?.remove();
   // These controls own closures over the current renderer generation. Rebuild
   // them on every reinjection so their mode/refresh clicks never call stale code.
   document.getElementById(USAGE_PANEL_ID)?.remove();
@@ -678,6 +679,40 @@
   let usageSnapshot = window.__CODEX_QQ_SKIN_USAGE_SNAPSHOT__ && typeof window.__CODEX_QQ_SKIN_USAGE_SNAPSHOT__ === "object"
     ? window.__CODEX_QQ_SKIN_USAGE_SNAPSHOT__
     : { schemaVersion: 1, status: "loading", scope: "device" };
+  let companionSnapshot = window.__CODEX_QQ_SKIN_COMPANION_SNAPSHOT__ &&
+    typeof window.__CODEX_QQ_SKIN_COMPANION_SNAPSHOT__ === "object"
+    ? window.__CODEX_QQ_SKIN_COMPANION_SNAPSHOT__
+    : { schemaVersion: 1, status: "loading", github: [] };
+  const BLIND_BOX_STORAGE_KEY = "codex-qq-skin-project-blind-box";
+  const BLIND_BOX_DECOR = ["globe", "rocket", "trophy", "cat"];
+  let companionBlindBox = {
+    currentId: 0,
+    history: [],
+    favorites: [],
+    avoidedIds: [],
+    avoidedLanguages: [],
+    discoveries: 0,
+    unlocked: [],
+  };
+  try {
+    const saved = JSON.parse(window.localStorage?.getItem(BLIND_BOX_STORAGE_KEY) || "null");
+    if (saved && typeof saved === "object") {
+      companionBlindBox = {
+        currentId: Number(saved.currentId) || 0,
+        history: Array.isArray(saved.history) ? saved.history.map(Number).filter(Boolean).slice(-50) : [],
+        favorites: Array.isArray(saved.favorites) ? saved.favorites.map(Number).filter(Boolean).slice(-100) : [],
+        avoidedIds: Array.isArray(saved.avoidedIds) ? saved.avoidedIds.map(Number).filter(Boolean).slice(-100) : [],
+        avoidedLanguages: Array.isArray(saved.avoidedLanguages)
+          ? saved.avoidedLanguages.map((item) => String(item || "").slice(0, 24)).filter(Boolean).slice(-20) : [],
+        discoveries: Math.max(0, Number(saved.discoveries) || 0),
+        unlocked: Array.isArray(saved.unlocked)
+          ? saved.unlocked.filter((item) => BLIND_BOX_DECOR.includes(item)) : [],
+      };
+    }
+  } catch {}
+  let companionRoomMode = "room";
+  let companionBreakTimer = null;
+  let blindBoxRevealTimer = null;
   let usageMode = "stats";
   let usageNetMode = false;
   try {
@@ -1193,6 +1228,253 @@
     setTextContent(companionParts.statusText, statusLabels[status] || statusLabels.idle);
   };
 
+  const companionRoomPhase = () => {
+    const hour = new Date().getHours();
+    if (hour >= 6 && hour < 12) return "morning";
+    if (hour >= 12 && hour < 18) return "day";
+    if (hour >= 18 && hour < 22) return "evening";
+    return "night";
+  };
+
+  const roomEscape = (value) => String(value || "").replace(/[&<>"']/g, (character) => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
+  })[character]);
+
+  const safeRoomUrl = (value, githubOnly = false) => {
+    try {
+      const url = new URL(String(value || ""));
+      if (!["http:", "https:"].includes(url.protocol)) return "";
+      if (githubOnly && url.hostname !== "github.com") return "";
+      return url.href;
+    } catch { return ""; }
+  };
+
+  const roomToast = (message) => {
+    const toast = companionParts?.toast;
+    if (!toast) return;
+    setTextContent(toast, message);
+    toast.classList?.add("is-visible");
+    setTimeout(() => toast.classList?.remove("is-visible"), 2200);
+  };
+
+  const openRoomExternal = (value, githubOnly = false) => {
+    const url = safeRoomUrl(value, githubOnly);
+    if (!url) {
+      roomToast("这个链接暂时不可用。");
+      return false;
+    }
+    try {
+      window.open(url, "_blank", "noopener,noreferrer");
+      roomToast("已在浏览器中打开。");
+      return true;
+    } catch {
+      roomToast("无法打开浏览器，请稍后重试。");
+      return false;
+    }
+  };
+
+  const bindBlindBoxButtons = (content) => {
+    content?.querySelectorAll?.(".qq-skin-blind-box-actions [data-room-action]").forEach((button) => {
+      if (button.dataset.qqBlindBoxBound === "true") return;
+      button.dataset.qqBlindBoxBound = "true";
+      let pointerHandledAt = 0;
+      const run = (event) => {
+        event?.preventDefault?.();
+        event?.stopPropagation?.();
+        handleCompanionRoomAction(button.dataset.roomAction);
+      };
+      button.addEventListener?.("pointerup", (event) => {
+        if (typeof event.button === "number" && event.button !== 0) return;
+        pointerHandledAt = Date.now();
+        run(event);
+      });
+      button.addEventListener?.("click", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        if (Date.now() - pointerHandledAt < 600) return;
+        run(event);
+      });
+    });
+  };
+
+  const persistBlindBox = () => {
+    try { window.localStorage?.setItem(BLIND_BOX_STORAGE_KEY, JSON.stringify(companionBlindBox)); } catch {}
+  };
+
+  const currentBlindBoxProject = () => (Array.isArray(companionSnapshot?.github) ? companionSnapshot.github : [])
+    .find((repo) => Number(repo.id) === Number(companionBlindBox.currentId)) || null;
+
+  const syncBlindBoxDecor = () => {
+    const companion = companionParts?.companion;
+    if (!companion) return;
+    companion.dataset.roomUnlocks = String(companionBlindBox.unlocked.length);
+    companion.querySelectorAll("[data-room-decor]").forEach((decor) => {
+      decor.classList?.toggle("is-unlocked", companionBlindBox.unlocked.includes(decor.dataset.roomDecor));
+    });
+  };
+
+  const discoverBlindBoxProject = () => {
+    const repos = Array.isArray(companionSnapshot?.github) ? companionSnapshot.github : [];
+    if (!repos.length) return null;
+    const currentId = Number(companionBlindBox.currentId) || 0;
+    const recent = new Set(companionBlindBox.history.slice(-Math.max(1, repos.length - 2)));
+    const avoided = new Set(companionBlindBox.avoidedIds);
+    const avoidedLanguages = new Set(companionBlindBox.avoidedLanguages);
+    let candidates = repos.filter((repo) => Number(repo.id) !== currentId && !recent.has(Number(repo.id)) &&
+      !avoided.has(Number(repo.id)) && !avoidedLanguages.has(String(repo.language || "")));
+    if (!candidates.length) {
+      candidates = repos.filter((repo) => Number(repo.id) !== currentId && !avoided.has(Number(repo.id)));
+    }
+    if (!candidates.length) candidates = repos.filter((repo) => Number(repo.id) !== currentId);
+    if (!candidates.length) candidates = repos;
+    const project = candidates[Math.floor(Math.random() * candidates.length)];
+    companionBlindBox.currentId = Number(project.id);
+    companionBlindBox.history.push(Number(project.id));
+    companionBlindBox.history = companionBlindBox.history.slice(-50);
+    companionBlindBox.discoveries += 1;
+    if (companionBlindBox.discoveries % 5 === 0) {
+      const nextDecor = BLIND_BOX_DECOR.find((item) => !companionBlindBox.unlocked.includes(item));
+      if (nextDecor) {
+        companionBlindBox.unlocked.push(nextDecor);
+        roomToast("连续发现 5 个项目：新摆件已解锁！");
+      }
+    }
+    persistBlindBox();
+    syncBlindBoxDecor();
+    const companion = companionParts?.companion;
+    if (companion?.dataset) {
+      companion.dataset.roomMood = "reading";
+      companion.dataset.roomDrawing = "true";
+      setTimeout(() => {
+        if (companion.dataset) {
+          companion.dataset.roomMood = "";
+          companion.dataset.roomDrawing = "false";
+        }
+      }, 900);
+    }
+    return project;
+  };
+
+  const renderCompanionRoomPanel = () => {
+    const panel = companionParts?.panel;
+    const title = companionParts?.panelTitle;
+    const content = companionParts?.panelContent;
+    if (!panel || !title || !content) return;
+    panel.classList?.toggle("is-visible", companionRoomMode !== "room");
+    if (companionRoomMode === "room") return;
+    const empty = (message) => `<div class="qq-skin-room-empty">${roomEscape(message)}</div>`;
+
+    if (companionRoomMode === "blindbox") {
+      setTextContent(title, `GitHub 热门项目盲盒 · 已发现 ${companionBlindBox.discoveries}`);
+      const project = currentBlindBoxProject();
+      if (!project) {
+        content.innerHTML = empty("机器人正在找一本合适的项目书……");
+        return;
+      }
+      const favorite = companionBlindBox.favorites.includes(Number(project.id));
+      content.innerHTML = `<article class="qq-skin-blind-box-card">
+        <div class="qq-skin-blind-box-project">
+          <h3>${roomEscape(project.name)}</h3>
+          <p>${roomEscape(project.descriptionZh || "这是一个近期受到关注的开源项目，帮助开发者改善开发流程与自动化体验。")}</p>
+        </div>
+        <div class="qq-skin-blind-box-actions">
+          <button type="button" data-room-action="favorite">${favorite ? "★ 已收藏" : "☆ 收藏"}</button>
+          <button type="button" data-room-action="open-project">打开 GitHub</button>
+          <button type="button" data-room-action="next-project">换一本</button>
+          <button type="button" data-room-action="less-like-this">以后少推荐这种</button>
+        </div>
+        <small>再发现 ${5 - (companionBlindBox.discoveries % 5)} 个项目解锁下一件房间摆件</small>
+      </article>`;
+      bindBlindBoxButtons(content);
+      return;
+    }
+
+    setTextContent(title, "伙伴房间设置");
+    const motion = companionParts.companion.dataset.roomMotion !== "off";
+    content.innerHTML = `<div class="qq-skin-room-settings">
+      <button type="button" data-room-action="motion"><b>房间动态效果</b><span>${motion ? "已开启" : "已关闭"}</span></button>
+      <p>收藏、减少同类推荐和摆件解锁进度只保存在本机。</p>
+    </div>`;
+  };
+
+  const setCompanionRoomMode = (mode) => {
+    companionRoomMode = ["room", "blindbox", "settings"].includes(mode) ? mode : "room";
+    if (companionParts?.companion?.dataset) companionParts.companion.dataset.roomMode = companionRoomMode;
+    renderCompanionRoomPanel();
+  };
+
+  const drawAndRevealBlindBox = () => {
+    if (blindBoxRevealTimer) clearTimeout(blindBoxRevealTimer);
+    setCompanionRoomMode("room");
+    discoverBlindBoxProject();
+    blindBoxRevealTimer = setTimeout(() => {
+      blindBoxRevealTimer = null;
+      setCompanionRoomMode("blindbox");
+    }, 720);
+  };
+
+  const handleCompanionRoomAction = (action) => {
+    if (action === "blindbox") {
+      drawAndRevealBlindBox();
+      return;
+    }
+    if (action === "settings") return setCompanionRoomMode("settings");
+    if (action === "back") return setCompanionRoomMode("room");
+    const companion = companionParts?.companion;
+    if (!companion?.dataset) return;
+    if (action === "favorite") {
+      const project = currentBlindBoxProject();
+      if (!project) return;
+      const id = Number(project.id);
+      if (companionBlindBox.favorites.includes(id)) {
+        companionBlindBox.favorites = companionBlindBox.favorites.filter((item) => item !== id);
+        roomToast("已取消收藏。");
+      } else {
+        companionBlindBox.favorites.push(id);
+        roomToast("已收藏到本机。");
+      }
+      persistBlindBox();
+      renderCompanionRoomPanel();
+    } else if (action === "open-project") {
+      const project = currentBlindBoxProject();
+      if (project) openRoomExternal(project.url, true);
+    } else if (action === "next-project") {
+      drawAndRevealBlindBox();
+    } else if (action === "less-like-this") {
+      const project = currentBlindBoxProject();
+      if (!project) return;
+      companionBlindBox.avoidedIds.push(Number(project.id));
+      if (project.language && project.language !== "Other") companionBlindBox.avoidedLanguages.push(String(project.language));
+      companionBlindBox.avoidedIds = [...new Set(companionBlindBox.avoidedIds)].slice(-100);
+      companionBlindBox.avoidedLanguages = [...new Set(companionBlindBox.avoidedLanguages)].slice(-20);
+      roomToast("记住了，以后会少推荐这一类。");
+      drawAndRevealBlindBox();
+    } else if (action === "motion") {
+      companion.dataset.roomMotion = companion.dataset.roomMotion === "off" ? "on" : "off";
+      try { window.localStorage?.setItem("codex-qq-skin-room-motion", companion.dataset.roomMotion); } catch {}
+      renderCompanionRoomPanel();
+    } else if (action === "robot") {
+      const moods = ["happy", "curious", "sleepy", "excited"];
+      const mood = moods[Math.floor(Math.random() * moods.length)];
+      companion.dataset.roomMood = mood;
+      roomToast({ happy: "今天也一起把 Bug 清空！", curious: "这个项目看起来很有意思。", sleepy: "唔……让我眯三秒。", excited: "出发！下一个任务！" }[mood]);
+      setTimeout(() => { companion.dataset.roomMood = ""; }, 2600);
+    } else if (action === "window") {
+      const phases = ["morning", "day", "evening", "night"];
+      companion.dataset.roomPhase = phases[(phases.indexOf(companion.dataset.roomPhase) + 1) % phases.length];
+      roomToast("窗外的时间变了。");
+    } else if (action === "break") {
+      if (companionBreakTimer) clearTimeout(companionBreakTimer);
+      companion.dataset.roomMood = "break";
+      roomToast("咖啡休息开始：5 分钟。");
+      companionBreakTimer = setTimeout(() => {
+        companionBreakTimer = null;
+        companion.dataset.roomMood = "";
+        roomToast("休息结束，回来继续创造吧。");
+      }, 5 * 60 * 1000);
+    } else if (action === "terminal") toggleNativeTerminal();
+  };
+
   const ensureCompanion = () => {
     let companion = document.getElementById(COMPANION_ID);
     if (!companion || companion.parentElement !== document.body) {
@@ -1202,11 +1484,45 @@
       companion.setAttribute("aria-label", "Codex 伙伴");
       companion.innerHTML = `
         <div class="qq-skin-companion-title">
-          <span>Codex 伙伴</span><i></i>
+          <span>Codex 伙伴</span><button type="button" data-room-action="settings" aria-label="伙伴房间设置">⚙</button><i></i>
         </div>
         <div class="qq-skin-companion-stage">
-          <img class="qq-skin-pet-image" alt="" draggable="false">
-          <div class="qq-skin-pet-glow"></div>
+          <div class="qq-skin-room-window" data-room-action="window" role="button" tabindex="0" aria-label="切换窗外时间">
+            <span class="qq-skin-room-sky"></span>
+            <span class="qq-skin-room-moon"></span>
+            <span class="qq-skin-room-cloud qq-skin-room-cloud-a"></span>
+            <span class="qq-skin-room-cloud qq-skin-room-cloud-b"></span>
+          </div>
+          <div class="qq-skin-room-wall-note" aria-hidden="true"><b>CODEX</b><span>BUILD · TEST · SHIP</span></div>
+          <div class="qq-skin-room-shelf" data-room-action="blindbox" role="button" tabindex="0" aria-label="抽一个项目盲盒">
+            <i></i><i></i><i></i><b></b>
+          </div>
+          <div class="qq-skin-room-lamp" data-room-action="blindbox" role="button" tabindex="0" aria-label="抽一个项目盲盒"><i></i><b></b></div>
+          <div class="qq-skin-room-character" data-room-action="robot" role="button" tabindex="0" aria-label="和 Codex 伙伴互动">
+            <img class="qq-skin-pet-image" alt="" draggable="false">
+            <span class="qq-skin-room-approval-sign">需要确认</span>
+          </div>
+          <div class="qq-skin-room-drawn-book" aria-hidden="true"><i></i><b>?</b></div>
+          <div class="qq-skin-room-monitor" data-room-action="blindbox" role="button" tabindex="0" aria-label="抽一个项目盲盒">
+            <i class="qq-skin-room-screen"><b>&gt;_</b><span></span></i>
+            <i class="qq-skin-room-monitor-stand"></i>
+          </div>
+          <div class="qq-skin-room-desk" aria-hidden="true">
+            <span class="qq-skin-room-keyboard" data-room-action="terminal" role="button" tabindex="0" aria-label="打开终端"></span>
+            <span class="qq-skin-room-mug" data-room-action="break" role="button" tabindex="0" aria-label="开始五分钟休息"></span>
+          </div>
+          <div class="qq-skin-room-plant" data-room-action="blindbox" role="button" tabindex="0" aria-label="抽一个项目盲盒"><i></i><i></i><i></i><b></b></div>
+          <div class="qq-skin-room-decor qq-skin-room-decor-globe" data-room-decor="globe" aria-hidden="true">◉</div>
+          <div class="qq-skin-room-decor qq-skin-room-decor-rocket" data-room-decor="rocket" aria-hidden="true">▲</div>
+          <div class="qq-skin-room-decor qq-skin-room-decor-trophy" data-room-decor="trophy" aria-hidden="true">★</div>
+          <div class="qq-skin-room-decor qq-skin-room-decor-cat" data-room-decor="cat" aria-hidden="true">ฅ</div>
+          <div class="qq-skin-room-confetti" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+          <div class="qq-skin-room-offline" aria-hidden="true">Z z z</div>
+          <div class="qq-skin-room-toast" aria-live="polite"></div>
+          <div class="qq-skin-room-panel">
+            <div class="qq-skin-room-panel-head"><button type="button" data-room-action="back">‹</button><b></b></div>
+            <div class="qq-skin-room-panel-content"></div>
+          </div>
         </div>
         <div class="qq-skin-companion-actions">
           <button type="button" data-companion-action="pet">🐾 打开宠物</button>
@@ -1217,6 +1533,12 @@
       document.body.appendChild(companion);
       companionParts = null;
     }
+    if (companion.dataset) {
+      companion.dataset.roomPhase = companionRoomPhase();
+      companion.dataset.roomMode = companionRoomMode;
+      try { companion.dataset.roomMotion = window.localStorage?.getItem("codex-qq-skin-room-motion") === "off" ? "off" : "on"; }
+      catch { companion.dataset.roomMotion = "on"; }
+    }
     if (!companionParts || companionParts.companion !== companion) {
       companionParts = {
         companion,
@@ -1226,6 +1548,10 @@
         soundButton: companion.querySelector('[data-companion-action="sound"]'),
         statusText: companion.querySelector(".qq-skin-pet-status span"),
         weeklyUsage: companion.querySelector(".qq-skin-weekly-usage"),
+        panel: companion.querySelector(".qq-skin-room-panel"),
+        panelTitle: companion.querySelector(".qq-skin-room-panel-head b"),
+        panelContent: companion.querySelector(".qq-skin-room-panel-content"),
+        toast: companion.querySelector(".qq-skin-room-toast"),
       };
       const bindAction = (button, action, label) => {
         if (!button?.dataset || button.dataset.qqCompanionBound === "true" || typeof button.addEventListener !== "function") return;
@@ -1239,12 +1565,31 @@
       };
       bindAction(companionParts.petButton, openAvatarOverlay, "打开 Codex 宠物");
       bindAction(companionParts.terminalButton, toggleNativeTerminal, "显示或隐藏终端");
+      if (companion.dataset.qqRoomBound !== "true" && typeof companion.addEventListener === "function") {
+        companion.dataset.qqRoomBound = "true";
+        companion.addEventListener("click", (event) => {
+          const target = event.target?.closest?.("[data-room-action]");
+          if (!target) return;
+          event.preventDefault();
+          event.stopPropagation();
+          handleCompanionRoomAction(target.dataset.roomAction);
+        });
+        companion.addEventListener("keydown", (event) => {
+          if (!["Enter", " "].includes(event.key)) return;
+          const target = event.target?.closest?.("[data-room-action]");
+          if (!target) return;
+          event.preventDefault();
+          handleCompanionRoomAction(target.dataset.roomAction);
+        });
+      }
     }
     if (companionParts.image && companionParts.image.src !== petUrl) companionParts.image.src = petUrl;
     soundMonitor.bindButton(companionParts.soundButton);
     soundMonitor.bindStatus(syncCompanionStatus);
     syncCompanionStatus(soundMonitor.status);
     syncWeeklyUsage(companionParts.weeklyUsage);
+    syncBlindBoxDecor();
+    renderCompanionRoomPanel();
     return companion;
   };
 
@@ -1374,6 +1719,14 @@
     usageSnapshot = snapshot;
     window.__CODEX_QQ_SKIN_USAGE_SNAPSHOT__ = snapshot;
     renderUsageSnapshot();
+    return true;
+  };
+
+  const setCompanionSnapshot = (snapshot) => {
+    if (!snapshot || typeof snapshot !== "object" || Number(snapshot.schemaVersion) !== 1) return false;
+    companionSnapshot = snapshot;
+    window.__CODEX_QQ_SKIN_COMPANION_SNAPSHOT__ = snapshot;
+    renderCompanionRoomPanel();
     return true;
   };
 
@@ -2364,6 +2717,14 @@
     }
     if (analysisTimer) clearTimeout(analysisTimer);
     if (routeSettleTimer) clearTimeout(routeSettleTimer);
+    if (companionBreakTimer) {
+      clearTimeout(companionBreakTimer);
+      companionBreakTimer = null;
+    }
+    if (blindBoxRevealTimer) {
+      clearTimeout(blindBoxRevealTimer);
+      blindBoxRevealTimer = null;
+    }
     if (state?.resizeHandler) window.removeEventListener("resize", state.resizeHandler);
     if (state?.routeInteractionHandler && typeof document.removeEventListener === "function") {
       document.removeEventListener("click", state.routeInteractionHandler, true);
@@ -2438,6 +2799,7 @@
     cleanup,
     ensureToggleButton,
     setUsageSnapshot,
+    setCompanionSnapshot,
     observer,
     rootObserver,
     resizeObserver,
