@@ -16,8 +16,8 @@ using System.Web.Script.Serialization;
 [assembly: AssemblyDescription("ChatGPT QQ Skin native Windows installer")]
 [assembly: AssemblyCompany("Codex QQ Skin")]
 [assembly: AssemblyProduct("ChatGPT QQ Skin")]
-[assembly: AssemblyVersion("2.5.1.0")]
-[assembly: AssemblyFileVersion("2.5.1.0")]
+[assembly: AssemblyVersion("2.5.2.0")]
+[assembly: AssemblyFileVersion("2.5.2.0")]
 
 namespace CodexQQSkinSetup
 {
@@ -36,13 +36,14 @@ namespace CodexQQSkinSetup
     {
         private readonly Button installButton;
         private readonly Button imageButton;
+        private readonly Button bumblebeeButton;
         private readonly Button skillButton;
         private readonly Label skillStatusLabel;
         private readonly Label statusLabel;
         private readonly ProgressBar progress;
         private readonly TextBox log;
 
-        private const string CurrentVersion = "2.5.1";
+        private const string CurrentVersion = "2.5.2";
         private const string LatestReleaseApi = "https://api.github.com/repos/zhulin025/Codex-QQ-Skin/releases/latest";
 
         public MainForm(string[] args)
@@ -51,13 +52,13 @@ namespace CodexQQSkinSetup
             Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath);
             ShowIcon = true;
             StartPosition = FormStartPosition.CenterScreen;
-            ClientSize = new Size(660, 580);
-            MinimumSize = new Size(600, 530);
+            ClientSize = new Size(660, 650);
+            MinimumSize = new Size(600, 600);
             BackColor = Color.FromArgb(245, 248, 255);
             Font = new Font("Microsoft YaHei UI", 10F);
 
             Label title = new Label { Text = "ChatGPT QQ Skin", Font = new Font("Microsoft YaHei UI", 23F, FontStyle.Bold), ForeColor = Color.FromArgb(26, 71, 156), AutoSize = true, Location = new Point(32, 25) };
-            Label subtitle = new Label { Text = "Windows 原生安装器 · 本地生成图片皮肤", ForeColor = Color.FromArgb(76, 92, 122), AutoSize = true, Location = new Point(36, 76) };
+            Label subtitle = new Label { Text = "Windows 原生安装器 · 内置经典 QQ 与大黄蜂深度皮肤", ForeColor = Color.FromArgb(76, 92, 122), AutoSize = true, Location = new Point(36, 76) };
             Controls.Add(title);
             Controls.Add(subtitle);
 
@@ -68,17 +69,22 @@ namespace CodexQQSkinSetup
             Controls.Add(installButton);
             Controls.Add(imageButton);
 
-            skillButton = MakeButton("安装 Codex 深度皮肤助手 Skill", new Point(36, 184), Color.FromArgb(224, 164, 20));
+            bumblebeeButton = MakeButton("应用内置大黄蜂皮肤", new Point(36, 184), Color.FromArgb(231, 170, 12));
+            bumblebeeButton.Size = new Size(588, 50);
+            bumblebeeButton.Click += async delegate { await ApplyBumblebeeAsync(); };
+            Controls.Add(bumblebeeButton);
+
+            skillButton = MakeButton("安装 Codex 深度皮肤助手 Skill", new Point(36, 246), Color.FromArgb(64, 78, 108));
             skillButton.Size = new Size(588, 50);
             skillButton.Click += async delegate { await InstallSkillAsync(); };
             Controls.Add(skillButton);
-            skillStatusLabel = new Label { AutoSize = false, TextAlign = ContentAlignment.MiddleCenter, Location = new Point(36, 236), Size = new Size(588, 24), ForeColor = Color.FromArgb(76, 92, 122) };
+            skillStatusLabel = new Label { AutoSize = false, TextAlign = ContentAlignment.MiddleCenter, Location = new Point(36, 298), Size = new Size(588, 24), ForeColor = Color.FromArgb(76, 92, 122) };
             Controls.Add(skillStatusLabel);
             RefreshSkillButton();
 
-            progress = new ProgressBar { Location = new Point(36, 270), Size = new Size(588, 7), Style = ProgressBarStyle.Marquee, Visible = false };
-            statusLabel = new Label { Text = "准备就绪", AutoSize = false, Location = new Point(36, 291), Size = new Size(588, 28), ForeColor = Color.FromArgb(55, 68, 93) };
-            log = new TextBox { Location = new Point(36, 326), Size = new Size(588, 210), Multiline = true, ReadOnly = true, ScrollBars = ScrollBars.Vertical, BackColor = Color.White, BorderStyle = BorderStyle.FixedSingle, Font = new Font("Consolas", 9F) };
+            progress = new ProgressBar { Location = new Point(36, 332), Size = new Size(588, 7), Style = ProgressBarStyle.Marquee, Visible = false };
+            statusLabel = new Label { Text = "准备就绪", AutoSize = false, Location = new Point(36, 353), Size = new Size(588, 28), ForeColor = Color.FromArgb(55, 68, 93) };
+            log = new TextBox { Location = new Point(36, 388), Size = new Size(588, 218), Multiline = true, ReadOnly = true, ScrollBars = ScrollBars.Vertical, BackColor = Color.White, BorderStyle = BorderStyle.FixedSingle, Font = new Font("Consolas", 9F) };
             Controls.Add(progress);
             Controls.Add(statusLabel);
             Controls.Add(log);
@@ -202,6 +208,20 @@ namespace CodexQQSkinSetup
             }
         }
 
+        private async Task ApplyBumblebeeAsync()
+        {
+            await RunBusyAsync("正在安装并应用大黄蜂深度皮肤…", async delegate
+            {
+                string installed = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "CodexQQSkin", "engine");
+                string switcher = Path.Combine(installed, "scripts", "windows", "switch-theme-windows.ps1");
+                string root = await ExtractPayloadAsync();
+                await RunPowerShellAsync(Path.Combine(root, "scripts", "windows", "install-qq-skin-windows.ps1"), "-NoLaunch");
+                if (!File.Exists(switcher)) throw new FileNotFoundException("安装后的引擎缺少皮肤切换器。", switcher);
+                await RunPowerShellAsync(switcher, "-Id preset-bumblebee");
+                return "大黄蜂深度皮肤已从安装器内置预设中应用。";
+            });
+        }
+
         private void RefreshSkillButton()
         {
             string skill = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".codex", "skills", "codex-deep-skin-builder", "SKILL.md");
@@ -260,7 +280,7 @@ namespace CodexQQSkinSetup
 
         private async Task RunBusyAsync(string running, Func<Task<string>> action)
         {
-            installButton.Enabled = imageButton.Enabled = skillButton.Enabled = false;
+            installButton.Enabled = imageButton.Enabled = bumblebeeButton.Enabled = skillButton.Enabled = false;
             progress.Visible = true;
             statusLabel.Text = running;
             log.Clear();
@@ -278,7 +298,7 @@ namespace CodexQQSkinSetup
             finally
             {
                 progress.Visible = false;
-                installButton.Enabled = imageButton.Enabled = true;
+                installButton.Enabled = imageButton.Enabled = bumblebeeButton.Enabled = true;
                 RefreshSkillButton();
             }
         }

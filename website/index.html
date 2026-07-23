@@ -3,70 +3,72 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta
-      name="description"
-      content="Codex QQ Skin：支持 macOS 与 Windows Codex 桌面端的复古 QQ 风格皮肤。"
-    />
-    <title>Codex QQ Skin</title>
+    <meta name="description" content="Codex 皮肤生成器：用图片或一句主题描述，为 Codex 生成并管理你的专属皮肤。" />
+    <title>Codex 皮肤生成器</title>
     <link rel="icon" type="image/png" href="./project-logo.png" />
     <link rel="stylesheet" href="./styles.css" />
-    <script defer src="./site.js"></script>
-    <script
-      defer
-      src="https://vibeloft.ai/telemetry/v1.js"
-      data-vl-product-id="714ba676-4c92-4ff4-847b-2de4bcd01588"
-      data-vl-auth-key="vl_web.f9eQ6x9kGbCxGbvci0fb5JakqwyRNX-UuRYEgwwSDF4"
-    ></script>
+    <script defer src="https://vibeloft.ai/telemetry/v1.js" data-vl-product-id="714ba676-4c92-4ff4-847b-2de4bcd01588" data-vl-auth-key="vl_web.f9eQ6x9kGbCxGbvci0fb5JakqwyRNX-UuRYEgwwSDF4"></script>
   </head>
   <body>
-    <main class="hero">
-      <div class="window" aria-labelledby="site-title">
-        <div class="titlebar" aria-hidden="true">
-          <span class="penguin">◉</span>
-          <span>Codex QQ Skin</span>
-          <span class="window-controls">— □ ×</span>
+    <header class="site-header">
+      <a class="brand" href="./" aria-label="Codex 皮肤生成器首页">
+        <span class="brand-mark" aria-hidden="true">C</span><span>Codex 皮肤生成器</span>
+      </a>
+    </header>
+
+    <main>
+      <section class="hero" aria-labelledby="hero-title">
+        <div class="hero-copy">
+          <p class="eyebrow"><span></span> CODEX SKIN GENERATOR</p>
+          <h1 id="hero-title">给 Codex<br /><em>换个心情。</em></h1>
+          <p class="intro">用一张喜欢的图片，或一句主题描述，生成属于你的 Codex 皮肤。内置经典 QQ 皮肤，支持 macOS 与 Windows。</p>
+          <div class="actions">
+            <a class="button button-primary" href="https://github.com/zhulin025/Codex-QQ-Skin/releases" target="_blank" rel="noreferrer">下载最新版 <span aria-hidden="true">↓</span></a>
+            <a class="button button-secondary" href="https://github.com/zhulin025/Codex-QQ-Skin" target="_blank" rel="noreferrer">GitHub 主仓库 <span aria-hidden="true">↗</span></a>
+          </div>
+          <p class="platform-note">免费开源 · macOS & Windows · 不修改官方应用</p>
         </div>
 
-        <section class="content">
+        <figure class="skin-preview">
+          <div class="preview-dots" aria-hidden="true"><i></i><i></i><i></i></div>
           <img
-            class="project-logo"
-            src="./project-logo.png"
-            alt="Codex QQ Skin 项目 Logo"
-            width="752"
-            height="766"
+            src="./bumblebee-skin-case.jpg"
+            alt="由 Codex 皮肤生成器制作的 Bumblebee 主题真实案例"
+            width="960"
+            height="726"
           />
-          <p class="eyebrow">CODEX · QQ · MACOS · WINDOWS</p>
-          <h1 id="site-title">Codex QQ Skin</h1>
-          <p class="intro">支持 macOS 与 Windows Codex 桌面端的复古 QQ 风格皮肤。</p>
-          <div class="cta-row">
-            <a
-              class="github-button"
-              href="https://github.com/zhulin025/Codex-QQ-Skin/releases"
-              target="_blank"
-              rel="noreferrer"
-            >
-              去下载
-              <span aria-hidden="true">↗</span>
-            </a>
-            <a
-              class="github-button"
-              href="https://github.com/zhulin025/Codex-QQ-Skin"
-              target="_blank"
-              rel="noreferrer"
-            >
-              在 GitHub 查看项目
-              <span aria-hidden="true">↗</span>
-            </a>
-          </div>
-        </section>
-      </div>
+          <figcaption>真实皮肤案例 · Bumblebee</figcaption>
+          <span class="sticker sticker-pink">一句话生成</span><span class="sticker sticker-blue">真实案例</span>
+        </figure>
+      </section>
+
+      <section class="features" aria-labelledby="feature-title">
+        <div class="section-heading"><p>一种选择，一次生成</p><h2 id="feature-title">两种生成方式，一套皮肤库</h2></div>
+        <div class="feature-grid">
+          <article class="feature-card feature-yellow">
+            <span class="feature-number">01</span><div class="feature-icon" aria-hidden="true">⌁</div>
+            <h3>图片生成</h3><p>选择一张图片，自动提取配色与视觉焦点。</p>
+          </article>
+          <article class="feature-card feature-pink">
+            <span class="feature-number">02</span><div class="feature-icon" aria-hidden="true">✦</div>
+            <h3>一句话定制</h3><p>描述想要的主题，深度皮肤助手帮你完成整套设计。</p>
+          </article>
+          <article class="feature-card feature-blue">
+            <span class="feature-number">03</span><div class="feature-icon" aria-hidden="true">↻</div>
+            <h3>轻松管理</h3><p>在原生、QQ 与自定义皮肤之间快速切换。</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="qq-banner">
+        <div>
+          <p class="qq-kicker">内置经典款</p><h2>QQ 皮肤，也还在。</h2>
+          <p>熟悉的蓝银复古外观，已经成为皮肤生成器中的预设之一。</p>
+        </div>
+        <a href="./qq/">看看原来的介绍页 <span aria-hidden="true">→</span></a>
+      </section>
     </main>
-    <audio
-      id="qq-cough-audio"
-      src="./qq-system-cough.mp3"
-      preload="auto"
-      autoplay
-      aria-hidden="true"
-    ></audio>
+
+    <footer><span>Codex Skin Generator</span><span>非 OpenAI、腾讯或 QQ 官方产品</span></footer>
   </body>
 </html>

@@ -1155,11 +1155,13 @@ html.codex-qq-skin[data-dream-task-route="true"][data-dream-three-pane="false"]
 }
 
 /* Keep a fixed gutter around the conversation on wide three-pane displays.
-   The main-surface container includes the pinned summary column. Subtract it
-   explicitly so the conversation cannot slide underneath the summary. */
+   Codex centers the thread inside the full main-surface (which also contains
+   the pinned summary column). Reserve the summary width on both sides of that
+   centered thread; subtracting it only once leaves half the thread underneath
+   the right panel on very wide Windows displays. */
 html.codex-qq-skin[data-dream-three-pane="true"] main.main-surface:not(.qq-skin-home-shell) {
   --thread-content-max-width: calc(
-    100cqw - var(--dream-summary-panel-width, var(--dream-right-panel-width, 300px)) + 22px
+    100cqw - 2 * var(--dream-summary-panel-width, var(--dream-right-panel-width, 300px)) + 44px
   ) !important;
 }
 

@@ -24,6 +24,13 @@ if ($commonWindows | Where-Object { $_ -match '\(Get-CodexProcesses\)\.Count' -a
 
 & $node (Join-Path $root 'scripts\injector.mjs') --check-payload --theme-dir (Join-Path $root 'presets\preset-classic-codex') | Out-Null
 if ($LASTEXITCODE -ne 0) { throw 'Injector payload check failed.' }
+$bumblebee = Join-Path $root 'presets\preset-bumblebee'
+& $node (Join-Path $root 'scripts\deep-theme.mjs') validate --theme-dir $bumblebee | Out-Null
+if ($LASTEXITCODE -ne 0) { throw 'Bundled Bumblebee preset validation failed.' }
+$guiBuilder = Get-Content -LiteralPath (Join-Path $root 'scripts\windows\build-gui-installer.ps1') -Raw
+if ($guiBuilder -notmatch "foreach \(\`$directory in @\('assets','presets','scripts','skills'\)\)") {
+  throw 'Windows GUI installer must embed the bundled presets directory.'
+}
 foreach ($test in @('image-metadata.test.mjs','injector-bootstrap.test.mjs','renderer-inject.test.mjs','deep-theme.test.mjs','skill-install.test.mjs','theme-stage.test.mjs','usage-level.test.mjs')) {
   & $node (Join-Path $root "tests\$test")
   if ($LASTEXITCODE -ne 0) { throw "$test failed." }

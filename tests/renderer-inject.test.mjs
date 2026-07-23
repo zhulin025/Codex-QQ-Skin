@@ -37,8 +37,8 @@ assert.match(
 );
 assert.match(
   css,
-  /data-dream-three-pane="true"[\s\S]{0,100}main\.main-surface:not\(\.qq-skin-home-shell\)[\s\S]{0,280}--thread-content-max-width:\s*calc\([\s\S]{0,120}100cqw - var\(--dream-summary-panel-width, var\(--dream-right-panel-width, 300px\)\) \+ 22px[\s\S]{0,40}\) !important;/,
-  "Wide three-pane task content must subtract the summary column so it cannot slide underneath the right panel.",
+  /data-dream-three-pane="true"[\s\S]{0,100}main\.main-surface:not\(\.qq-skin-home-shell\)[\s\S]{0,360}--thread-content-max-width:\s*calc\([\s\S]{0,140}100cqw - 2 \* var\(--dream-summary-panel-width, var\(--dream-right-panel-width, 300px\)\) \+ 44px[\s\S]{0,40}\) !important;/,
+  "Wide three-pane task content must reserve the summary width on both sides of its centered column.",
 );
 assert.match(
   css,
