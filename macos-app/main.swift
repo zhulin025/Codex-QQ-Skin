@@ -9,6 +9,7 @@ private struct GitHubRelease: Decodable {
     struct Asset: Decodable {
         let name: String
         let browser_download_url: URL
+        let size: Int64
     }
     let tag_name: String
     let html_url: URL
@@ -23,9 +24,47 @@ struct ThemeLibraryItem {
     let active: Bool
 }
 
+private final class UpdateDownloadDelegate: NSObject, URLSessionDownloadDelegate {
+    var progressHandler: ((Int64, Int64) -> Void)?
+    var completionHandler: ((URL?, Error?) -> Void)?
+    private var completed = false
+
+    func urlSession(
+        _ session: URLSession,
+        downloadTask: URLSessionDownloadTask,
+        didWriteData bytesWritten: Int64,
+        totalBytesWritten: Int64,
+        totalBytesExpectedToWrite: Int64
+    ) {
+        progressHandler?(totalBytesWritten, totalBytesExpectedToWrite)
+    }
+
+    func urlSession(
+        _ session: URLSession,
+        downloadTask: URLSessionDownloadTask,
+        didFinishDownloadingTo location: URL
+    ) {
+        guard !completed else { return }
+        completed = true
+        completionHandler?(location, nil)
+    }
+
+    func urlSession(
+        _ session: URLSession,
+        task: URLSessionTask,
+        didCompleteWithError error: Error?
+    ) {
+        guard let error, !completed else { return }
+        completed = true
+        completionHandler?(nil, error)
+    }
+}
+
 final class AppDelegate: NSObject, NSApplicationDelegate, NSTableViewDataSource, NSTableViewDelegate {
     private var window: NSWindow!
     private var statusLabel: NSTextField!
+    private var updateProgress: NSProgressIndicator!
+    private var updateReleaseButton: NSButton!
     private var primaryButton: NSButton!
     private var skillButton: NSButton!
     private var skillStatusLabel: NSTextField!
@@ -38,6 +77,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTableViewDataSource,
     private var libraryPane: NSStackView!
     private var busy = false
     private var themes: [ThemeLibraryItem] = []
+    private var updateReleaseURL: URL?
+    private var updateSession: URLSession?
+    private var updateDownloadDelegate: UpdateDownloadDelegate?
 
     private var home: URL { FileManager.default.homeDirectoryForCurrentUser }
     private var installedRoot: URL { home.appendingPathComponent(".codex/codex-qq-skin-studio") }
@@ -112,10 +154,24 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTableViewDataSource,
             showError("这个 Release 缺少 macOS 安装包或 SHA-256 校验文件。")
             return
         }
-        setBusy(true, message: "正在下载 \(release.tag_name)…")
-        URLSession.shared.downloadTask(with: archive.browser_download_url) { [weak self] temporary, _, error in
-            guard let self, let temporary, error == nil else {
-                DispatchQueue.main.async { self?.setBusy(false, message: "更新下载失败"); self?.showError("无法下载安装包，请检查网络后重试。") }
+        beginUpdateDownload(release: release, asset: archive)
+        let delegate = UpdateDownloadDelegate()
+        updateDownloadDelegate = delegate
+        delegate.progressHandler = { [weak self] received, expected in
+            DispatchQueue.main.async {
+                self?.showUpdateProgress(received: received, expected: expected > 0 ? expected : archive.size, tag: release.tag_name)
+            }
+        }
+        delegate.completionHandler = { [weak self] temporary, error in
+            guard let self else { return }
+            self.updateSession?.finishTasksAndInvalidate()
+            self.updateSession = nil
+            self.updateDownloadDelegate = nil
+            guard let temporary, error == nil else {
+                DispatchQueue.main.async {
+                    self.endUpdateDownload(message: "更新下载失败")
+                    self.showUpdateFailure("无法下载安装包，请检查网络后重试。", releaseURL: release.html_url)
+                }
                 return
             }
             let work = FileManager.default.temporaryDirectory.appendingPathComponent("codex-qq-skin-update-\(UUID().uuidString)")
@@ -141,9 +197,67 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTableViewDataSource,
                 try self.launchUpdater(stagedApp: staged, work: work)
             } catch {
                 try? FileManager.default.removeItem(at: work)
-                DispatchQueue.main.async { self.setBusy(false, message: "更新失败"); self.showError(error.localizedDescription) }
+                DispatchQueue.main.async {
+                    self.endUpdateDownload(message: "更新失败")
+                    self.showUpdateFailure(error.localizedDescription, releaseURL: release.html_url)
+                }
             }
-        }.resume()
+        }
+        let session = URLSession(configuration: .default, delegate: delegate, delegateQueue: nil)
+        updateSession = session
+        session.downloadTask(with: archive.browser_download_url).resume()
+    }
+
+    private func beginUpdateDownload(release: GitHubRelease, asset: GitHubRelease.Asset) {
+        updateReleaseURL = release.html_url
+        updateProgress.minValue = 0
+        updateProgress.maxValue = 100
+        updateProgress.doubleValue = 0
+        updateProgress.isIndeterminate = false
+        updateProgress.isHidden = false
+        updateReleaseButton.isHidden = false
+        setBusy(true, message: "正在下载 \(release.tag_name)：0 B / \(formatBytes(asset.size)) (0%)")
+    }
+
+    private func showUpdateProgress(received: Int64, expected: Int64, tag: String) {
+        let total = max(expected, 0)
+        let percent = total > 0 ? min(100, Int((Double(received) / Double(total)) * 100)) : 0
+        updateProgress.doubleValue = Double(percent)
+        statusLabel.stringValue = total > 0
+            ? "正在下载 \(tag)：\(formatBytes(received)) / \(formatBytes(total)) (\(percent)%)"
+            : "正在下载 \(tag)：已下载 \(formatBytes(received))"
+    }
+
+    private func endUpdateDownload(message: String) {
+        updateProgress.isHidden = true
+        updateReleaseButton.isHidden = true
+        updateReleaseURL = nil
+        setBusy(false, message: message)
+    }
+
+    private func formatBytes(_ bytes: Int64) -> String {
+        let formatter = ByteCountFormatter()
+        formatter.allowedUnits = [.useMB, .useGB]
+        formatter.countStyle = .file
+        formatter.includesUnit = true
+        formatter.isAdaptive = true
+        return formatter.string(fromByteCount: max(0, bytes))
+    }
+
+    @objc private func openUpdateRelease() {
+        if let updateReleaseURL { NSWorkspace.shared.open(updateReleaseURL) }
+    }
+
+    private func showUpdateFailure(_ message: String, releaseURL: URL) {
+        let alert = NSAlert()
+        alert.alertStyle = .warning
+        alert.messageText = "自动更新没有完成"
+        alert.informativeText = "\(message)\n\n你可以前往 GitHub Release 页面手动下载安装包。"
+        alert.addButton(withTitle: "打开 GitHub Release")
+        alert.addButton(withTitle: "关闭")
+        if alert.runModal() == .alertFirstButtonReturn {
+            NSWorkspace.shared.open(releaseURL)
+        }
     }
 
     private func validateStagedUpdate(_ app: URL, releaseTag: String) throws {
@@ -224,11 +338,25 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTableViewDataSource,
         statusLabel.translatesAutoresizingMaskIntoConstraints = false
         statusLabel.widthAnchor.constraint(equalToConstant: 480).isActive = true
 
+        updateProgress = NSProgressIndicator()
+        updateProgress.style = .bar
+        updateProgress.controlSize = .small
+        updateProgress.isIndeterminate = false
+        updateProgress.isHidden = true
+        updateProgress.translatesAutoresizingMaskIntoConstraints = false
+        updateProgress.widthAnchor.constraint(equalToConstant: 480).isActive = true
+
+        updateReleaseButton = NSButton(title: "下载太慢？前往 GitHub Release 手动下载", target: self, action: #selector(openUpdateRelease))
+        updateReleaseButton.bezelStyle = .inline
+        updateReleaseButton.isBordered = false
+        updateReleaseButton.contentTintColor = .linkColor
+        updateReleaseButton.isHidden = true
+
         buildLaunchPane()
         buildLibraryPane()
         libraryPane.isHidden = true
 
-        [tabControl, launchPane, libraryPane, statusLabel].forEach(root.addArrangedSubview)
+        [tabControl, launchPane, libraryPane, statusLabel, updateProgress, updateReleaseButton].forEach(root.addArrangedSubview)
         window.contentView?.addSubview(root)
         NSLayoutConstraint.activate([
             root.leadingAnchor.constraint(equalTo: window.contentView!.leadingAnchor),

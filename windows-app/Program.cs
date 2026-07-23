@@ -16,8 +16,8 @@ using System.Web.Script.Serialization;
 [assembly: AssemblyDescription("ChatGPT QQ Skin native Windows installer")]
 [assembly: AssemblyCompany("Codex QQ Skin")]
 [assembly: AssemblyProduct("ChatGPT QQ Skin")]
-[assembly: AssemblyVersion("2.5.2.0")]
-[assembly: AssemblyFileVersion("2.5.2.0")]
+[assembly: AssemblyVersion("2.5.3.0")]
+[assembly: AssemblyFileVersion("2.5.3.0")]
 
 namespace CodexQQSkinSetup
 {
@@ -41,9 +41,11 @@ namespace CodexQQSkinSetup
         private readonly Label skillStatusLabel;
         private readonly Label statusLabel;
         private readonly ProgressBar progress;
+        private readonly LinkLabel releaseLink;
         private readonly TextBox log;
+        private string currentReleaseUrl;
 
-        private const string CurrentVersion = "2.5.2";
+        private const string CurrentVersion = "2.5.3";
         private const string LatestReleaseApi = "https://api.github.com/repos/zhulin025/Codex-QQ-Skin/releases/latest";
 
         public MainForm(string[] args)
@@ -84,9 +86,12 @@ namespace CodexQQSkinSetup
 
             progress = new ProgressBar { Location = new Point(36, 332), Size = new Size(588, 7), Style = ProgressBarStyle.Marquee, Visible = false };
             statusLabel = new Label { Text = "准备就绪", AutoSize = false, Location = new Point(36, 353), Size = new Size(588, 28), ForeColor = Color.FromArgb(55, 68, 93) };
-            log = new TextBox { Location = new Point(36, 388), Size = new Size(588, 218), Multiline = true, ReadOnly = true, ScrollBars = ScrollBars.Vertical, BackColor = Color.White, BorderStyle = BorderStyle.FixedSingle, Font = new Font("Consolas", 9F) };
+            releaseLink = new LinkLabel { Text = "下载太慢？前往 GitHub Release 手动下载", AutoSize = false, TextAlign = ContentAlignment.MiddleLeft, Location = new Point(36, 378), Size = new Size(588, 24), Visible = false };
+            releaseLink.LinkClicked += delegate { OpenReleasePage(); };
+            log = new TextBox { Location = new Point(36, 410), Size = new Size(588, 196), Multiline = true, ReadOnly = true, ScrollBars = ScrollBars.Vertical, BackColor = Color.White, BorderStyle = BorderStyle.FixedSingle, Font = new Font("Consolas", 9F) };
             Controls.Add(progress);
             Controls.Add(statusLabel);
+            Controls.Add(releaseLink);
             Controls.Add(log);
             Shown += async delegate { if (Array.IndexOf(args, "--updated") < 0) await CheckForUpdatesAsync(); };
         }
@@ -121,7 +126,13 @@ namespace CodexQQSkinSetup
             ReleaseAsset installer = Array.Find(release.assets, delegate(ReleaseAsset a) { return a.name.Equals(expectedName, StringComparison.OrdinalIgnoreCase); });
             ReleaseAsset checksum = installer == null ? null : Array.Find(release.assets, delegate(ReleaseAsset a) { return a.name == installer.name + ".sha256"; });
             if (installer == null || checksum == null) throw new InvalidOperationException("最新 Release 缺少 Windows 安装包或 SHA-256 校验文件。");
-            await RunBusyAsync("正在下载 " + release.tag_name + "…", async delegate
+            currentReleaseUrl = release.html_url;
+            releaseLink.Visible = true;
+            progress.Style = ProgressBarStyle.Continuous;
+            progress.Minimum = 0;
+            progress.Maximum = 100;
+            progress.Value = 0;
+            await RunBusyAsync(DownloadStatus(release.tag_name, 0, installer.size, 0), async delegate
             {
                 string folder = Path.Combine(Path.GetTempPath(), "CodexQQSkinUpdate", release.tag_name);
                 Directory.CreateDirectory(folder);
@@ -129,6 +140,16 @@ namespace CodexQQSkinSetup
                 string expected;
                 using (WebClient client = NewWebClient())
                 {
+                    client.DownloadProgressChanged += delegate(object sender, DownloadProgressChangedEventArgs e)
+                    {
+                        BeginInvoke((Action)(delegate
+                        {
+                            long total = e.TotalBytesToReceive > 0 ? e.TotalBytesToReceive : installer.size;
+                            int percent = total > 0 ? Math.Min(100, (int)(e.BytesReceived * 100L / total)) : 0;
+                            progress.Value = percent;
+                            statusLabel.Text = DownloadStatus(release.tag_name, e.BytesReceived, total, percent);
+                        }));
+                    };
                     await client.DownloadFileTaskAsync(installer.browser_download_url, target);
                     expected = (await client.DownloadStringTaskAsync(checksum.browser_download_url)).Split((char[])null, StringSplitOptions.RemoveEmptyEntries)[0].ToLowerInvariant();
                 }
@@ -146,6 +167,28 @@ namespace CodexQQSkinSetup
                 BeginInvoke((Action)(delegate { Close(); }));
                 return "新版本安装程序已启动。";
             });
+        }
+
+        private static string DownloadStatus(string tag, long received, long total, int percent)
+        {
+            return total > 0
+                ? "正在下载 " + tag + "：" + FormatBytes(received) + " / " + FormatBytes(total) + " (" + percent + "%)"
+                : "正在下载 " + tag + "：已下载 " + FormatBytes(received);
+        }
+
+        private static string FormatBytes(long bytes)
+        {
+            double value = Math.Max(0, bytes);
+            if (value >= 1024 * 1024 * 1024) return (value / (1024 * 1024 * 1024)).ToString("0.0") + " GB";
+            if (value >= 1024 * 1024) return (value / (1024 * 1024)).ToString("0.0") + " MB";
+            if (value >= 1024) return (value / 1024).ToString("0.0") + " KB";
+            return value.ToString("0") + " B";
+        }
+
+        private void OpenReleasePage()
+        {
+            if (String.IsNullOrWhiteSpace(currentReleaseUrl)) return;
+            Process.Start(new ProcessStartInfo(currentReleaseUrl) { UseShellExecute = true });
         }
 
         private static WebClient NewWebClient()
@@ -167,8 +210,8 @@ namespace CodexQQSkinSetup
             return true;
         }
 
-        private sealed class ReleaseInfo { public string tag_name { get; set; } public ReleaseAsset[] assets { get; set; } }
-        private sealed class ReleaseAsset { public string name { get; set; } public string browser_download_url { get; set; } }
+        private sealed class ReleaseInfo { public string tag_name { get; set; } public string html_url { get; set; } public ReleaseAsset[] assets { get; set; } }
+        private sealed class ReleaseAsset { public string name { get; set; } public string browser_download_url { get; set; } public long size { get; set; } }
 
         private Button MakeButton(string text, Point location, Color color)
         {
@@ -282,6 +325,7 @@ namespace CodexQQSkinSetup
         {
             installButton.Enabled = imageButton.Enabled = bumblebeeButton.Enabled = skillButton.Enabled = false;
             progress.Visible = true;
+            if (String.IsNullOrWhiteSpace(currentReleaseUrl)) progress.Style = ProgressBarStyle.Marquee;
             statusLabel.Text = running;
             log.Clear();
             try
@@ -293,11 +337,23 @@ namespace CodexQQSkinSetup
             {
                 statusLabel.Text = "操作失败";
                 AppendLog(ex.Message);
-                MessageBox.Show(this, ex.Message, "ChatGPT QQ Skin", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                if (!String.IsNullOrWhiteSpace(currentReleaseUrl))
+                {
+                    DialogResult fallback = MessageBox.Show(this, ex.Message + "\r\n\r\n自动更新失败。是否前往 GitHub Release 页面手动下载？", "ChatGPT QQ Skin", MessageBoxButtons.YesNo, MessageBoxIcon.Error);
+                    if (fallback == DialogResult.Yes) OpenReleasePage();
+                }
+                else
+                {
+                    MessageBox.Show(this, ex.Message, "ChatGPT QQ Skin", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
             }
             finally
             {
                 progress.Visible = false;
+                progress.Style = ProgressBarStyle.Marquee;
+                progress.Value = 0;
+                releaseLink.Visible = false;
+                currentReleaseUrl = null;
                 installButton.Enabled = imageButton.Enabled = bumblebeeButton.Enabled = true;
                 RefreshSkillButton();
             }

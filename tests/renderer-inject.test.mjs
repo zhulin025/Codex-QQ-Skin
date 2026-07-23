@@ -37,23 +37,26 @@ assert.match(
 );
 assert.match(
   css,
-  /data-dream-three-pane="true"[\s\S]{0,100}main\.main-surface:not\(\.qq-skin-home-shell\)[\s\S]{0,360}--thread-content-max-width:\s*calc\([\s\S]{0,140}100cqw - 2 \* var\(--dream-summary-panel-width, var\(--dream-right-panel-width, 300px\)\) \+ 44px[\s\S]{0,40}\) !important;/,
-  "Wide three-pane task content must reserve the summary width on both sides of its centered column.",
+  /data-dream-task-route="true"[\s\S]{0,100}main\.main-surface:not\(\.qq-skin-home-shell\)[\s\S]{0,160}--thread-content-max-width:\s*min\(48rem, calc\(100% - 24px\)\) !important;/,
+  "Every QQ task must retain the native desktop reading width and keep 12px gutters in narrower panes.",
 );
-assert.match(
+assert.doesNotMatch(
+  css.slice(
+    css.indexOf('html.codex-qq-skin[data-dream-task-route="true"] main.main-surface'),
+    css.indexOf('html.codex-qq-skin[data-dream-three-pane="true"] [data-pip-obstacle="thread-summary-panel"]'),
+  ),
+  /--thread-content-max-width:[^;]*\bcqw\b/,
+  "Task widths must not depend on a nested query container that can collapse the conversation.",
+);
+assert.doesNotMatch(
   css,
-  /data-dream-task-route="true"\]\[data-dream-three-pane="false"\][\s\S]{0,120}main\.main-surface:not\(\.qq-skin-home-shell\)[\s\S]{0,140}--thread-content-max-width:\s*min\(1360px, calc\(\(300cqw \+ 48rem\) \/ 4\)\) !important;/,
-  "A normal task must halve the previous QQ whitespace again without becoming unbounded on wide displays.",
+  /data-dream-three-pane="true"[\s\S]{0,180}\.thread-scroll-container > div:first-child[\s\S]{0,180}(?:width|transform)\s*:/,
+  "Opening the native right sidebar must not resize or reposition the existing middle thread.",
 );
 assert.match(
   template,
   /visibleThreadFooters[\s\S]{0,420}data-dream-side-task[\s\S]{0,100}visibleThreadFooters\.length >= 2/,
   "The renderer must distinguish a real split side task from the body-level floating chat portal.",
-);
-assert.match(
-  css,
-  /data-dream-task-route="true"\]\[data-dream-side-task="open"\][\s\S]{0,180}main\.main-surface:not\(\.qq-skin-home-shell\)[\s\S]{0,180}--thread-content-max-width:\s*calc\(100cqw \+ 28px\) !important;/,
-  "Both real side-task threads must use their own container widths without subtracting the summary twice.",
 );
 assert.match(
   css,
