@@ -307,7 +307,7 @@ assert.match(css, /data-pip-obstacle="thread-summary-panel"\][\s\S]{0,260}backgr
   "QQ light mode must override a stale native dark summary-panel surface.");
 assert.match(css, /data-pip-obstacle="thread-summary-panel"\] > div:first-child[\s\S]{0,260}background:\s*linear-gradient\(180deg, #ffffff, #edf6fd\) !important;/,
   "QQ light mode must also override the current summary panel's inner dark surface.");
-assert.match(customCss, /\.dream-skin-home > div:first-child\s*\{[\s\S]{0,180}justify-content:\s*flex-start !important;/,
+assert.match(customCss, /\.dream-skin-home-stack\s*\{[\s\S]{0,180}justify-content:\s*flex-start !important;/,
   "Custom home content must not retain the new native vertical centering gap.");
 assert.doesNotMatch(customCss, /html\.codex-dream-skin body > #root > div,\s*\nhtml\.codex-dream-skin main\.main-surface/,
   "Custom skin must not turn Codex's fixed portal nodes into in-flow layout spacers.");
@@ -416,7 +416,7 @@ assert.match(template, /const restoreNativeAppearance = \(\) =>[\s\S]{0,1500}sna
   "Leaving QQ mode must restore the native appearance captured before entry.");
 assert.match(template, /const cleanup = \(\) =>[\s\S]{0,220}restoreNativeAppearance\(\)/,
   "Removing the skin must also restore the user's native appearance.");
-assert.match(customCss, /html\.codex-dream-skin \.dream-skin-home > div:first-child > div:first-child > div:first-child/,
+assert.match(customCss, /html\.codex-dream-skin \.dream-skin-home-stack > div:first-child > div:first-child/,
   "Custom hero wallpaper rules must stay gated behind the custom skin root class.");
 assert.match(template, /const layoutMode = LAYOUT\.mode[\s\S]{0,500}const layoutRightWidth =/,
   "A skin-mode switch must re-read layout dimensions instead of freezing the startup mode.");

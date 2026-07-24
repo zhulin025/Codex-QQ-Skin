@@ -2981,13 +2981,13 @@ html.codex-qq-skin .qq-skin-home {
   overflow: visible !important;
 }
 
-.qq-skin-home > div:first-child {
+.qq-skin-home-stack {
   min-height: 100% !important;
   padding-top: 15px !important;
   overflow: visible !important;
 }
 
-.qq-skin-home > div:first-child > div:first-child {
+.qq-skin-home-stack > div:first-child {
   flex: 0 0 auto !important;
   min-height: 380px !important;
   align-items: flex-start !important;
@@ -2995,7 +2995,45 @@ html.codex-qq-skin .qq-skin-home {
   overflow: visible !important;
 }
 
-.qq-skin-home > div:first-child > div:first-child > div:first-child {
+/* When Codex inserts .home-banners above the real stack. Keep the marked
+   content column filling the panel and stop the native items-end/pb-24 hero
+   from parking the composer below the clipped QQ frame. */
+html[data-qq-home-layout="banners"] .qq-skin-home {
+  display: flex !important;
+  flex-direction: column !important;
+  min-height: 0 !important;
+}
+
+html[data-qq-home-layout="banners"] .qq-skin-home > .home-banners,
+html[data-qq-home-layout="banners"] .qq-skin-home > :has(> .home-banners) {
+  flex: 0 0 auto !important;
+  min-height: 0 !important;
+}
+
+html[data-qq-home-layout="banners"] .qq-skin-home-stack {
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  padding-top: 8px !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+html[data-qq-home-layout="banners"] .qq-skin-home-stack > div:first-child {
+  flex: 1 1 auto !important;
+  min-height: 280px !important;
+  justify-content: flex-start !important;
+  align-items: stretch !important;
+  padding-bottom: 132px !important;
+  overflow: visible !important;
+}
+
+html[data-qq-home-layout="banners"] .qq-skin-home-stack > div:last-child {
+  flex: 0 0 auto !important;
+  min-height: 0 !important;
+  justify-content: flex-end !important;
+}
+
+.qq-skin-home-stack > div:first-child > div:first-child {
   position: relative !important;
   isolation: isolate;
   width: calc(100% - 44px) !important;
@@ -3020,11 +3058,11 @@ html.codex-qq-skin .qq-skin-home {
    cropping a head or body to force the image edge-to-edge. The panel color
    fills the remaining side space, while true wide artwork still uses cover. */
 html.codex-qq-skin[data-dream-art-fit="contain"]
-  .qq-skin-home > div:first-child > div:first-child > div:first-child {
+  .qq-skin-home-stack > div:first-child > div:first-child {
   background-size: contain !important;
 }
 
-.qq-skin-home > div:first-child > div:first-child > div:first-child::before {
+.qq-skin-home-stack > div:first-child > div:first-child::before {
   content: "";
   position: absolute;
   inset: 0 auto 0 0;
@@ -3036,25 +3074,25 @@ html.codex-qq-skin[data-dream-art-fit="contain"]
 }
 
 html.codex-qq-skin:is([data-dream-art-safe="right"], [data-dream-art-safe-area="right"])
-  .qq-skin-home > div:first-child > div:first-child > div:first-child::before {
+  .qq-skin-home-stack > div:first-child > div:first-child::before {
   inset: 0 0 0 auto;
 }
 
 html.codex-qq-skin:is([data-dream-art-safe="center"], [data-dream-art-safe-area="center"])
-  .qq-skin-home > div:first-child > div:first-child > div:first-child::before {
+  .qq-skin-home-stack > div:first-child > div:first-child::before {
   inset: 0 14%;
   width: auto;
   border-radius: 0;
 }
 
 html.codex-qq-skin:is([data-dream-art-safe="none"], [data-dream-art-safe-area="none"])
-  .qq-skin-home > div:first-child > div:first-child > div:first-child::before {
+  .qq-skin-home-stack > div:first-child > div:first-child::before {
   inset: 0;
   width: auto;
   border-radius: 21px;
 }
 
-.qq-skin-home > div:first-child > div:first-child > div:first-child > div:first-child {
+.qq-skin-home-stack > div:first-child > div:first-child > div:first-child {
   position: relative;
   z-index: 1;
   height: 100%;
@@ -3064,29 +3102,29 @@ html.codex-qq-skin:is([data-dream-art-safe="none"], [data-dream-art-safe-area="n
 }
 
 html.codex-qq-skin:is([data-dream-art-safe="right"], [data-dream-art-safe-area="right"])
-  .qq-skin-home > div:first-child > div:first-child > div:first-child > div:first-child {
+  .qq-skin-home-stack > div:first-child > div:first-child > div:first-child {
   justify-content: flex-end !important;
 }
 
 html.codex-qq-skin:is([data-dream-art-safe="center"], [data-dream-art-safe-area="center"])
-  .qq-skin-home > div:first-child > div:first-child > div:first-child > div:first-child {
+  .qq-skin-home-stack > div:first-child > div:first-child > div:first-child {
   justify-content: center !important;
 }
 
-.qq-skin-home > div:first-child > div:first-child > div:first-child > div:first-child > div:first-child {
+.qq-skin-home-stack > div:first-child > div:first-child > div:first-child > div:first-child {
   width: min(46%, 520px) !important;
   align-items: flex-start !important;
   gap: 0 !important;
 }
 
 html.codex-qq-skin:is([data-dream-art-safe="right"], [data-dream-art-safe-area="right"])
-  .qq-skin-home > div:first-child > div:first-child > div:first-child > div:first-child > div:first-child {
+  .qq-skin-home-stack > div:first-child > div:first-child > div:first-child > div:first-child {
   align-items: flex-end !important;
   text-align: right !important;
 }
 
 html.codex-qq-skin:is([data-dream-art-safe="center"], [data-dream-art-safe-area="center"])
-  .qq-skin-home > div:first-child > div:first-child > div:first-child > div:first-child > div:first-child {
+  .qq-skin-home-stack > div:first-child > div:first-child > div:first-child > div:first-child {
   width: min(58%, 640px) !important;
   align-items: center !important;
   text-align: center !important;
@@ -3104,6 +3142,7 @@ html.codex-qq-skin:is([data-dream-art-safe="center"], [data-dream-art-safe-area=
   text-align: inherit !important;
   text-shadow: none !important;
   opacity: 1 !important;
+  visibility: visible !important;
   pointer-events: auto !important;
 }
 
@@ -3141,7 +3180,7 @@ html.codex-qq-skin:is([data-dream-art-safe="center"], [data-dream-art-safe-area=
   opacity: .86;
 }
 
-.qq-skin-home > div:first-child > div:first-child > div:first-child > div:nth-child(2) {
+.qq-skin-home-stack > div:first-child > div:first-child > div:nth-child(2) {
   position: absolute !important;
   left: 14px !important;
   right: 14px !important;
@@ -3272,7 +3311,7 @@ html.codex-qq-skin[data-dream-art-wide="true"] main.main-surface
 }
 
 html.codex-qq-skin[data-dream-art-wide="true"] main.main-surface.qq-skin-home-shell
-  .qq-skin-home > div:first-child > div:first-child > div:first-child {
+  .qq-skin-home-stack > div:first-child > div:first-child {
   border: 0 !important;
   border-radius: 0 !important;
   background: transparent !important;
@@ -3280,7 +3319,7 @@ html.codex-qq-skin[data-dream-art-wide="true"] main.main-surface.qq-skin-home-sh
 }
 
 html.codex-qq-skin[data-dream-art-wide="true"] main.main-surface.qq-skin-home-shell
-  .qq-skin-home > div:first-child > div:first-child > div:first-child::before {
+  .qq-skin-home-stack > div:first-child > div:first-child::before {
   content: none !important;
 }
 
@@ -3493,22 +3532,22 @@ html.codex-qq-skin [data-message-author-role] { border-radius: 16px; }
 @media (max-width: 1120px) {
   .qq-skin-status { display: none !important; }
   .qq-skin-home { --thread-content-max-width: min(940px, calc(100cqw - 30px)) !important; }
-  .qq-skin-home > div:first-child > div:first-child > div:first-child { width: calc(100% - 28px) !important; }
+  .qq-skin-home-stack > div:first-child > div:first-child { width: calc(100% - 28px) !important; }
 }
 
 @media (max-width: 900px) {
   .qq-skin-brand { left: 15px; }
   .qq-skin-brand b { font-size: 12px; }
-  .qq-skin-home > div:first-child > div:first-child {
+  .qq-skin-home-stack > div:first-child {
     flex-basis: 408px !important;
     min-height: 408px !important;
   }
-  .qq-skin-home > div:first-child > div:first-child > div:first-child {
+  .qq-skin-home-stack > div:first-child > div:first-child {
     height: 232px !important;
     min-height: 232px !important;
   }
-  .qq-skin-home > div:first-child > div:first-child > div:first-child > div:first-child { padding: 0 26px; }
-  .qq-skin-home > div:first-child > div:first-child > div:first-child > div:first-child > div:first-child {
+  .qq-skin-home-stack > div:first-child > div:first-child > div:first-child { padding: 0 26px; }
+  .qq-skin-home-stack > div:first-child > div:first-child > div:first-child > div:first-child {
     width: min(58%, 460px) !important;
   }
   .qq-skin-home [data-feature="game-source"] { font-size: 18px !important; }
@@ -3537,12 +3576,12 @@ html.codex-qq-skin[data-dream-shell="light"] main.main-surface.qq-skin-home-shel
 }
 
 html.codex-qq-skin[data-dream-shell="light"]
-  .qq-skin-home > div:first-child {
+  .qq-skin-home-stack {
   padding-top: 18px !important;
 }
 
 html.codex-qq-skin[data-dream-shell="light"]
-  .qq-skin-home > div:first-child > div:first-child {
+  .qq-skin-home-stack > div:first-child {
   flex-basis: auto !important;
   min-height: 360px !important;
   padding-bottom: 148px !important;
@@ -3550,7 +3589,7 @@ html.codex-qq-skin[data-dream-shell="light"]
 }
 
 html.codex-qq-skin[data-dream-shell="light"]
-  .qq-skin-home > div:first-child > div:first-child > div:first-child {
+  .qq-skin-home-stack > div:first-child > div:first-child {
   width: calc(100% - 36px) !important;
   height: clamp(220px, 28cqw, 300px) !important;
   min-height: 220px !important;
@@ -3578,7 +3617,7 @@ html.codex-qq-skin[data-dream-shell="light"]
 }
 
 html.codex-qq-skin[data-dream-shell="light"]
-  .qq-skin-home > div:first-child > div:first-child > div:first-child::before {
+  .qq-skin-home-stack > div:first-child > div:first-child::before {
   inset: 0 !important;
   width: auto !important;
   border-radius: 9px !important;
@@ -3589,13 +3628,13 @@ html.codex-qq-skin[data-dream-shell="light"]
 }
 
 html.codex-qq-skin[data-dream-shell="light"]
-  .qq-skin-home > div:first-child > div:first-child > div:first-child > div:first-child {
+  .qq-skin-home-stack > div:first-child > div:first-child > div:first-child {
   justify-content: center !important;
   padding: 0 190px 0 36px !important;
 }
 
 html.codex-qq-skin[data-dream-shell="light"]
-  .qq-skin-home > div:first-child > div:first-child > div:first-child > div:first-child > div:first-child {
+  .qq-skin-home-stack > div:first-child > div:first-child > div:first-child > div:first-child {
   width: calc(100% - 190px) !important;
   max-width: none !important;
   align-items: center !important;
@@ -3650,7 +3689,7 @@ html.codex-qq-skin[data-dream-shell="light"]
 }
 
 html.codex-qq-skin[data-dream-shell="light"]
-  .qq-skin-home > div:first-child > div:first-child > div:first-child > div:nth-child(2) {
+  .qq-skin-home-stack > div:first-child > div:first-child > div:nth-child(2) {
   position: absolute !important;
   left: 18px !important;
   right: 18px !important;
@@ -3801,7 +3840,7 @@ html.codex-qq-skin[data-dream-shell="light"]
 
 @media (max-width: 1100px) {
   html.codex-qq-skin[data-dream-shell="light"]
-    .qq-skin-home > div:first-child > div:first-child > div:first-child > div:first-child {
+    .qq-skin-home-stack > div:first-child > div:first-child > div:first-child {
     padding-right: 150px !important;
   }
   #codex-qq-skin-home-pet,
@@ -3814,7 +3853,7 @@ html.codex-qq-skin[data-dream-shell="light"]
 
 @media (max-width: 820px) {
   html.codex-qq-skin[data-dream-shell="light"]
-    .qq-skin-home > div:first-child > div:first-child > div:first-child > div:first-child {
+    .qq-skin-home-stack > div:first-child > div:first-child > div:first-child {
     padding: 0 22px 72px !important;
   }
   #codex-qq-skin-home-pet,

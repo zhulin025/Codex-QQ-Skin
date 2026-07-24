@@ -6,7 +6,7 @@ on:
       tag:
         description: Existing draft release tag
         required: true
-        default: v2.6.0
+        default: v2.6.1
 
 permissions:
   contents: write
@@ -28,7 +28,7 @@ jobs:
 
       - name: Build Windows installer
         shell: powershell
-        run: .\scripts\windows\build-gui-installer.ps1 -UseInstalledNode -OutputFileName 'ChatGPT QQ Skin Setup 2.6.0.exe'
+        run: .\scripts\windows\build-gui-installer.ps1 -UseInstalledNode -OutputFileName 'ChatGPT QQ Skin Setup 2.6.1.exe'
 
       - name: Upload Windows assets and publish release
         shell: powershell
@@ -36,7 +36,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ inputs.tag }}
         run: |
-          $installer = Get-Item '.\release\ChatGPT QQ Skin Setup 2.6.0.exe'
+          $installer = Get-Item '.\release\ChatGPT QQ Skin Setup 2.6.1.exe'
           $checksum = "$($installer.FullName).sha256"
           gh release upload $env:RELEASE_TAG $installer.FullName $checksum --clobber
           gh release edit $env:RELEASE_TAG --draft=false --latest

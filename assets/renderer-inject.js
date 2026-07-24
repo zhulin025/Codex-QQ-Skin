@@ -43,6 +43,49 @@
     else if (legacyEnabled === "false") skinMode = "native";
     else if (CUSTOM_THEME_KINDS.has(CUSTOM_THEME.kind)) skinMode = "custom";
   } catch {}
+  // Newer Codex home pages insert a .home-banners row above the real stack.
+  // Detect that from the live DOM only — version strings are unnecessary.
+  const detectHomeLayoutKind = (home) => {
+    if (home?.querySelector?.(":scope .home-banners")) return "banners";
+    if (home?.children?.length >= 2) {
+      const hasContentChild = [...home.children].some((child) =>
+        child.querySelector?.('[data-feature="game-source"], .composer-surface-chrome'));
+      const firstIsContent = Boolean(
+        home.firstElementChild?.querySelector?.('[data-feature="game-source"], .composer-surface-chrome'),
+      );
+      if (hasContentChild && !firstIsContent) return "banners";
+    }
+    return "legacy";
+  };
+  const resolveHomeStack = (home) => {
+    if (!home) return null;
+    if (detectHomeLayoutKind(home) === "banners") {
+      return [...home.children].find((child) =>
+        child.querySelector?.('[data-feature="game-source"], .composer-surface-chrome')) || null;
+    }
+    return home.firstElementChild || null;
+  };
+  const syncHomeLayoutMarks = (home) => {
+    const layout = detectHomeLayoutKind(home);
+    const root = document.documentElement;
+    if (root) setAttribute(root, "data-qq-home-layout", layout);
+    const stackClass = skinMode === "qq" ? "qq-skin-home-stack" : "dream-skin-home-stack";
+    const otherStackClass = skinMode === "qq" ? "dream-skin-home-stack" : "qq-skin-home-stack";
+    for (const node of document.querySelectorAll(".qq-skin-home-stack, .dream-skin-home-stack")) {
+      if (!home || !home.contains(node)) {
+        node.classList.remove("qq-skin-home-stack", "dream-skin-home-stack");
+      }
+    }
+    if (!home || skinMode === "native") return null;
+    const stack = resolveHomeStack(home);
+    if (!stack) return null;
+    stack.classList.add(stackClass);
+    stack.classList.remove(otherStackClass);
+    for (const node of home.querySelectorAll(".qq-skin-home-stack, .dream-skin-home-stack")) {
+      if (node !== stack) node.classList.remove("qq-skin-home-stack", "dream-skin-home-stack");
+    }
+    return stack;
+  };
   if (skinMode === "custom" && !CUSTOM_THEME_KINDS.has(CUSTOM_THEME.kind)) skinMode = "qq";
   let THEME = skinMode === "qq" ? QQ_THEME : CUSTOM_THEME;
   let ART = THEME.art && typeof THEME.art === "object" ? THEME.art : {};
@@ -137,13 +180,31 @@
     document.removeEventListener("click", previous.routeInteractionHandler, true);
   }
   previous?.soundMonitor?.cleanup?.();
+  // Rebuild floating chrome that closes over the previous generation. Keep the
+  // shared <style id="codex-qq-skin-style"> node when a skin stays enabled so
+  // reinject can reuse it; native mode must strip every painted leftover.
   document.getElementById(TOGGLE_ID)?.remove();
   document.getElementById(LIBRARY_MENU_ID)?.remove();
   document.getElementById(COMPANION_ID)?.remove();
-  // These controls own closures over the current renderer generation. Rebuild
-  // them on every reinjection so their mode/refresh clicks never call stale code.
   document.getElementById(USAGE_PANEL_ID)?.remove();
   document.getElementById(USAGE_TOGGLE_ID)?.remove();
+  document.getElementById(HOME_PET_ID)?.remove();
+  document.getElementById(RIGHT_TRAY_ID)?.remove();
+  document.getElementById(RETRO_SHELL_ID)?.remove();
+  document.getElementById(RETRO_PROFILE_ID)?.remove();
+  document.getElementById(CHROME_ID)?.remove();
+  document.querySelectorAll(".dream-retro-profile-host").forEach((node) =>
+    node.classList.remove("dream-retro-profile-host"));
+  document.querySelectorAll(".qq-skin-home-stack, .dream-skin-home-stack").forEach((node) =>
+    node.classList.remove("qq-skin-home-stack", "dream-skin-home-stack"));
+  document.querySelectorAll(".qq-skin-home, .dream-skin-home, .qq-skin-home-shell, .dream-skin-home-shell").forEach((node) => {
+    node.classList.remove("qq-skin-home", "dream-skin-home", "qq-skin-home-shell", "dream-skin-home-shell");
+  });
+  if (skinMode === "native") {
+    document.getElementById(STYLE_ID)?.remove();
+    document.documentElement?.classList.remove("codex-qq-skin", "codex-dream-skin");
+    document.documentElement?.removeAttribute("data-qq-home-layout");
+  }
   if (previous?.mediaHandler && previous?.mediaQuery) {
     try { previous.mediaQuery.removeEventListener("change", previous.mediaHandler); } catch {}
   }
@@ -1826,8 +1887,10 @@
       pet?.remove();
       return null;
     }
-    // Matches the hero card targeted by `.qq-skin-home > div > div > div` styles.
-    const hero = home.querySelector(":scope > div:first-child > div:first-child > div:first-child");
+    // Prefer the marked stack (legacy first-child or Codex 26.721+ content column).
+    const stack = home.querySelector(":scope > .qq-skin-home-stack, :scope > .dream-skin-home-stack") ||
+      resolveHomeStack(home);
+    const hero = stack?.querySelector(":scope > div:first-child > div:first-child");
     if (!hero) {
       pet?.remove();
       return null;
@@ -2261,6 +2324,7 @@
       home.classList.toggle("qq-skin-home", skinMode === "qq");
       home.classList.toggle("dream-skin-home", skinMode === "custom");
     }
+    syncHomeLayoutMarks(home);
     const homeUtilityBars = new Set(home
       ? home.querySelectorAll('[class*="_homeUtilityBar_"]')
       : []);
@@ -2471,7 +2535,10 @@
     document.querySelectorAll(".dream-skin-home").forEach((node) => node.classList.remove("dream-skin-home"));
     document.querySelectorAll(".dream-skin-home-shell").forEach((node) => node.classList.remove("dream-skin-home-shell"));
     document.querySelectorAll(".dream-skin-home-utility").forEach((node) => node.classList.remove("dream-skin-home-utility"));
+    document.querySelectorAll(".qq-skin-home-stack, .dream-skin-home-stack").forEach((node) =>
+      node.classList.remove("qq-skin-home-stack", "dream-skin-home-stack"));
     document.querySelectorAll(".qq-skin-section-bar").forEach((node) => node.classList.remove("qq-skin-section-bar"));
+    root?.removeAttribute("data-qq-home-layout");
     document.getElementById(STYLE_ID)?.remove();
     document.getElementById(CHROME_ID)?.remove();
     document.getElementById(COMPANION_ID)?.remove();

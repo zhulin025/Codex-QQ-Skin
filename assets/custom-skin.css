@@ -544,13 +544,13 @@ html.codex-dream-skin .dream-skin-home {
   overflow-x: hidden !important;
 }
 
-.dream-skin-home > div:first-child {
+.dream-skin-home-stack {
   min-height: 100% !important;
   padding-top: 15px !important;
   justify-content: flex-start !important;
 }
 
-.dream-skin-home > div:first-child > div:first-child {
+.dream-skin-home-stack > div:first-child {
   flex: 0 0 440px !important;
   min-height: 440px !important;
   align-items: flex-start !important;
@@ -558,14 +558,48 @@ html.codex-dream-skin .dream-skin-home {
   margin-top: 0 !important;
 }
 
+/* Same banners/content split as the QQ skin when .home-banners is present. */
+html[data-qq-home-layout="banners"] .dream-skin-home {
+  display: flex !important;
+  flex-direction: column !important;
+  min-height: 0 !important;
+}
+
+html[data-qq-home-layout="banners"] .dream-skin-home > .home-banners,
+html[data-qq-home-layout="banners"] .dream-skin-home > :has(> .home-banners) {
+  flex: 0 0 auto !important;
+  min-height: 0 !important;
+}
+
+html[data-qq-home-layout="banners"] .dream-skin-home-stack {
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  padding-top: 8px !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+html[data-qq-home-layout="banners"] .dream-skin-home-stack > div:first-child {
+  flex: 1 1 auto !important;
+  min-height: 280px !important;
+  justify-content: flex-start !important;
+  align-items: stretch !important;
+}
+
+html[data-qq-home-layout="banners"] .dream-skin-home-stack > div:last-child {
+  flex: 0 0 auto !important;
+  min-height: 0 !important;
+  justify-content: flex-end !important;
+}
+
 /* Codex 2026.7 added a vertical centering spacer above the home hero. */
 html.codex-dream-skin main.main-surface.dream-skin-home-shell
-  .dream-skin-home > div:first-child > div:first-child {
+  .dream-skin-home-stack > div:first-child {
   align-self: stretch !important;
   justify-content: flex-start !important;
 }
 
-html.codex-dream-skin .dream-skin-home > div:first-child > div:first-child > div:first-child {
+html.codex-dream-skin .dream-skin-home-stack > div:first-child > div:first-child {
   position: relative !important;
   isolation: isolate;
   width: calc(100% - 44px) !important;
@@ -588,11 +622,11 @@ html.codex-dream-skin .dream-skin-home > div:first-child > div:first-child > div
 /* Preserve the full frame for portrait and ordinary photo compositions in the
    panoramic new-task build panel. Wide wallpaper artwork continues to cover. */
 html.codex-dream-skin[data-dream-art-fit="contain"]
-  .dream-skin-home > div:first-child > div:first-child > div:first-child {
+  .dream-skin-home-stack > div:first-child > div:first-child {
   background-size: contain !important;
 }
 
-.dream-skin-home > div:first-child > div:first-child > div:first-child::before {
+.dream-skin-home-stack > div:first-child > div:first-child::before {
   content: "";
   position: absolute;
   inset: 0 auto 0 0;
@@ -604,25 +638,25 @@ html.codex-dream-skin[data-dream-art-fit="contain"]
 }
 
 html.codex-dream-skin:is([data-dream-art-safe="right"], [data-dream-art-safe-area="right"])
-  .dream-skin-home > div:first-child > div:first-child > div:first-child::before {
+  .dream-skin-home-stack > div:first-child > div:first-child::before {
   inset: 0 0 0 auto;
 }
 
 html.codex-dream-skin:is([data-dream-art-safe="center"], [data-dream-art-safe-area="center"])
-  .dream-skin-home > div:first-child > div:first-child > div:first-child::before {
+  .dream-skin-home-stack > div:first-child > div:first-child::before {
   inset: 0 14%;
   width: auto;
   border-radius: 0;
 }
 
 html.codex-dream-skin:is([data-dream-art-safe="none"], [data-dream-art-safe-area="none"])
-  .dream-skin-home > div:first-child > div:first-child > div:first-child::before {
+  .dream-skin-home-stack > div:first-child > div:first-child::before {
   inset: 0;
   width: auto;
   border-radius: 21px;
 }
 
-.dream-skin-home > div:first-child > div:first-child > div:first-child > div:first-child {
+.dream-skin-home-stack > div:first-child > div:first-child > div:first-child {
   position: relative;
   z-index: 1;
   height: 100%;
@@ -632,29 +666,29 @@ html.codex-dream-skin:is([data-dream-art-safe="none"], [data-dream-art-safe-area
 }
 
 html.codex-dream-skin:is([data-dream-art-safe="right"], [data-dream-art-safe-area="right"])
-  .dream-skin-home > div:first-child > div:first-child > div:first-child > div:first-child {
+  .dream-skin-home-stack > div:first-child > div:first-child > div:first-child {
   justify-content: flex-end !important;
 }
 
 html.codex-dream-skin:is([data-dream-art-safe="center"], [data-dream-art-safe-area="center"])
-  .dream-skin-home > div:first-child > div:first-child > div:first-child > div:first-child {
+  .dream-skin-home-stack > div:first-child > div:first-child > div:first-child {
   justify-content: center !important;
 }
 
-.dream-skin-home > div:first-child > div:first-child > div:first-child > div:first-child > div:first-child {
+.dream-skin-home-stack > div:first-child > div:first-child > div:first-child > div:first-child {
   width: min(46%, 520px) !important;
   align-items: flex-start !important;
   gap: 0 !important;
 }
 
 html.codex-dream-skin:is([data-dream-art-safe="right"], [data-dream-art-safe-area="right"])
-  .dream-skin-home > div:first-child > div:first-child > div:first-child > div:first-child > div:first-child {
+  .dream-skin-home-stack > div:first-child > div:first-child > div:first-child > div:first-child {
   align-items: flex-end !important;
   text-align: right !important;
 }
 
 html.codex-dream-skin:is([data-dream-art-safe="center"], [data-dream-art-safe-area="center"])
-  .dream-skin-home > div:first-child > div:first-child > div:first-child > div:first-child > div:first-child {
+  .dream-skin-home-stack > div:first-child > div:first-child > div:first-child > div:first-child {
   width: min(58%, 640px) !important;
   align-items: center !important;
   text-align: center !important;
@@ -672,6 +706,7 @@ html.codex-dream-skin:is([data-dream-art-safe="center"], [data-dream-art-safe-ar
   text-align: inherit !important;
   text-shadow: none !important;
   opacity: 1 !important;
+  visibility: visible !important;
   pointer-events: auto !important;
 }
 
@@ -709,7 +744,7 @@ html.codex-dream-skin:is([data-dream-art-safe="center"], [data-dream-art-safe-ar
   opacity: .86;
 }
 
-.dream-skin-home > div:first-child > div:first-child > div:first-child > div:nth-child(2) {
+.dream-skin-home-stack > div:first-child > div:first-child > div:nth-child(2) {
   left: 14px !important;
   right: 14px !important;
   top: 100% !important;
@@ -841,7 +876,7 @@ html.codex-dream-skin[data-dream-art-wide="true"] main.main-surface
 }
 
 html.codex-dream-skin[data-dream-art-wide="true"] main.main-surface.dream-skin-home-shell
-  .dream-skin-home > div:first-child > div:first-child > div:first-child {
+  .dream-skin-home-stack > div:first-child > div:first-child {
   border: 0 !important;
   border-radius: 0 !important;
   background: transparent !important;
@@ -849,7 +884,7 @@ html.codex-dream-skin[data-dream-art-wide="true"] main.main-surface.dream-skin-h
 }
 
 html.codex-dream-skin[data-dream-art-wide="true"] main.main-surface.dream-skin-home-shell
-  .dream-skin-home > div:first-child > div:first-child > div:first-child::before {
+  .dream-skin-home-stack > div:first-child > div:first-child::before {
   content: none !important;
 }
 
@@ -1062,22 +1097,22 @@ html.codex-dream-skin [data-message-author-role] { border-radius: 16px; }
 @media (max-width: 1120px) {
   .dream-skin-status { display: none !important; }
   .dream-skin-home { --thread-content-max-width: min(940px, calc(100cqw - 30px)) !important; }
-  .dream-skin-home > div:first-child > div:first-child > div:first-child { width: calc(100% - 28px) !important; }
+  .dream-skin-home-stack > div:first-child > div:first-child { width: calc(100% - 28px) !important; }
 }
 
 @media (max-width: 900px) {
   .dream-skin-brand { left: 15px; }
   .dream-skin-brand b { font-size: 12px; }
-  .dream-skin-home > div:first-child > div:first-child {
+  .dream-skin-home-stack > div:first-child {
     flex-basis: 408px !important;
     min-height: 408px !important;
   }
-  .dream-skin-home > div:first-child > div:first-child > div:first-child {
+  .dream-skin-home-stack > div:first-child > div:first-child {
     height: 232px !important;
     min-height: 232px !important;
   }
-  .dream-skin-home > div:first-child > div:first-child > div:first-child > div:first-child { padding: 0 26px; }
-  .dream-skin-home > div:first-child > div:first-child > div:first-child > div:first-child > div:first-child {
+  .dream-skin-home-stack > div:first-child > div:first-child > div:first-child { padding: 0 26px; }
+  .dream-skin-home-stack > div:first-child > div:first-child > div:first-child > div:first-child {
     width: min(58%, 460px) !important;
   }
   .dream-skin-home [data-feature="game-source"] { font-size: 18px !important; }
@@ -1184,7 +1219,7 @@ html.codex-dream-skin body > #root > div > .app-header-tint {
 
 html.codex-dream-skin main.main-surface.dream-skin-home-shell,
 html.codex-dream-skin main.main-surface.dream-skin-home-shell
-  .dream-skin-home > div:first-child > div:first-child > div:first-child {
+  .dream-skin-home-stack > div:first-child > div:first-child {
   background: transparent !important;
   background-image: none !important;
   border-color: rgb(var(--ds-muted-rgb) / .22) !important;
@@ -1192,7 +1227,7 @@ html.codex-dream-skin main.main-surface.dream-skin-home-shell
 }
 
 html.codex-dream-skin main.main-surface.dream-skin-home-shell
-  .dream-skin-home > div:first-child > div:first-child > div:first-child::before {
+  .dream-skin-home-stack > div:first-child > div:first-child::before {
   content: none !important;
   display: none !important;
 }

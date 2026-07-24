@@ -1,7 +1,7 @@
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-$script:SkinVersion = '2.6.0'
+$script:SkinVersion = '2.6.1'
 $script:ScriptRoot = Split-Path -Parent $PSCommandPath
 $script:ProjectRoot = (Resolve-Path (Join-Path $script:ScriptRoot '..\..')).Path
 $script:InjectorPath = Join-Path $script:ProjectRoot 'scripts\injector.mjs'

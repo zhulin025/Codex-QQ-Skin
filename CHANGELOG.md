@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.6.1 — 2026-07-24
+
+- 适配 Codex Desktop `26.721` 首页新增的 `home-banners` 结构；按 DOM 自动识别新旧布局，避免 QQ / 自定义皮肤下「新建任务」面板被顶出可视区域而空白。
+- 修复切换到原生皮肤或 reinject 时 QQ 企鹅头像/侧栏 profile 残留的问题。
+- 首页内容列改为稳定标记（`qq-skin-home-stack` / `dream-skin-home-stack`），旧版 Codex 无 banners 时仍走原注入路径。
+
 ## 2.6.0 — 2026-07-23
 
 - 将右下角 Codex 伙伴从单一头像升级为可交互桌面房间，增加随时间、运行中、等待确认、完成、离线和休息状态变化的场景反馈。

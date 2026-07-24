@@ -11,7 +11,7 @@ import { loadDeepThemeDirectory, mimeForExtension } from "./deep-theme-core.mjs"
 const scriptPath = fileURLToPath(import.meta.url);
 const here = path.dirname(scriptPath);
 const root = path.resolve(here, "..");
-const SKIN_VERSION = "2.6.0";
+const SKIN_VERSION = "2.6.1";
 const LOOPBACK_HOSTS = new Set(["127.0.0.1", "localhost", "[::1]"]);
 const CDP_ID_PATTERN = /^[A-Za-z0-9._-]{1,200}$/;
 const MAX_ART_BYTES = 16 * 1024 * 1024;
@@ -1002,7 +1002,11 @@ async function verifySession(session) {
     const suggestions = home?.querySelector('.group\\\\/home-suggestions') ?? null;
     const cardBoxes = suggestions ? [...suggestions.querySelectorAll('button')].map(box) : [];
     const visibleCards = cardBoxes.filter((item) => item?.visible);
-    const hero = box(home?.firstElementChild?.firstElementChild?.firstElementChild);
+    const stack = home?.querySelector(':scope > .qq-skin-home-stack, :scope > .dream-skin-home-stack') ||
+      [...(home?.children || [])].find((child) =>
+        child.querySelector?.('[data-feature="game-source"], .composer-surface-chrome')) ||
+      home?.firstElementChild || null;
+    const hero = box(stack?.querySelector(':scope > div:first-child > div:first-child'));
     const projectButton = box(home?.querySelector('.group\\\\/project-selector > button'));
     const shell = box(document.querySelector('main.main-surface'));
     const composer = box(document.querySelector('.composer-surface-chrome'));
