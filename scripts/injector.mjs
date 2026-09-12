@@ -818,13 +818,34 @@ function listThemeLibrary(themeDir, { limit = 12, customOnly = false } = {}) {
   return items.slice(0, Math.max(1, limit)).map(({ id, name, kind, active }) => ({ id, name, kind, active }));
 }
 
+function runWindowsLibrarySwitch(themeId) {
+  const script = path.join(root, "scripts", "windows", "switch-theme-windows.ps1");
+  const commandLine = ["powershell.exe", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", `"${script}"`, "-Id", `"${themeId}"`].join(" ");
+  const launcher = [
+    `$result = Invoke-CimMethod -ClassName Win32_Process -MethodName Create -Arguments @{ CommandLine = '${commandLine.replaceAll("'", "''")}'; CurrentDirectory = '${root.replaceAll("'", "''")}' }`,
+    `if ($result.ReturnValue -ne 0) { throw "Win32_Process.Create failed: $($result.ReturnValue)" }`,
+  ].join("; ");
+  return new Promise((resolve, reject) => {
+    // WMI starts the switcher outside Codex's process tree. A direct child is
+    // killed together with this injector during a full Windows restart.
+    const child = spawn("powershell.exe", [
+      "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-Command", launcher,
+    ], { env: process.env, stdio: ["ignore", "ignore", "pipe"], windowsHide: true });
+    let stderr = "";
+    child.stderr.on("data", (chunk) => { stderr += String(chunk); });
+    child.on("error", reject);
+    child.on("close", (code) => {
+      if (code === 0) resolve();
+      else reject(new Error(stderr.trim() || `Windows library switch launcher exited with ${code}`));
+    });
+  });
+}
+
 function runLibrarySwitch(themeId) {
   if (!/^[A-Za-z0-9_-]{1,80}$/.test(themeId || "")) {
     return Promise.reject(new Error(`Invalid theme id: ${themeId}`));
   }
-  if (process.platform === "win32") {
-    return Promise.reject(new Error("In-app library switching is currently macOS-only"));
-  }
+  if (process.platform === "win32") return runWindowsLibrarySwitch(themeId);
   const script = path.join(root, "scripts", "switch-theme-macos.sh");
   return new Promise((resolve, reject) => {
     // --no-apply only stages the live theme pack. The watch loop refreshes
@@ -1388,7 +1409,7 @@ async function runWatch(options) {
   };
 
   const pollLibrarySwitchRequests = async () => {
-    if (librarySwitchBusy || process.platform === "win32" || !sessions.size) return;
+    if (librarySwitchBusy || !sessions.size) return;
     for (const record of sessions.values()) {
       if (record.session.closed) continue;
       let themeId = null;
@@ -1411,6 +1432,10 @@ async function runWatch(options) {
       librarySwitchBusy = true;
       try {
         await runLibrarySwitch(themeId);
+        if (process.platform === "win32") {
+          console.log(`[qq-skin] handed library theme ${themeId} to detached Windows switcher`);
+          return;
+        }
         await record.session.evaluate(`try {
           window.localStorage?.setItem("codex-qq-skin-mode", "custom");
           window.localStorage?.setItem("codex-qq-skin-enabled", "true");

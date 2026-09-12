@@ -386,6 +386,14 @@ assert.match(template, /const TOGGLE_ID = "codex-qq-skin-toggle"[\s\S]{0,400}cod
   "The renderer must ship a persistent three-mode UI selector.");
 assert.match(template, /\["native", "原生"\][\s\S]{0,80}\["qq", "QQ"\][\s\S]{0,80}\["custom", "自定义"\]/,
   "The title-bar selector must expose native, stable QQ, and custom skins.");
+assert.match(template, /getAttribute\("data-reduced-motion"\) === "true"/,
+  "Renderer motion must honor Codex's root reduced-motion attribute.");
+assert.match(css, /html\.codex-qq-skin\[data-reduced-motion="true"\]/,
+  "QQ CSS must honor the root reduced-motion attribute.");
+assert.match(customCss, /html\.codex-dream-skin\[data-reduced-motion="true"\]/,
+  "Custom CSS must honor the root reduced-motion attribute.");
+assert.match(template, /nodeIsSkinOwned[\s\S]{0,500}hasNativeMutation[\s\S]{0,120}scheduleEnsure/,
+  "The renderer observer must ignore its own skin-owned DOM mutations.");
 assert.match(template, /LIBRARY_SWITCH_KEY = "codex-qq-skin-library-switch"/,
   "Codex must request library switches through a dedicated localStorage channel.");
 assert.match(template, /dataset\.skinLibrary = "recent"/,

@@ -22,6 +22,14 @@ if ($commonWindows | Where-Object { $_ -match '\(Get-CodexProcesses\)\.Count' -a
   throw 'Get-CodexProcesses count checks must use @(...) under StrictMode.'
 }
 
+$injectorSource = Get-Content -LiteralPath (Join-Path $root 'scripts\injector.mjs') -Raw
+if ($injectorSource -match 'In-app library switching is currently macOS-only') {
+  throw 'Windows in-app library switching regressed to macOS-only.'
+}
+if ($injectorSource -notmatch 'Invoke-CimMethod -ClassName Win32_Process') {
+  throw 'Windows library switching must launch outside the injector process tree.'
+}
+
 & $node (Join-Path $root 'scripts\injector.mjs') --check-payload --theme-dir (Join-Path $root 'presets\preset-classic-codex') | Out-Null
 if ($LASTEXITCODE -ne 0) { throw 'Injector payload check failed.' }
 $bumblebee = Join-Path $root 'presets\preset-bumblebee'
