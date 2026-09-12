@@ -1132,6 +1132,17 @@ html.codex-dream-skin [data-message-author-role] { border-radius: 16px; }
   }
 }
 
+/* Codex 26.9 exposes reduced motion as a root data attribute rather than an OS
+   media query. Honor either signal so Neon Storm and room animations stop. */
+html.codex-dream-skin[data-reduced-motion="true"] *,
+html.codex-dream-skin[data-reduced-motion="true"] *::before,
+html.codex-dream-skin[data-reduced-motion="true"] *::after {
+  scroll-behavior: auto !important;
+  transition-duration: .01ms !important;
+  animation-duration: .01ms !important;
+  animation-iteration-count: 1 !important;
+}
+
 /* Full-window custom wallpaper. Paint the uploaded image once behind the UI,
    then soften it so chat text stays readable (same idea as the frosted sidebar). */
 html.codex-dream-skin body {
@@ -1798,4 +1809,9 @@ html.codex-dream-skin[data-qq-settings="true"] main.main-surface [class*="text-t
   html.codex-dream-skin[data-qq-weather="neon-storm"] #codex-qq-skin-weather {
     opacity: 0.28;
   }
+}
+
+html.codex-dream-skin[data-reduced-motion="true"][data-qq-weather="neon-storm"]
+  #codex-qq-skin-weather {
+  opacity: 0.28;
 }

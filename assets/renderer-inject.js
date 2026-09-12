@@ -1802,9 +1802,11 @@
 
       try {
         mq = window.matchMedia("(prefers-reduced-motion: reduce)");
-        reduced = Boolean(mq.matches);
+        const reducedMotionEnabled = () => Boolean(mq.matches) ||
+          document.documentElement?.getAttribute("data-reduced-motion") === "true";
+        reduced = reducedMotionEnabled();
         mq._handler = () => {
-          reduced = Boolean(mq.matches);
+          reduced = reducedMotionEnabled();
           if (reduced) {
             stop();
             paint();
@@ -3684,7 +3686,17 @@
       scheduler.timeout = setTimeout(flushScheduledEnsure, 64);
     }
   };
-  const observer = new MutationObserver(() => scheduleEnsure({ route: true }));
+  const skinOwnedSelector = '[id^="codex-qq-skin-"], [class*="qq-skin-"], [class*="dream-skin-"], [class*="dream-retro-"]';
+  const nodeIsSkinOwned = (node) => node?.nodeType === 1 &&
+    (node.matches?.(skinOwnedSelector) || Boolean(node.closest?.(skinOwnedSelector)));
+  const observer = new MutationObserver((records) => {
+    const hasNativeMutation = records.some((record) => {
+      if (record.target?.closest?.(skinOwnedSelector)) return false;
+      const changed = [...record.addedNodes, ...record.removedNodes];
+      return changed.length === 0 || changed.some((node) => !nodeIsSkinOwned(node));
+    });
+    if (!records.length || hasNativeMutation) scheduleEnsure({ route: true });
+  });
   rootObserver = new MutationObserver(() => {
     if (samplingNativeShell) return;
     scheduleEnsure({ root: true, route: true });

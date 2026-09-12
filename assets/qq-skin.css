@@ -3878,6 +3878,17 @@ html.codex-qq-skin[data-dream-shell="light"]
   }
 }
 
+/* Codex 26.9 exposes reduced motion as a root data attribute rather than an OS
+   media query. Honor either signal so rain and room animations stop reliably. */
+html.codex-qq-skin[data-reduced-motion="true"] *,
+html.codex-qq-skin[data-reduced-motion="true"] *::before,
+html.codex-qq-skin[data-reduced-motion="true"] *::after {
+  scroll-behavior: auto !important;
+  transition-duration: .01ms !important;
+  animation-duration: .01ms !important;
+  animation-iteration-count: 1 !important;
+}
+
 /* Windows/settings corrections. The settings screen owns a separate navigation
    panel, so task-sidebar profile decoration must not leak into it. */
 html.codex-qq-skin:is(
